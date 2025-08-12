@@ -1,0 +1,10 @@
+{
+  "tailwindCSS.experimental.classRegex": [
+    ["([\"'`][^\"'`]*.*?[\"'`])", "[\"'`]([^\"'`]*).*?[\"'`]"]
+  ],
+  "i18n-ally.localesPaths": [
+		"src/locales/base"
+  ],
+  "i18n-ally.keystyle": "flat",
+  "i18n-ally.sourceLanguage": "en-US"
+}
