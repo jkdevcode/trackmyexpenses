@@ -23,3 +23,5 @@ logs
 
 # VSCode
 .vscode/
+
+/src/generated/prisma
