@@ -1,64 +1,53 @@
-import { Link } from "@heroui/link";
-import { Snippet } from "@heroui/snippet";
-import { Code } from "@heroui/code";
-import { button as buttonStyles } from "@heroui/theme";
 import { Trans, useTranslation } from "react-i18next";
-
-import { siteConfig } from "@/config/site";
 import { title, subtitle } from "@/components/primitives";
-import { GithubIcon } from "@/components/icons";
+import { button as buttonStyles } from "@heroui/theme";
 import DefaultLayout from "@/layouts/default";
+import { Link } from "@heroui/link";
 
 export default function IndexPage() {
   const { t } = useTranslation();
 
   return (
     <DefaultLayout>
-      <section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
-        <div className="inline-block max-w-lg text-center justify-center">
-          <span className={title()}>{t("make")}&nbsp;</span>
-          <span className={title({ color: "violet" })}>
-            {t("beautiful")}&nbsp;
-          </span>
-          <br />
-          <span className={title()}>
-            <Trans i18nKey="websites-regardless-of-your-design-experience" />
-          </span>
-          <div className={subtitle({ class: "mt-4" })}>
-            <Trans i18nKey="beautiful-fast-and-modern-react-ui-library" />
-          </div>
+      <section className="flex flex-col items-center justify-center gap-6 py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white">
+        
+        {/* Título y subtítulo */}
+        <div className="inline-block max-w-2xl text-center">
+          <h1 className={title()}>
+            {t("welcome-to")}&nbsp;
+            <span className={title({ color: "violet" })}>{t("my-app")}</span>
+          </h1>
+          <p className={subtitle({ class: "mt-4 text-gray-600" })}>
+            <Trans i18nKey="start-your-journey-with-us" />
+          </p>
         </div>
 
-        <div className="flex gap-3">
+        {/* Botones de acción */}
+        <div className="flex gap-4 mt-6">
           <Link
-            isExternal
+            href="/login"
             className={buttonStyles({
               color: "primary",
               radius: "full",
               variant: "shadow",
+              class: "px-6 py-3 text-lg"
             })}
-            href={siteConfig().links.docs}
           >
-            <Trans i18nKey="documentation" />
+            {t("login")}
           </Link>
+
           <Link
-            isExternal
-            className={buttonStyles({ variant: "bordered", radius: "full" })}
-            href={siteConfig().links.github}
+            href="/register"
+            className={buttonStyles({
+              variant: "bordered",
+              radius: "full",
+              class: "px-6 py-3 text-lg"
+            })}
           >
-            <GithubIcon size={20} />
-            GitHub
+            {t("register")}
           </Link>
         </div>
 
-        <div className="mt-8">
-          <Snippet hideCopyButton hideSymbol variant="bordered">
-            <span>
-              <Trans i18nKey="get-started-by-editing" />{" "}
-              <Code color="primary">pages/index.tsx</Code>
-            </span>
-          </Snippet>
-        </div>
       </section>
     </DefaultLayout>
   );

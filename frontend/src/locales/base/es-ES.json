@@ -34,5 +34,12 @@
   "cookie-policy": "Política de cookies.",
   "accept-all": "Aceptar todo",
   "reject": "Rechazar",
-  "cookie-consent-title": "Política de cookies"
+  "cookie-consent-title": "Política de cookies",
+
+
+  "welcome-to": "Bienvenido a",
+  "my-app": "Invoicely",
+  "start-your-journey-with-us": "Comienza tu viaje con nosotros",
+  "login": "Iniciar sesión",
+  "register": "Regístrate"
 }

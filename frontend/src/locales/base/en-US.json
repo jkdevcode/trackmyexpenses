@@ -34,5 +34,12 @@
   "cookie-policy": "Cookie Policy.",
   "accept-all": "Accept All",
   "reject": "Reject",
-  "cookie-consent-title": "Cookies policy"
+  "cookie-consent-title": "Cookies policy",
+
+  "welcome-to": "Welcome to",
+  "my-app": "My App",
+  "start-your-journey-with-us": "Start your journey with us",
+  "login": "Login",
+  "register": "Sign Up"
+
 }
