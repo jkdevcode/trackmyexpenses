@@ -27,7 +27,7 @@ export default function DefaultLayout({
           <span className="text-default-600">
             <Trans ns="base">powered-by</Trans>
           </span>
-          <p className="text-primary">HeroUI</p>
+          <p className="text-primary">Invoicely</p>
         </Link>
       </footer>
     </div>
