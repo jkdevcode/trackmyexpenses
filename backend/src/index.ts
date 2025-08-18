@@ -1,6 +1,8 @@
-const express = require("express");
-const cors = require("cors");
-const dotenv = require("dotenv");
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
 
 dotenv.config();
 
@@ -9,6 +11,10 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// Rutas
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 
 // Ruta de prueba
 app.get("/", (req: any, res: any) => {
