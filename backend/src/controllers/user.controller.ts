@@ -96,3 +96,87 @@ export async function updateProfile(req: AuthRequest, res: Response) {
     });
   }
 }
+
+export async function getAllUsers(req: AuthRequest, res: Response) {
+  try {
+    const users = await prisma.usuario.findMany({
+      select: {
+        id: true,
+        tipoDocumento: true,
+        documento: true,
+        nombres: true,
+        apellidos: true,
+        correo: true,
+        foto: true,
+        fechaIngreso: true,
+        fechaUltimaEdicion: true,
+      },
+      orderBy: {
+        fechaIngreso: 'desc'
+      }
+    });
+
+    return res.status(200).json({
+      status: 200,
+      message: "Usuarios obtenidos exitosamente",
+      users,
+      total: users.length
+    });
+  } catch (err: any) {
+    console.error("Error obteniendo usuarios:", err);
+    return res.status(500).json({
+      status: 500,
+      message: "Error en el servidor " + err.message
+    });
+  }
+}
+
+export async function deleteUser(req: AuthRequest, res: Response) {
+  try {
+    const { id } = req.params;
+    const userId = parseInt(id || '');
+
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        status: 400,
+        message: "ID de usuario inválido"
+      });
+    }
+
+    // Verificar que el usuario existe
+    const userExists = await prisma.usuario.findUnique({
+      where: { id: userId }
+    });
+
+    if (!userExists) {
+      return res.status(404).json({
+        status: 404,
+        message: "Usuario no encontrado"
+      });
+    }
+
+    // Verificar que no se está eliminando a sí mismo
+    if (userId === req.user!.id) {
+      return res.status(403).json({
+        status: 403,
+        message: "No puedes eliminar tu propia cuenta"
+      });
+    }
+
+    // Eliminar el usuario
+    await prisma.usuario.delete({
+      where: { id: userId }
+    });
+
+    return res.status(200).json({
+      status: 200,
+      message: "Usuario eliminado exitosamente"
+    });
+  } catch (err: any) {
+    console.error("Error eliminando usuario:", err);
+    return res.status(500).json({
+      status: 500,
+      message: "Error en el servidor " + err.message
+    });
+  }
+}
