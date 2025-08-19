@@ -18,15 +18,7 @@ export async function register(req: Request, res: Response) {
       });
     }
 
-    const {
-      tipoDocumento,
-      documento,
-      nombres,
-      apellidos,
-      correo,
-      contrasena,
-      foto,
-    } = req.body;
+    const { tipoDocumento, documento, nombres, apellidos, correo, contrasena, foto } = req.body;
 
     // ¿existe correo o documento?
     const exists = await prisma.usuario.findFirst({
@@ -59,7 +51,8 @@ export async function register(req: Request, res: Response) {
     if (nuevo.id) {
       return res.status(200).json({
         status: 200,
-        message: "Se registró con éxito el usuario " + nombres + " " + apellidos,
+        message:
+          "Se registró con éxito el usuario " + nombres + " " + apellidos,
       });
     } else {
       return res.status(403).json({
@@ -93,16 +86,18 @@ export async function login(req: Request, res: Response) {
     const { documento, contrasena } = req.body;
 
     const user = await prisma.usuario.findUnique({ where: { documento } });
-    if (!user) return res.status(401).json({
-      status: 401,
-      message: "Credenciales inválidas"
-    });
+    if (!user)
+      return res.status(401).json({
+        status: 401,
+        message: "Credenciales inválidas",
+      });
 
     const ok = await comparePassword(contrasena, user.contrasena);
-    if (!ok) return res.status(401).json({
-      status: 401,
-      message: "Credenciales inválidas"
-    });
+    if (!ok)
+      return res.status(401).json({
+        status: 401,
+        message: "Credenciales inválidas",
+      });
 
     const token = signJwt({ id: user.id });
 
