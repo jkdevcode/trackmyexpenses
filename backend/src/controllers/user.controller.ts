@@ -8,28 +8,35 @@ export async function me(req: AuthRequest, res: Response) {
     const user = await prisma.usuario.findUnique({
       where: { id: req.user!.id },
       select: {
-        id: true, tipoDocumento: true, documento: true, nombres: true,
-        apellidos: true, correo: true, foto: true, fechaIngreso: true, fechaUltimaEdicion: true
-      }
+        id: true,
+        tipoDocumento: true,
+        documento: true,
+        nombres: true,
+        apellidos: true,
+        correo: true,
+        foto: true,
+        fechaIngreso: true,
+        fechaUltimaEdicion: true,
+      },
     });
 
     if (!user) {
       return res.status(404).json({
         status: 404,
-        message: "Usuario no encontrado"
+        message: "Usuario no encontrado",
       });
     }
 
     return res.status(200).json({
       status: 200,
       message: "Perfil obtenido exitosamente",
-      user
+      user,
     });
   } catch (err: any) {
     console.error("Error obteniendo perfil:", err);
     return res.status(500).json({
       status: 500,
-      message: "Error en el servidor " + err.message
+      message: "Error en el servidor " + err.message,
     });
   }
 }
@@ -60,26 +67,32 @@ export async function updateProfile(req: AuthRequest, res: Response) {
         fechaUltimaEdicion: new Date(),
       },
       select: {
-        id: true, documento: true, nombres: true, apellidos: true, correo: true, foto: true, fechaUltimaEdicion: true
-      }
+        id: true,
+        documento: true,
+        nombres: true,
+        apellidos: true,
+        correo: true,
+        foto: true,
+        fechaUltimaEdicion: true,
+      },
     });
 
     return res.status(200).json({
       status: 200,
       message: "Perfil actualizado exitosamente",
-      user: updated
+      user: updated,
     });
   } catch (e: any) {
     if (e.code === "P2002") {
       return res.status(409).json({
         status: 409,
-        message: "Correo ya está en uso"
+        message: "Correo ya está en uso",
       });
     }
     console.error("Error actualizando perfil:", e);
     return res.status(500).json({
       status: 500,
-      message: "Error en el servidor " + e.message
+      message: "Error en el servidor " + e.message,
     });
   }
 }
