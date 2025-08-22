@@ -3,6 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import facturaRoutes from "./routes/factura.routes.js";
+import productoRoutes from "./routes/producto.routes.js";
 
 dotenv.config();
 
@@ -15,6 +17,8 @@ app.use(express.json());
 // Rutas
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/facturas", facturaRoutes);
+app.use("/api/productos", productoRoutes);
 
 // Ruta de prueba
 app.get("/", (req: any, res: any) => {
