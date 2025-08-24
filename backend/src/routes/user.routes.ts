@@ -7,7 +7,7 @@ const router = Router();
 
 router.get("/me", authGuard, me);
 router.put("/me", authGuard, validateUpdateProfile, updateProfile);
-router.get("/", authGuard, getAllUsers);
+router.get("/", /* authGuard, */ getAllUsers);
 router.delete("/:id", authGuard, deleteUser);
 
 export default router;
