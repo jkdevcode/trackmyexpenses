@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../prisma/prisma.js";
-import { Prisma } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 // Crear una nueva factura con productos
 export const crearFactura = async (req: Request, res: Response) => {
@@ -93,7 +93,7 @@ export const crearFactura = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error al crear factura:", error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error instanceof PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
         return res.status(400).json({ error: "El código de factura ya existe" });
       }
@@ -261,7 +261,7 @@ export const actualizarFactura = async (req: Request, res: Response) => {
     }
 
     // Actualizar factura usando transacción
-    const facturaActualizada = await prisma.$transaction(async (tx) => {
+    const facturaActualizada = await prisma.$transaction(async (tx: any) => {
       // Eliminar productos existentes
       await tx.facturaProducto.deleteMany({
         where: { facturaId: Number(id) }

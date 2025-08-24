@@ -227,7 +227,7 @@ export const obtenerProductosMasVendidos = async (req: Request, res: Response) =
 
     // Obtener información completa de los productos
     const productosConInfo = await Promise.all(
-      productosMasVendidos.map(async (item) => {
+      productosMasVendidos.map(async (item: any) => {
         const producto = await prisma.producto.findUnique({
           where: { id: item.productoId }
         });
