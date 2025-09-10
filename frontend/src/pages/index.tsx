@@ -1,7 +1,7 @@
 import { Trans, useTranslation } from "react-i18next";
 import { button as buttonStyles } from "@heroui/theme";
 import { Link } from "@heroui/link";
-import imgs from "../styles/imgs";
+/* import imgs from "../styles/imgs"; */
 
 import { title, subtitle } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
@@ -14,7 +14,7 @@ export default function IndexPage() {
       <section
         className="flex flex-col items-center justify-center gap-6 py-16 md:py-24 
                   bg-cover bg-center bg-no-repeat relative"
-        style={{ backgroundImage: `url(${imgs.imgPrincipalPets})` }}
+        /* style={{ backgroundImage: `url(${imgs.imgPrincipalPets})` }} */
       >
         {/* Capa de oscurecimiento para que el texto sea legible */}
         <div className="absolute inset-0 bg-black bg-opacity-40"></div>
