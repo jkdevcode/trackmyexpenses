@@ -1,0 +1,11 @@
+PASS test/auth.e2e-spec.ts
+  AuthController (e2e)
+    √ /api/auth/register (POST) (531 ms)
+    √ /api/auth/login (POST) (132 ms)
+    √ /api/auth/login (POST) - Fail Invalid Creds (112 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+Snapshots:   0 total
+Time:        3.049 s
+Ran all test suites matching test/auth.e2e-spec.ts.

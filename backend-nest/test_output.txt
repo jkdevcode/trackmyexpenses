@@ -1,0 +1,53 @@
+FAIL test/auth.e2e-spec.ts
+  AuthController (e2e)
+    × /api/auth/register (POST) (327 ms)
+    × /api/auth/login (POST) (26 ms)
+    × /api/auth/login (POST) - Fail Invalid Creds (20 ms)
+
+  ● AuthController (e2e) › /api/auth/register (POST)
+
+    TypeError: request is not a function
+
+    [0m [90m 37 |[39m
+     [90m 38 |[39m   it([32m'/api/auth/register (POST)'[39m[33m,[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 39 |[39m     [36mreturn[39m request(app[33m.[39mgetHttpServer())
+     [90m    |[39m            [31m[1m^[22m[39m
+     [90m 40 |[39m       [33m.[39mpost([32m'/api/auth/register'[39m)
+     [90m 41 |[39m       [33m.[39msend(testUser)
+     [90m 42 |[39m       [33m.[39mexpect([35m201[39m)[0m
+
+      at Object.<anonymous> (auth.e2e-spec.ts:39:12)
+
+  ● AuthController (e2e) › /api/auth/login (POST)
+
+    TypeError: request is not a function
+
+    [0m [90m 51 |[39m
+     [90m 52 |[39m   it([32m'/api/auth/login (POST)'[39m[33m,[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 53 |[39m     [36mreturn[39m request(app[33m.[39mgetHttpServer())
+     [90m    |[39m            [31m[1m^[22m[39m
+     [90m 54 |[39m       [33m.[39mpost([32m'/api/auth/login'[39m)
+     [90m 55 |[39m       [33m.[39msend({
+     [90m 56 |[39m         documento[33m:[39m testUser[33m.[39mdocumento[33m,[39m[0m
+
+      at Object.<anonymous> (auth.e2e-spec.ts:53:12)
+
+  ● AuthController (e2e) › /api/auth/login (POST) - Fail Invalid Creds
+
+    TypeError: request is not a function
+
+    [0m [90m 66 |[39m
+     [90m 67 |[39m   it([32m'/api/auth/login (POST) - Fail Invalid Creds'[39m[33m,[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 68 |[39m     [36mreturn[39m request(app[33m.[39mgetHttpServer())
+     [90m    |[39m            [31m[1m^[22m[39m
+     [90m 69 |[39m       [33m.[39mpost([32m'/api/auth/login'[39m)
+     [90m 70 |[39m       [33m.[39msend({
+     [90m 71 |[39m         documento[33m:[39m testUser[33m.[39mdocumento[33m,[39m[0m
+
+      at Object.<anonymous> (auth.e2e-spec.ts:68:12)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 3 total
+Snapshots:   0 total
+Time:        2.313 s, estimated 3 s
+Ran all test suites matching test/auth.e2e-spec.ts.

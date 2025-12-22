@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id                Int       @id @default(autoincrement())
+  tipoDocumento     String
+  documento         String    @unique
+  nombres           String
+  apellidos         String
+  correo            String    @unique
+  contrasena        String
+  foto              String?   // opcional
+  fechaIngreso      DateTime  @default(now())
+  fechaUltimaEdicion DateTime?
+  facturas          Factura[]
+
+  @@index([documento])
+  @@index([correo])
+}
+
+model Factura {
+  id                Int         @id @default(autoincrement())
+  codigoFactura     String      @unique
+  metodoPago        MetodoPago
+  lugarCompra       String
+  nitProveedor      String?
+  fechaHoraCompra   DateTime    @default(now())
+  totalPagar        Decimal     @db.Decimal(10,2)
+  usuarioId         Int
+  usuario           Usuario     @relation(fields: [usuarioId], references: [id])
+  productos         FacturaProducto[]
+
+  @@index([fechaHoraCompra])
+}
+
+model Producto {
+  id           Int               @id @default(autoincrement())
+  codigo       String            @unique
+  nombre       String
+  precioUnitario Decimal          @db.Decimal(10,2)
+  facturas     FacturaProducto[]
+}
+
+model FacturaProducto {
+  id             Int       @id @default(autoincrement())
+  facturaId      Int
+  productoId     Int
+  cantidad       Int
+  descuento      Decimal?  @db.Decimal(5,2) // porcentaje, ej: 10.00
+  precioTotal    Decimal   @db.Decimal(10,2)
+
+  factura        Factura   @relation(fields: [facturaId], references: [id])
+  producto       Producto  @relation(fields: [productoId], references: [id])
+
+  @@unique([facturaId, productoId])
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TARJETA_CREDITO
+  TARJETA_DEBITO
+  TRANSFERENCIA
+  OTRO
+}

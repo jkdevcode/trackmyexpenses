@@ -1,0 +1,74 @@
+FAIL test/auth.e2e-spec.ts
+  AuthController (e2e)
+    × /api/auth/register (POST) (539 ms)
+    × /api/auth/login (POST) (57 ms)
+    × /api/auth/login (POST) - Fail Invalid Creds (41 ms)
+
+  ● AuthController (e2e) › /api/auth/register (POST)
+
+    expected 201 "Created", got 400 "Bad Request"
+
+    [0m [90m 40 |[39m       [33m.[39mpost([32m'/api/auth/register'[39m)
+     [90m 41 |[39m       [33m.[39msend(testUser)
+    [31m[1m>[22m[39m[90m 42 |[39m       [33m.[39mexpect([35m201[39m)
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 43 |[39m       [33m.[39mexpect((res) [33m=>[39m {
+     [90m 44 |[39m         expect(res[33m.[39mbody[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m [90m// Controller returns 200 with { status: 200 } wrapper? Or standard?[39m
+     [90m 45 |[39m         [90m// AuthService returns { status: 200, message: ... }[39m[0m
+
+      at Object.<anonymous> (auth.e2e-spec.ts:42:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ● AuthController (e2e) › /api/auth/login (POST)
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 57 |[39m         contrasena[33m:[39m testUser[33m.[39mcontrasena[33m,[39m
+     [90m 58 |[39m       })
+    [31m[1m>[22m[39m[90m 59 |[39m       [33m.[39mexpect([35m201[39m) [90m// POST defaults to 201 in Nest unless @HttpCode(200) used.[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 60 |[39m       [33m.[39mexpect((res) [33m=>[39m {
+     [90m 61 |[39m         expect(res[33m.[39mbody[33m.[39mtoken)[33m.[39mtoBeDefined()[33m;[39m
+     [90m 62 |[39m         expect(res[33m.[39mbody[33m.[39muser)[33m.[39mtoBeDefined()[33m;[39m[0m
+
+      at Object.<anonymous> (auth.e2e-spec.ts:59:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ● AuthController (e2e) › /api/auth/login (POST) - Fail Invalid Creds
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 72 |[39m         contrasena[33m:[39m [32m'wrongpassword'[39m[33m,[39m
+     [90m 73 |[39m       })
+    [31m[1m>[22m[39m[90m 74 |[39m       [33m.[39mexpect([35m201[39m) [90m// Still 201 HTTP but body might contain error?[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 75 |[39m       [90m// Wait, AuthService throws UnauthorizedException.[39m
+     [90m 76 |[39m       [90m// NestJS Exception Filter maps to 401.[39m
+     [90m 77 |[39m       [90m// So expected HTTP status is 401.[39m[0m
+
+      at Object.<anonymous> (auth.e2e-spec.ts:74:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 3 total
+Snapshots:   0 total
+Time:        3.378 s
+Ran all test suites matching test/auth.e2e-spec.ts.
