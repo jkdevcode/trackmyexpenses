@@ -1,0 +1,100 @@
+FAIL test/user.e2e-spec.ts (6.33 s)
+  UserController (e2e)
+    × /api/users (GET) (3 ms)
+    × /api/users/:id (GET) (1 ms)
+    × /api/users/:id (PUT)
+    × /api/users/:id (DELETE)
+
+  ● UserController (e2e) › /api/users (GET)
+
+    PrismaClientInitializationError: Can't reach database server at `localhost:3306`
+
+    Please make sure your database server is running at `localhost:3306`.
+
+    [0m [90m  5 |[39m [36mexport[39m [36mclass[39m [33mPrismaService[39m [36mextends[39m [33mPrismaClient[39m [36mimplements[39m [33mOnModuleInit[39m {
+     [90m  6 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m  7 |[39m     [36mawait[39m [36mthis[39m[33m.[39m$connect()[33m;[39m
+     [90m    |[39m     [31m[1m^[22m[39m
+     [90m  8 |[39m   }
+     [90m  9 |[39m }
+     [90m 10 |[39m[0m
+
+      at r (../node_modules/@prisma/client/src/runtime/core/engines/library/LibraryEngine.ts:440:17)
+      at Proxy.onModuleInit (../src/prisma/prisma.service.ts:7:5)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:242:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at Object.<anonymous> (user.e2e-spec.ts:28:5)
+
+  ● UserController (e2e) › /api/users/:id (GET)
+
+    PrismaClientInitializationError: Can't reach database server at `localhost:3306`
+
+    Please make sure your database server is running at `localhost:3306`.
+
+    [0m [90m  5 |[39m [36mexport[39m [36mclass[39m [33mPrismaService[39m [36mextends[39m [33mPrismaClient[39m [36mimplements[39m [33mOnModuleInit[39m {
+     [90m  6 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m  7 |[39m     [36mawait[39m [36mthis[39m[33m.[39m$connect()[33m;[39m
+     [90m    |[39m     [31m[1m^[22m[39m
+     [90m  8 |[39m   }
+     [90m  9 |[39m }
+     [90m 10 |[39m[0m
+
+      at r (../node_modules/@prisma/client/src/runtime/core/engines/library/LibraryEngine.ts:440:17)
+      at Proxy.onModuleInit (../src/prisma/prisma.service.ts:7:5)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:242:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at Object.<anonymous> (user.e2e-spec.ts:28:5)
+
+  ● UserController (e2e) › /api/users/:id (PUT)
+
+    PrismaClientInitializationError: Can't reach database server at `localhost:3306`
+
+    Please make sure your database server is running at `localhost:3306`.
+
+    [0m [90m  5 |[39m [36mexport[39m [36mclass[39m [33mPrismaService[39m [36mextends[39m [33mPrismaClient[39m [36mimplements[39m [33mOnModuleInit[39m {
+     [90m  6 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m  7 |[39m     [36mawait[39m [36mthis[39m[33m.[39m$connect()[33m;[39m
+     [90m    |[39m     [31m[1m^[22m[39m
+     [90m  8 |[39m   }
+     [90m  9 |[39m }
+     [90m 10 |[39m[0m
+
+      at r (../node_modules/@prisma/client/src/runtime/core/engines/library/LibraryEngine.ts:440:17)
+      at Proxy.onModuleInit (../src/prisma/prisma.service.ts:7:5)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:242:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at Object.<anonymous> (user.e2e-spec.ts:28:5)
+
+  ● UserController (e2e) › /api/users/:id (DELETE)
+
+    PrismaClientInitializationError: Can't reach database server at `localhost:3306`
+
+    Please make sure your database server is running at `localhost:3306`.
+
+    [0m [90m  5 |[39m [36mexport[39m [36mclass[39m [33mPrismaService[39m [36mextends[39m [33mPrismaClient[39m [36mimplements[39m [33mOnModuleInit[39m {
+     [90m  6 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m  7 |[39m     [36mawait[39m [36mthis[39m[33m.[39m$connect()[33m;[39m
+     [90m    |[39m     [31m[1m^[22m[39m
+     [90m  8 |[39m   }
+     [90m  9 |[39m }
+     [90m 10 |[39m[0m
+
+      at r (../node_modules/@prisma/client/src/runtime/core/engines/library/LibraryEngine.ts:440:17)
+      at Proxy.onModuleInit (../src/prisma/prisma.service.ts:7:5)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:242:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at Object.<anonymous> (user.e2e-spec.ts:28:5)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 4 total
+Snapshots:   0 total
+Time:        6.884 s, estimated 10 s
+Ran all test suites matching test/user.e2e-spec.ts.
