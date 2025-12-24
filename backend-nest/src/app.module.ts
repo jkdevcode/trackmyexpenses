@@ -7,6 +7,7 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { FacturaModule } from './factura/factura.module';
+import { ProductoModule } from './producto/producto.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { FacturaModule } from './factura/factura.module';
     AuthModule,
     UserModule,
     FacturaModule,
+    ProductoModule,
   ],
   controllers: [AppController],
   providers: [AppService],
