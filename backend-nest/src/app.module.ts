@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { FacturaModule } from './factura/factura.module';
 import { ProductoModule } from './producto/producto.module';
+import { FacturaOcrModule } from './factura-ocr/factura-ocr.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ProductoModule } from './producto/producto.module';
     UserModule,
     FacturaModule,
     ProductoModule,
+    FacturaOcrModule,
   ],
   controllers: [AppController],
   providers: [AppService],
