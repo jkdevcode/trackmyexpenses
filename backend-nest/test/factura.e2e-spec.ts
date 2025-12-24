@@ -1,0 +1,82 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { AppModule } from './../src/app.module';
+
+describe('FacturaController (e2e)', () => {
+  let app: INestApplication;
+  let authToken: string;
+
+  const uniqueId = Date.now().toString().slice(-8);
+  const testUser = {
+    tipoDocumento: 'CC',
+    documento: `1${uniqueId}`, // 1 + 8 = 9 chars. Fits 6-10.
+    nombres: 'Factura',
+    apellidos: 'Tester',
+    correo: `factura${uniqueId}@example.com`,
+    contrasena: 'password123',
+  };
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+
+    // Register & Login
+    await request(app.getHttpServer()).post('/api/auth/register').send(testUser);
+    const loginRes = await request(app.getHttpServer()).post('/api/auth/login').send({
+      documento: testUser.documento,
+      contrasena: testUser.contrasena,
+    });
+    authToken = loginRes.body.token;
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('/api/facturas (POST) - Create Factura', () => {
+    return request(app.getHttpServer())
+      .post('/api/facturas')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        fecha: new Date().toISOString(),
+        total: 150.00,
+        metodoPago: 'EFECTIVO',
+        lugarCompra: 'Supermercado Test'
+      })
+      .expect(201)
+      .expect((res) => {
+        expect(res.body.factura).toBeDefined();
+        expect(res.body.factura.totalPagar).toBe('150'); // Decimal returned as string usually
+        expect(res.body.factura.codigoFactura).toBeDefined();
+      });
+  });
+
+  it('/api/facturas (GET) - List Facturas', () => {
+    return request(app.getHttpServer())
+      .get('/api/facturas')
+      .set('Authorization', `Bearer ${authToken}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.facturas).toBeInstanceOf(Array);
+        expect(res.body.facturas.length).toBeGreaterThan(0);
+        expect(res.body.facturas[0].usuarioId).toBeDefined();
+      });
+  });
+
+  it('/api/facturas (POST) - Fail Validation', () => {
+    return request(app.getHttpServer())
+      .post('/api/facturas')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        fecha: 'invalid-date', // Invalid
+        total: -50 // Negative
+      })
+      .expect(400);
+  });
+});
