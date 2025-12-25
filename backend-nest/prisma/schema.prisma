@@ -55,6 +55,7 @@ model FacturaProducto {
   facturaId      Int
   productoId     Int
   cantidad       Int
+  unidad         String
   descuento      Decimal?  @db.Decimal(5,2) // porcentaje, ej: 10.00
   precioTotal    Decimal   @db.Decimal(10,2)
 

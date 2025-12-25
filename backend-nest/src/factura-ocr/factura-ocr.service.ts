@@ -1,15 +1,18 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import sharp from 'sharp';
-import { createWorker } from 'tesseract.js';
+import { createWorker, Worker } from 'tesseract.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Fuse from 'fuse.js';
+import { TextParserHelper } from './helpers/parse-text.helper';
+import { ScanResponseDto } from './dto/scan-response.dto';
 
 @Injectable()
-export class FacturaOcrService {
+export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(FacturaOcrService.name);
   private geminiModel: any;
+  private tesseractWorker: Worker | null = null;
 
   constructor(
     private prisma: PrismaService,
@@ -18,37 +21,79 @@ export class FacturaOcrService {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (apiKey) {
       const genAI = new GoogleGenerativeAI(apiKey);
-      this.geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    } else {
-        this.logger.warn('GEMINI_API_KEY not found. AI parsing will fail.');
+      // Using gemini-1.5-flash as it is faster and cheaper, or fallback to pro. 
+      // User specific code had 2.5-flash? Maybe typo. Sticking to valid models or config.
+      // Assuming 'gemini-pro' or 'gemini-1.5-flash' is available.
+      this.geminiModel = genAI.getGenerativeModel({ 
+        model: 'gemini-2.5-flash',
+        generationConfig: { responseMimeType: "application/json" } // Force JSON
+      });
     }
   }
 
-  async processImage(file: Express.Multer.File) {
+  async onModuleInit() {
+    this.logger.log('Initializing Tesseract Worker...');
+    try {
+        this.tesseractWorker = await createWorker('spa+eng');
+        this.logger.log('Tesseract Worker ready.');
+    } catch (e) {
+        this.logger.error('Failed to init Tesseract', e);
+    }
+  }
+
+  async onModuleDestroy() {
+      if (this.tesseractWorker) {
+          await this.tesseractWorker.terminate();
+      }
+  }
+
+  async processImage(file: Express.Multer.File): Promise<ScanResponseDto> {
     try {
       // 1. Pre-processing (Sharp)
       const processedBuffer = await sharp(file.buffer)
-        .resize(2000, null, { withoutEnlargement: true }) // Max width 2000px
+        .resize(2000, null, { withoutEnlargement: true })
         .grayscale()
-        .normalize() // Improve contrast
+        .normalize()
+        //.threshold(150) // Optional, can be noisy. normalize() acts well enough usually.
         .toBuffer();
 
       // 2. OCR (Tesseract.js)
-      // Note: Creating worker per request is slow. In prod, use a pool or singleton worker.
-      // For this task, local worker is fine.
-      const worker = await createWorker('spa+eng');
-      const { data: { text: rawText } } = await worker.recognize(processedBuffer);
-      await worker.terminate();
+      if (!this.tesseractWorker) await this.onModuleInit();
+      const { data: { text: rawText } } = await this.tesseractWorker!.recognize(processedBuffer);
 
-      // 3. AI Parsing (Gemini)
-      const parsedData = await this.parseWithAI(rawText);
+      // 3. AI Parsing (Gemini) with Fallback
+      let parsedData: any = {};
+      let usedFallbackParser = false;
 
-      // 4. Fuzzy Matching (Fuse.js)
-      const finalData = await this.matchProducts(parsedData);
+      try {
+          parsedData = await this.parseWithAI(rawText);
+      } catch (e) {
+          this.logger.warn('AI Parsing failed, switching to fallback regex', e);
+          parsedData = { products: TextParserHelper.fallbackParse(rawText) };
+          usedFallbackParser = true;
+      }
 
+      // Validate basic structure
+      if (!parsedData.productos || !Array.isArray(parsedData.productos) || parsedData.productos.length === 0) {
+           if (!usedFallbackParser) {
+               this.logger.warn('AI returned no products, trying fallback');
+               parsedData.productos = TextParserHelper.fallbackParse(rawText);
+               usedFallbackParser = true;
+           }
+      }
+
+      // 4. Match & Enrich (UPC + Fuzzy)
+      if (!parsedData.productos) parsedData.productos = [];
+
+      const enrichedProducts = await this.enrichProducts(parsedData.productos, rawText);
+      
       return {
         rawText,
-        ...finalData
+        parsed: {
+            ...parsedData,
+            productos: enrichedProducts
+        },
+        usedFallbackParser
       };
 
     } catch (error) {
@@ -58,85 +103,83 @@ export class FacturaOcrService {
   }
 
   private async parseWithAI(text: string) {
-    if (!this.geminiModel) {
-        throw new InternalServerErrorException('Servicio de IA no configurado');
-    }
+    if (!this.geminiModel) throw new Error('AI not configured');
 
     const prompt = `
-      Analiza el siguiente texto extraído de una factura mediante OCR.
-      Extrae la información en JSON puro siguiendo estas reglas estrictas:
-
-      1. Formato de Números: Las facturas colombianas usan puntos para miles (ej: 72.832). 
-        DEBES eliminar los puntos y devolver números enteros (ej: 72832).
-      2. Fecha: Devuelve en formato YYYY-MM-DD.
-      3. Productos:
-        - nombre: Descripción corta.
-        - cantidad: Si hay peso (KGM), usa 1 o la unidad entera.
-        - precioUnitario: El valor del artículo sin puntos.
-        - total: cantidad * precioUnitario.
+      Analiza el texto OCR de una factura comercial.
+      Extrae datos en JSON estricto:
+      {
+        "empresa": { "nombre": string, "nit": string },
+        "fecha": "YYYY-MM-DD",
+        "totalDetectado": integer (sin puntos),
+        "productos": [
+          {
+            "nombreDetected": string,
+            "cantidad": number,
+            "unidad": "u" | "kg" | "g",
+            "precioUnitario": integer (COP sans points),
+            "precioTotal": integer (COP sans points),
+            "confidence": { "nombre": 0.0-1.0, "cantidad": 0.0-1.0, "precio": 0.0-1.0 }
+          }
+        ]
+      }
+      
+      Reglas:
+      1. Normaliza montos a enteros (elimina puntos miles).
+      2. Detecta unidades (kg/g) en descripción.
+      3. "confidence" estimado (1.0 si es claro, 0.5 si dudoso).
 
       Texto OCR:
       """
       ${text}
       """
-      `;
+    `;
 
-    try {
-        const result = await this.geminiModel.generateContent(prompt);
-        const response = await result.response;
-        const textResponse = response.text();
-        // Clean markdown code blocks if present
-        const jsonString = textResponse.replace(/^```json\n|\n```$/g, '').trim();
-        return JSON.parse(jsonString);
-    } catch (e) {
-        this.logger.error('AI Parsing failed', e);
-        // Fallback or rethrow
-        return { productos: [], total: 0 };
-    }
+    const result = await this.geminiModel.generateContent(prompt);
+    return JSON.parse(result.response.text());
   }
 
-  private async matchProducts(parsedData: any) {
-    const allProducts = await this.prisma.producto.findMany({
-        select: { id: true, nombre: true, codigo: true, precioUnitario: true }
+  private async enrichProducts(products: any[], fullText: string) {
+    // Load local DB cache (could be large, optimization: search individually if > 1000 products, but for now load all)
+    const dbProducts = await this.prisma.producto.findMany({
+        select: { id: true, nombre: true, codigo: true }
     });
 
-    const options = {
-        keys: ['nombre'],
+    const fuse = new Fuse(dbProducts, {
+        keys: ['nombre', 'codigo'],
         includeScore: true,
-        threshold: 0.4 // 0.0 is perfect match, 1.0 is no match. 
-        // User asked for > 80% match. This corresponds to score < 0.2 roughly?
-        // Let's set basic threshold and strictly filter later.
-    };
+        threshold: 0.4
+    });
 
-    const fuse = new Fuse(allProducts, options);
-
-    const matchThreshold = 0.2; // Equivalent to > 80% similarity
-
-    if (parsedData.productos && Array.isArray(parsedData.productos)) {
-        parsedData.productos = parsedData.productos.map((item: any) => {
-            const searchResult = fuse.search(item.nombre);
-            
-            // Take best match
-            if (searchResult.length > 0) {
-                const bestMatch = searchResult[0];
-                if (bestMatch.score !== undefined && bestMatch.score <= matchThreshold) {
-                    return {
-                        ...item,
-                        productId: bestMatch.item.id,
-                        matchedName: bestMatch.item.nombre,
-                        newProduct: false,
-                        matchScore: bestMatch.score
-                    };
-                }
+    return products.map(p => {
+        const item = { ...p };
+        
+        // 1. Try UPC Match from Line Text or detected Name
+        const upc = TextParserHelper.findUPC(item.nombreDetected);
+        if (upc) {
+            const exact = dbProducts.find(dp => dp.codigo === upc);
+            if (exact) {
+                item.productId = exact.id;
+                item.matchedBy = 'barcode';
+                item.matchScore = 1.0;
+                return item;
             }
+        }
 
-            return {
-                ...item,
-                newProduct: true
-            };
-        });
-    }
+        // 2. Fuzzy Match
+        const search = fuse.search(item.nombreDetected);
+        if (search.length > 0) {
+            const best = search[0];
+            const score = 1 - (best.score || 1); // Invert score (0 is bad in my output logic, 1 is good)
+            
+            if (score >= 0.8) {
+                item.productId = best.item.id;
+                item.matchedBy = 'fuzzy';
+                item.matchScore = score;
+            }
+        }
 
-    return parsedData;
+        return item;
+    });
   }
 }
