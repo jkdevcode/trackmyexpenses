@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger, OnModuleInit, OnModuleDestroy, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import sharp from 'sharp';
@@ -7,6 +7,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import Fuse from 'fuse.js';
 import { TextParserHelper } from './helpers/parse-text.helper';
 import { ScanResponseDto } from './dto/scan-response.dto';
+import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
@@ -21,9 +23,6 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (apiKey) {
       const genAI = new GoogleGenerativeAI(apiKey);
-      // Using gemini-1.5-flash as it is faster and cheaper, or fallback to pro. 
-      // User specific code had 2.5-flash? Maybe typo. Sticking to valid models or config.
-      // Assuming 'gemini-pro' or 'gemini-1.5-flash' is available.
       this.geminiModel = genAI.getGenerativeModel({ 
         model: 'gemini-2.5-flash',
         generationConfig: { responseMimeType: "application/json" } // Force JSON
@@ -99,6 +98,124 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       this.logger.error('Error processing OCR', error);
       throw new InternalServerErrorException('Error procesando la imagen de la factura');
+    }
+  }
+
+  // --- Confirmation Logic ---
+
+  async confirmarFactura(userId: number, dto: ConfirmFacturaDto) {
+    const { factura, productos } = dto;
+
+    try {
+      const result = await this.prisma.$transaction(async (tx) => {
+        // 1. Create Factura Header
+        // Generate a random code if not provided or just use timestamp
+        const codigoFactura = `OCR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+        const nuevaFactura = await tx.factura.create({
+          data: {
+            usuarioId: userId,
+            codigoFactura: codigoFactura,
+            fechaHoraCompra: new Date(factura.fechaHoraCompra),
+            metodoPago: factura.metodoPago as any,
+            lugarCompra: factura.lugarCompra,
+            nitProveedor: factura.nitProveedor,
+            totalPagar: 0, // Will be updated
+          }
+        });
+
+        let totalCalculado = 0;
+
+        // 2. Process Products
+        for (const item of productos) {
+          // Normalize inputs
+          const nombreClean = item.nombreDetectado.trim().toUpperCase();
+          const cantidad = Number(item.cantidadDetectada);
+          const precioUnitario = Number(item.precioUnitario);
+          const descuento = Number(item.descuentoDetectado || 0);
+          
+          // Requirement: "Guardar cantidad numérica + unidad textual"
+          // "unidadDetectada" e.g. "g", "ml", "u".
+          // "pesoDetectado" e.g. "200" if "200g".
+          // The schema supports `cantidad` (Int) and `unidad` (String).
+          // If 200g is the "item size", but user bought 2 yogurts of 200g...
+          // Usually: cantidad=2, Producto="Yogurt 200g".
+          // But Input says "cantidadDetectada":2, "pesoDetectado": 200, "unidadDetectada": "g".
+          // Maybe store 'unidad' = '200g' or just 'g'?
+          // Schema `FacturaProducto` has `unidad String`.
+          // Let's store `unidad: item.unidadDetectada`.
+          // And put the weight in the NAME of the product if creating new one.
+          
+          if (cantidad <= 0) continue;
+
+          // 3. Find or Create Product
+          // "Un producto NO se reutiliza entre facturas? => new registry"
+          // We interpret this as: Independent FacturaProducto record.
+          // But we need a parent `Producto`.
+          // Strategy: Try to find by Exact Name/Code. If not, create.
+          // BUT prompt says "Cada factura tiene su propia evidencia histórica... Crear registros independientes...".
+          // If we create a new `Producto` with same `codigo` it fails (@unique).
+          // We assume we reuse `Producto` (catalog) if exists, create if not.
+          
+          // Generate a pseudo-code if we create it.
+          // Use name as base for code if new.
+          
+          let producto = await tx.producto.findFirst({
+            where: { nombre: nombreClean } // Simple name match logic
+          });
+
+          if (!producto) {
+            // Create new Product
+            // Generate Code: PROD-{UUID}
+            const uniqueCode = `PROD-${Date.now()}-${Math.floor(Math.random()*10000)}`;
+            producto = await tx.producto.create({
+              data: {
+                nombre: nombreClean,
+                codigo: uniqueCode,
+                precioUnitario: precioUnitario // Initial price
+              }
+            });
+          }
+
+          // 4. Create FacturaProducto (The Independent Record)
+          const precioTotalItem = (precioUnitario * cantidad) - descuento;
+          totalCalculado += precioTotalItem;
+
+          await tx.facturaProducto.create({
+            data: {
+              facturaId: nuevaFactura.id,
+              productoId: producto.id,
+              cantidad: cantidad,
+              unidad: item.unidadDetectada || 'u',
+              descuento: new Prisma.Decimal(descuento),
+              precioTotal: new Prisma.Decimal(precioTotalItem)
+            }
+          });
+        }
+
+        // 5. Update Factura Total
+        const facturaActualizada = await tx.factura.update({
+          where: { id: nuevaFactura.id },
+          data: { totalPagar: totalCalculado },
+          include: {
+            productos: {
+              include: { producto: true }
+            }
+          }
+        });
+
+        return facturaActualizada;
+      });
+
+      return {
+        status: 201,
+        message: 'Factura OCR confirmada exitosamente',
+        data: { factura: result }
+      };
+
+    } catch (error) {
+      this.logger.error('Error confirming factura', error);
+      throw new InternalServerErrorException('Error al confirmar factura');
     }
   }
 
