@@ -1,9 +1,9 @@
-import { Controller, Post, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Post, UseGuards, UseInterceptors, UploadedFile, BadRequestException, Body, UsePipes, Request } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FacturaOcrService } from './factura-ocr.service';
-import { ZodValidationPipe } from 'nestjs-zod'; // Useful if validating output, but usually for input.
-// Creating a guard for output? No, just returning DTO.
+import { ZodValidationPipe } from 'nestjs-zod';
+import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
 
 @Controller('facturas/ocr')
 @UseGuards(JwtAuthGuard)
@@ -23,5 +23,11 @@ export class FacturaOcrController {
     }
 
     return this.ocrService.processImage(file);
+  }
+
+  @Post('confirmar')
+  @UsePipes(ZodValidationPipe)
+  async confirmar(@Request() req: any, @Body() dto: ConfirmFacturaDto) {
+    return this.ocrService.confirmarFactura(req.user.id, dto);
   }
 }
