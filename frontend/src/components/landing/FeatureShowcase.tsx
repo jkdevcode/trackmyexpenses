@@ -1,27 +1,30 @@
+import { useTranslation } from "react-i18next";
+
 export const FeatureShowcase = () => {
+  const { t } = useTranslation();
+
   return (
     <section id="features" className="py-20 px-4">
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div className="flex flex-col gap-6">
           <h2 className="text-3xl md:text-4xl font-bold">
-            Tu historial, <span className="text-primary">siempre a mano</span>
+            {t("features-title")} <span className="text-primary">{t("features-title-highlight")}</span>
           </h2>
           <p className="text-lg text-default-500">
-            Olvídate de las pilas de papeles y los Excel manuales. 
-            TrackMyExpenses organiza tus gastos por categorías y te ofrece una vista clara de dónde se va tu dinero cada mes.
+            {t("features-desc")}
           </p>
           <ul className="space-y-4">
             <li className="flex items-center gap-3">
               <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs">✓</div>
-              <span>Filtros avanzados por fecha y monto</span>
+              <span>{t("feature-1")}</span>
             </li>
             <li className="flex items-center gap-3">
               <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs">✓</div>
-              <span>Categorización automática inteligente</span>
+              <span>{t("feature-2")}</span>
             </li>
             <li className="flex items-center gap-3">
               <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs">✓</div>
-              <span>Exportación de datos para tu contabilidad</span>
+              <span>{t("feature-3")}</span>
             </li>
           </ul>
         </div>
