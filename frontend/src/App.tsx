@@ -5,6 +5,7 @@ import { CookieConsent } from "./components/cookie-consent";
 import { PageNotFound } from "./pages/404";
 
 import IndexPage from "@/pages/index";
+import LandingPage from "@/pages/landing";
 import DocsPage from "@/pages/docs";
 import PricingPage from "@/pages/pricing";
 import BlogPage from "@/pages/blog";
@@ -15,7 +16,8 @@ function App() {
     <CookieConsentProvider>
       <CookieConsent />
       <Routes>
-        <Route element={<IndexPage />} path="/" />
+        <Route element={<LandingPage />} path="/" />
+        <Route element={<IndexPage />} path="/dashboard" />
         <Route element={<DocsPage />} path="/docs" />
         <Route element={<PricingPage />} path="/pricing" />
         <Route element={<BlogPage />} path="/blog" />
