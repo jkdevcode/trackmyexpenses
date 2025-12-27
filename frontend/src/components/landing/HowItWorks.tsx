@@ -1,18 +1,22 @@
+import { useTranslation } from "react-i18next";
+
 export const HowItWorks = () => {
+  const { t } = useTranslation();
+
   const steps = [
     {
-      title: "Sube o Toma Foto",
-      description: "Carga tu factura desde tu ordenador o toma una foto directamente con tu móvil.",
+      title: t("step-1-title"),
+      description: t("step-1-desc"),
       icon: "📸",
     },
     {
-      title: "Extracción Inteligente",
-      description: "Nuestro sistema OCR lee automáticamente la fecha, el comercio y el importe total por ti.",
+      title: t("step-2-title"),
+      description: t("step-2-desc"),
       icon: "🔍",
     },
     {
-      title: "Confirma y Guarda",
-      description: "Verifica que los datos sean correctos y añádelos a tu historial con un solo clic.",
+      title: t("step-3-title"),
+      description: t("step-3-desc"),
       icon: "✅",
     },
   ];
@@ -21,9 +25,9 @@ export const HowItWorks = () => {
     <section id="how-it-works" className="py-20 bg-default-50 px-4">
       <div className="max-w-6xl mx-auto flex flex-col gap-12">
         <div className="text-center flex flex-col gap-4">
-          <h2 className="text-3xl md:text-4xl font-bold">Cómo funciona</h2>
+          <h2 className="text-3xl md:text-4xl font-bold">{t("how-it-works-title")}</h2>
           <p className="text-default-500 max-w-xl mx-auto">
-            Hemos simplificado el proceso al máximo para que registrar un gasto no te quite más de 10 segundos.
+            {t("how-it-works-subtitle")}
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
