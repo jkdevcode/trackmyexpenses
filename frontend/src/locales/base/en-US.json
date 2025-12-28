@@ -62,5 +62,82 @@
   "features-desc": "Forget about stacks of papers and manual Excels. TrackMyExpenses organizes your expenses by category and offers you a clear view of where your money goes each month.",
   "feature-1": "Advanced filters by date and amount",
   "feature-2": "Intelligent automatic categorization",
-  "feature-3": "Data export for your accounting"
+  "feature-3": "Data export for your accounting",
+  "auth": {
+    "login": {
+      "title": "Login to your account",
+      "submit": "Login",
+      "forgot_password": "Forgot password?",
+      "no_account": "Don't have an account?",
+      "register_link": "Sign up"
+    },
+    "register": {
+      "title": "Register",
+      "submit": "Sign up",
+      "has_account": "Already have an account?",
+      "login_link": "Login",
+      "avatar_fallback": "Upload photo"
+    },
+    "fields": {
+      "email": {
+        "label": "Email",
+        "placeholder": "you@email.com"
+      },
+      "password": {
+        "label": "Password",
+        "placeholder": "********"
+      },
+      "confirm_password": {
+        "label": "Confirm Password",
+        "placeholder": "********"
+      },
+      "name": {
+        "label": "Full Name",
+        "placeholder": "John"
+      },
+      "lastname": {
+        "label": "Last Name",
+        "placeholder": "Doe"
+      },
+      "address": {
+        "label": "Address",
+        "placeholder": "123 Street"
+      },
+      "phone": {
+        "label": "Phone",
+        "placeholder": "3001234567"
+      },
+      "document_type": {
+        "label": "Document Type",
+        "placeholder": "Select"
+      },
+      "document_id": {
+        "label": "Document ID",
+        "placeholder": "1234567890"
+      }
+    },
+    "roles": {
+      "user": "User"
+    },
+    "document_types": {
+      "cc": "Citizenship Card",
+      "ti": "Identity Card",
+      "ce": "Foreigner ID",
+      "pasaport": "Passport",
+      "tarjeta_extranjeria": "Foreigner Card"
+    }
+  },
+  "errors": {
+    "required": "This field is required",
+    "email_invalid": "Must be a valid email",
+    "password_min": "Password must be at least 8 characters",
+    "password_max": "Password cannot be more than 16 characters",
+    "password_match": "Passwords must match",
+    "only_letters": "Only letters and spaces are allowed",
+    "phone_invalid": "Phone must be 10 digits",
+    "numeric_only": "Must be numeric",
+    "document_min": "Minimum 6 digits",
+    "document_max": "Maximum 10 digits",
+    "generic": "An error occurred. Please try again later."
+  }
 }
