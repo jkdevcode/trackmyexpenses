@@ -5,7 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";
 import "./i18n";
 import { Provider } from "./provider.tsx";
-import "@/styles/globals.css";
+import "./styles/globals.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

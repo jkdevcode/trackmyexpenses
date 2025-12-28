@@ -1,29 +1,44 @@
 import { useTranslation } from "react-i18next";
 
+import { appColor } from "@/theme/theme.config";
+
 export const FeatureShowcase = () => {
   const { t } = useTranslation();
 
   return (
-    <section id="features" className="py-20 px-4">
+    <section className="py-20 px-4" id="features">
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div className="flex flex-col gap-6">
           <h2 className="text-3xl md:text-4xl font-bold">
-            {t("features-title")} <span className="text-primary">{t("features-title-highlight")}</span>
+            {t("features-title")}{" "}
+            <span className={`text-${appColor}`}>
+              {t("features-title-highlight")}
+            </span>
           </h2>
-          <p className="text-lg text-default-500">
-            {t("features-desc")}
-          </p>
+          <p className="text-lg text-default-500">{t("features-desc")}</p>
           <ul className="space-y-4">
             <li className="flex items-center gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs">✓</div>
+              <div
+                className={`w-6 h-6 rounded-full bg-${appColor}/10 flex items-center justify-center text-${appColor} text-xs`}
+              >
+                ✓
+              </div>
               <span>{t("feature-1")}</span>
             </li>
             <li className="flex items-center gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs">✓</div>
+              <div
+                className={`w-6 h-6 rounded-full bg-${appColor}/10 flex items-center justify-center text-${appColor} text-xs`}
+              >
+                ✓
+              </div>
               <span>{t("feature-2")}</span>
             </li>
             <li className="flex items-center gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs">✓</div>
+              <div
+                className={`w-6 h-6 rounded-full bg-${appColor}/10 flex items-center justify-center text-${appColor} text-xs`}
+              >
+                ✓
+              </div>
               <span>{t("feature-3")}</span>
             </li>
           </ul>

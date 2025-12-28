@@ -8,6 +8,7 @@ import { Link } from "@heroui/link";
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 
+import { appColor } from "@/theme/theme.config";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { LanguageSwitch, I18nIcon } from "@/components/language-switch";
 import { availableLanguages } from "@/i18n";
@@ -34,10 +35,10 @@ export const LandingHeader = () => {
       </NavbarContent>
       <NavbarContent justify="end">
         <NavbarItem className="hidden lg:flex">
-          <Link href="/login">{t("login")}</Link>
+          <Link color={appColor === "default" ? "foreground" : (appColor as any)} href="/login">{t("login")}</Link>
         </NavbarItem>
         <NavbarItem>
-          <Button as={Link} color="primary" href="/register" variant="flat">
+          <Button as={Link} color={appColor} href="/register" variant="flat">
             {t("create-account")}
           </Button>
         </NavbarItem>
