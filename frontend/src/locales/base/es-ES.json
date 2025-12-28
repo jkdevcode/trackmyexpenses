@@ -62,5 +62,82 @@
   "features-desc": "Olvídate de las pilas de papeles y los Excel manuales. TrackMyExpenses organiza tus gastos por categorías y te ofrece una vista clara de dónde se va tu dinero cada mes.",
   "feature-1": "Filtros avanzados por fecha y monto",
   "feature-2": "Categorización automática inteligente",
-  "feature-3": "Exportación de datos para tu contabilidad"
+  "feature-3": "Exportación de datos para tu contabilidad",
+  "auth": {
+    "login": {
+      "title": "Inicia sesión en tu cuenta",
+      "submit": "Ingresar",
+      "forgot_password": "¿Olvidó su contraseña?",
+      "no_account": "¿No tienes cuenta?",
+      "register_link": "Regístrate"
+    },
+    "register": {
+      "title": "Registro",
+      "submit": "Registrar",
+      "has_account": "¿Ya tienes cuenta?",
+      "login_link": "Inicia sesión",
+      "avatar_fallback": "Subir foto"
+    },
+    "fields": {
+      "email": {
+        "label": "Correo electrónico",
+        "placeholder": "tu@email.com"
+      },
+      "password": {
+        "label": "Contraseña",
+        "placeholder": "********"
+      },
+      "confirm_password": {
+        "label": "Confirmar contraseña",
+        "placeholder": "********"
+      },
+      "name": {
+        "label": "Nombres completos",
+        "placeholder": "Juan"
+      },
+      "lastname": {
+        "label": "Apellidos completos",
+        "placeholder": "Pérez"
+      },
+      "address": {
+        "label": "Dirección",
+        "placeholder": "Calle 123"
+      },
+      "phone": {
+        "label": "Teléfono",
+        "placeholder": "3001234567"
+      },
+      "document_type": {
+        "label": "Tipo de documento",
+        "placeholder": "Seleccione"
+      },
+      "document_id": {
+        "label": "Documento de identidad",
+        "placeholder": "1234567890"
+      }
+    },
+    "roles": {
+      "user": "Usuario"
+    },
+    "document_types": {
+      "cc": "Cédula de ciudadanía",
+      "ti": "Tarjeta de identidad",
+      "ce": "Cédula de extranjería",
+      "pasaport": "Pasaporte",
+      "tarjeta_extranjeria": "Tarjeta de extranjería"
+    }
+  },
+  "errors": {
+    "required": "Este campo es obligatorio",
+    "email_invalid": "Debe ser un correo válido",
+    "password_min": "La contraseña debe tener al menos 8 caracteres",
+    "password_max": "La contraseña no puede tener más de 16 caracteres",
+    "password_match": "Las contraseñas deben coincidir",
+    "only_letters": "Solo puede contener letras y espacios",
+    "phone_invalid": "El teléfono debe tener 10 dígitos",
+    "numeric_only": "Debe ser numérico",
+    "document_min": "Mínimo 6 dígitos",
+    "document_max": "Máximo 10 dígitos",
+    "generic": "Ocurrió un error. Inténtalo más tarde."
+  }
 }

@@ -10,6 +10,8 @@ import DocsPage from "@/pages/docs";
 import PricingPage from "@/pages/pricing";
 import BlogPage from "@/pages/blog";
 import AboutPage from "@/pages/about";
+import LoginPage from "@/pages/auth/Login";
+import RegisterPage from "@/pages/auth/Register";
 
 function App() {
   return (
@@ -17,6 +19,8 @@ function App() {
       <CookieConsent />
       <Routes>
         <Route element={<LandingPage />} path="/" />
+        <Route element={<LoginPage />} path="/login" />
+        <Route element={<RegisterPage />} path="/register" />
         <Route element={<IndexPage />} path="/dashboard" />
         <Route element={<DocsPage />} path="/docs" />
         <Route element={<PricingPage />} path="/pricing" />
