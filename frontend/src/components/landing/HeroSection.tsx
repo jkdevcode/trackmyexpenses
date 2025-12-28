@@ -2,6 +2,8 @@ import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
 import { useTranslation } from "react-i18next";
 
+import { appColor } from "@/theme/theme.config";
+
 export const HeroSection = () => {
   const { t } = useTranslation();
 
@@ -9,17 +11,32 @@ export const HeroSection = () => {
     <section className="flex flex-col items-center justify-center py-20 gap-8 text-center px-4">
       <div className="max-w-3xl flex flex-col gap-4">
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-          {t("hero-title")} <span className="text-primary text-6xl">{t("hero-title-highlight")}</span>
+          {t("hero-title")}{" "}
+          <span className={`text-${appColor} text-6xl`}>
+            {t("hero-title-highlight")}
+          </span>
         </h1>
         <p className="text-xl text-default-500 max-w-2xl mx-auto">
           {t("hero-subtitle")}
         </p>
       </div>
       <div className="flex gap-4">
-        <Button as={Link} color="primary" size="lg" href="/register" className="px-8 font-semibold">
+        <Button
+          as={Link}
+          className="px-8 font-semibold"
+          color={appColor}
+          href="/register"
+          size="lg"
+        >
           {t("hero-cta-primary")}
         </Button>
-        <Button as={Link} variant="bordered" size="lg" href="#how-it-works" className="px-8">
+        <Button
+          as={Link}
+          className="px-8"
+          href="#how-it-works"
+          size="lg"
+          variant="bordered"
+        >
           {t("hero-cta-secondary")}
         </Button>
       </div>

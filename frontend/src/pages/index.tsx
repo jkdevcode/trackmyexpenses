@@ -17,7 +17,7 @@ export default function IndexPage() {
         /* style={{ backgroundImage: `url(${imgs.imgPrincipalPets})` }} */
       >
         {/* Capa de oscurecimiento para que el texto sea legible */}
-        <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+        <div className="absolute inset-0 bg-black bg-opacity-40" />
 
         {/* Contenido encima del fondo */}
         <div className="relative z-10 text-center">
@@ -33,24 +33,24 @@ export default function IndexPage() {
         {/* Botones */}
         <div className="relative z-10 flex gap-4 mt-6">
           <Link
-            href="/login"
             className={buttonStyles({
               color: "primary",
               radius: "full",
               variant: "shadow",
-              class: "px-6 py-3 text-lg"
+              class: "px-6 py-3 text-lg",
             })}
+            href="/login"
           >
             {t("login")}
           </Link>
 
           <Link
-            href="/register"
             className={buttonStyles({
               variant: "bordered",
               radius: "full",
-              class: "px-6 py-3 text-lg text-white border-white"
+              class: "px-6 py-3 text-lg text-white border-white",
             })}
+            href="/register"
           >
             {t("register")}
           </Link>

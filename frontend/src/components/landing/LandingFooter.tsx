@@ -6,12 +6,24 @@ export const LandingFooter = () => {
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
         <div className="flex flex-col gap-2">
           <p className="font-bold text-xl">TrackMyExpenses</p>
-          <p className="text-default-400 text-sm">© 2025 Todos los derechos reservados.</p>
+          <p className="text-default-400 text-sm">
+            © 2025 Todos los derechos reservados.
+          </p>
         </div>
         <div className="flex gap-8">
-          <Link href="/terms" color="foreground" className="text-sm">Términos</Link>
-          <Link href="/privacy" color="foreground" className="text-sm">Privacidad</Link>
-          <Link href="mailto:info@trackmyexpenses.com" color="foreground" className="text-sm">Contacto</Link>
+          <Link className="text-sm" color="foreground" href="/terms">
+            Términos
+          </Link>
+          <Link className="text-sm" color="foreground" href="/privacy">
+            Privacidad
+          </Link>
+          <Link
+            className="text-sm"
+            color="foreground"
+            href="mailto:info@trackmyexpenses.com"
+          >
+            Contacto
+          </Link>
         </div>
       </div>
     </footer>
