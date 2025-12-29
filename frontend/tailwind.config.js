@@ -9,6 +9,15 @@ module.exports = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    {
+      pattern: /text-(primary|secondary|success|warning|danger)/,
+    },
+    {
+      pattern: /bg-(primary|secondary|success|warning|danger)/,
+      variants: ['hover', 'focus'],
+    },
+  ],
   theme: {
     extend: {
       backgroundImage: {

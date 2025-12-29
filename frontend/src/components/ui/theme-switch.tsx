@@ -5,7 +5,7 @@ import { clsx } from "@heroui/shared-utils";
 import { useTranslation } from "react-i18next";
 
 import { useTheme } from "@/hooks/use-theme";
-import { SunFilledIcon, MoonFilledIcon } from "@/components/icons";
+import { MoonFilledIcon, SunFilledIcon } from "./icons";
 
 export interface ThemeSwitchProps {
   className?: string;

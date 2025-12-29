@@ -1,7 +1,7 @@
 import LandingLayout from "@/layouts/landing";
-import { HeroSection } from "@/components/landing/HeroSection";
-import { HowItWorks } from "@/components/landing/HowItWorks";
-import { FeatureShowcase } from "@/components/landing/FeatureShowcase";
+import { HeroSection } from "@/features/landing/components/HeroSection";
+import { HowItWorks } from "@/features/landing/components/HowItWorks";
+import { FeatureShowcase } from "@/features/landing/components/FeatureShowcase";
 
 export default function LandingPage() {
   return (

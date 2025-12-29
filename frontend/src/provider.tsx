@@ -4,7 +4,7 @@ import type { NavigateOptions } from "react-router-dom";
 import { HeroUIProvider } from "@heroui/system";
 import { useHref, useNavigate } from "react-router-dom";
 
-import { ThemeProvider } from "./context/theme-context";
+import { ThemeProvider } from "./contexts/theme-context";
 
 declare module "@react-types/shared" {
   interface RouterConfig {

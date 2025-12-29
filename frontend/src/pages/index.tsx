@@ -3,7 +3,7 @@ import { button as buttonStyles } from "@heroui/theme";
 import { Link } from "@heroui/link";
 /* import imgs from "../styles/imgs"; */
 
-import { title, subtitle } from "@/components/primitives";
+import { title, subtitle } from "@/components/ui/primitives";
 import DefaultLayout from "@/layouts/default";
 
 export default function IndexPage() {

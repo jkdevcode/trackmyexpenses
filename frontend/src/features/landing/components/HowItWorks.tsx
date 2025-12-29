@@ -5,18 +5,18 @@ export const HowItWorks = () => {
 
   const steps = [
     {
-      title: t("step-1-title"),
-      description: t("step-1-desc"),
+      title: t("landing:step-1-title"),
+      description: t("landing:step-1-desc"),
       icon: "📸",
     },
     {
-      title: t("step-2-title"),
-      description: t("step-2-desc"),
+      title: t("landing:step-2-title"),
+      description: t("landing:step-2-desc"),
       icon: "🔍",
     },
     {
-      title: t("step-3-title"),
-      description: t("step-3-desc"),
+      title: t("landing:step-3-title"),
+      description: t("landing:step-3-desc"),
       icon: "✅",
     },
   ];
@@ -26,10 +26,10 @@ export const HowItWorks = () => {
       <div className="max-w-6xl mx-auto flex flex-col gap-12">
         <div className="text-center flex flex-col gap-4">
           <h2 className="text-3xl md:text-4xl font-bold">
-            {t("how-it-works-title")}
+            {t("landing:how-it-works-title")}
           </h2>
           <p className="text-default-500 max-w-xl mx-auto">
-            {t("how-it-works-subtitle")}
+            {t("landing:how-it-works-subtitle")}
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
