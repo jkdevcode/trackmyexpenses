@@ -1,8 +1,8 @@
 import { Route, Routes } from "react-router-dom";
 
-import { CookieConsentProvider } from "./contexts/cookie-consent-context";
-import { CookieConsent } from "./components/cookie-consent";
-import { PageNotFound } from "./pages/404";
+import { CookieConsentProvider } from "@/contexts/cookie-consent-context";
+import { CookieConsent } from "@/components/ui/cookie-consent";
+import { PageNotFound } from "@/pages/404";
 
 import IndexPage from "@/pages/index";
 import LandingPage from "@/pages/landing";
@@ -10,8 +10,8 @@ import DocsPage from "@/pages/docs";
 import PricingPage from "@/pages/pricing";
 import BlogPage from "@/pages/blog";
 import AboutPage from "@/pages/about";
-import LoginPage from "@/pages/auth/Login";
-import RegisterPage from "@/pages/auth/Register";
+import LoginPage from "@/features/auth/pages/Login";
+import RegisterPage from "@/features/auth/pages/Register";
 
 function App() {
   return (
