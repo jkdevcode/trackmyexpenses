@@ -9,8 +9,8 @@ import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 
 import { appColor } from "@/theme/theme.config";
-import { ThemeSwitch } from "@/components/theme-switch";
-import { LanguageSwitch, I18nIcon } from "@/components/language-switch";
+import { ThemeSwitch } from "@/components/ui/theme-switch";
+import { LanguageSwitch, I18nIcon } from "@/components/ui/language-switch";
 import { availableLanguages } from "@/i18n";
 
 export const LandingHeader = () => {

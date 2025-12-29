@@ -62,52 +62,17 @@ i18n
       fallbackLng,
     fallbackLng: fallbackLng,
 
-    ns: ["base"],
-    defaultNS: "base",
+    ns: ["common", "auth", "landing", "validation"],
+    defaultNS: "common",
     interpolation: {
       escapeValue: false, // react already safes from xss
     },
     react: {
       transKeepBasicHtmlNodesFor: ["br", "strong", "i", "p", "sub", "sup"],
+      useSuspense: true,
     },
     backend: {
-      loadPath: (lng, ns) => {
-        let url: URL = new URL("./locales/base/en-US.json", import.meta.url);
-
-        // Vite does not know how to resolve
-        // new URL(`./locales/${ns}/${reqlng}.json`, import.meta.url)
-        // so we need to manually handle the different namespaces and languages
-        switch (ns[0]) {
-          case "base":
-            switch (lng[0]) {
-              case "en-US":
-                url = new URL("./locales/base/en-US.json", import.meta.url);
-                break;
-              case "fr-FR":
-                url = new URL("./locales/base/fr-FR.json", import.meta.url);
-                break;
-              case "es-ES":
-                url = new URL("./locales/base/es-ES.json", import.meta.url);
-                break;
-              case "zh-CN":
-                url = new URL("./locales/base/zh-CN.json", import.meta.url);
-                break;
-              case "ar-SA":
-                url = new URL("./locales/base/ar-SA.json", import.meta.url);
-                break;
-              case "he-IL":
-                url = new URL("./locales/base/he-IL.json", import.meta.url);
-                break;
-              default:
-                url = new URL("./locales/base/en-US.json", import.meta.url);
-            }
-            break;
-          default:
-            url = new URL("./locales/base/en-US.json", import.meta.url);
-        }
-
-        return url.toString();
-      },
+      loadPath: "/locales/{{lng}}/{{ns}}.json",
     },
   });
 

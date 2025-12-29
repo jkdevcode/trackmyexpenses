@@ -10,7 +10,7 @@ import {
   ModalHeader,
 } from "@heroui/modal";
 
-import { useCookieConsent } from "../contexts/cookie-consent-context";
+import { useCookieConsent } from "@/contexts/cookie-consent-context";
 
 import { buttonGradient } from "./primitives";
 

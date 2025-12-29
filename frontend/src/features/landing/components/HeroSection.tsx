@@ -11,13 +11,13 @@ export const HeroSection = () => {
     <section className="flex flex-col items-center justify-center py-20 gap-8 text-center px-4">
       <div className="max-w-3xl flex flex-col gap-4">
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-          {t("hero-title")}{" "}
+          {t("landing:hero-title")}{" "}
           <span className={`text-${appColor} text-6xl`}>
-            {t("hero-title-highlight")}
+            {t("landing:hero-title-highlight")}
           </span>
         </h1>
         <p className="text-xl text-default-500 max-w-2xl mx-auto">
-          {t("hero-subtitle")}
+          {t("landing:hero-subtitle")}
         </p>
       </div>
       <div className="flex gap-4">
@@ -28,7 +28,7 @@ export const HeroSection = () => {
           href="/register"
           size="lg"
         >
-          {t("hero-cta-primary")}
+          {t("landing:hero-cta-primary")}
         </Button>
         <Button
           as={Link}
@@ -37,7 +37,7 @@ export const HeroSection = () => {
           size="lg"
           variant="bordered"
         >
-          {t("hero-cta-secondary")}
+          {t("landing:hero-cta-secondary")}
         </Button>
       </div>
       <div className="mt-12 w-full max-w-5xl rounded-2xl overflow-hidden border border-default-200 bg-default-50 shadow-2xl aspect-video flex items-center justify-center text-default-300">
