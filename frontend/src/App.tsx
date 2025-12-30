@@ -8,6 +8,8 @@ import IndexPage from "@/pages/index";
 import LandingPage from "@/pages/landing";
 import LoginPage from "@/features/auth/pages/Login";
 import RegisterPage from "@/features/auth/pages/Register";
+import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
+import { PublicOnlyRoute } from "@/features/auth/components/PublicOnlyRoute";
 
 function App() {
   return (
@@ -15,9 +17,30 @@ function App() {
       <CookieConsent />
       <Routes>
         <Route element={<LandingPage />} path="/" />
-        <Route element={<LoginPage />} path="/login" />
-        <Route element={<RegisterPage />} path="/register" />
-        <Route element={<IndexPage />} path="/dashboard" />
+        <Route
+          element={
+            <PublicOnlyRoute>
+              <LoginPage />
+            </PublicOnlyRoute>
+          }
+          path="/login"
+        />
+        <Route
+          element={
+            <PublicOnlyRoute>
+              <RegisterPage />
+            </PublicOnlyRoute>
+          }
+          path="/register"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <IndexPage />
+            </ProtectedRoute>
+          }
+          path="/dashboard"
+        />
         <Route element={<PageNotFound />} path="*" />
       </Routes>
     </CookieConsentProvider>
