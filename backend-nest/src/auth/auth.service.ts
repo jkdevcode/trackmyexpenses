@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, UnauthorizedException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, ForbiddenException, InternalServerErrorException, Body, UploadedFile } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,11 +10,14 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
-  async register(dto: RegisterUserDto) {
+  async register(
+    @Body() dto: RegisterUserDto,
+    @UploadedFile() foto?: Express.Multer.File
+  ) {
     try {
-      const { tipoDocumento, documento, nombres, apellidos, correo, contrasena, foto } = dto;
+      const { tipoDocumento, documento, nombres, apellidos, correo, contrasena } = dto;
 
       const exists = await this.prisma.usuario.findFirst({
         where: {
@@ -28,6 +31,21 @@ export class AuthService {
 
       const hashedPassword = await bcrypt.hash(contrasena, 10); // BCRYPT_SALT_ROUNDS=10
 
+      let fotoPath = null;
+      if (foto) {
+        const fs = await import('fs');
+        const path = await import('path');
+        const uploadDir = path.join(process.cwd(), 'uploads', 'users');
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = path.extname(foto.originalname);
+        const filename = `user-${uniqueSuffix}${ext}`;
+        fs.writeFileSync(path.join(uploadDir, filename), foto.buffer);
+        fotoPath = `/uploads/users/${filename}`;
+      }
+
       const newUser = await this.prisma.usuario.create({
         data: {
           tipoDocumento,
@@ -36,13 +54,13 @@ export class AuthService {
           apellidos,
           correo,
           contrasena: hashedPassword,
-          foto: foto || null,
+          foto: fotoPath,
           fechaIngreso: new Date(),
         },
       });
 
       if (!newUser.id) {
-         throw new ForbiddenException('No se registró el usuario');
+        throw new ForbiddenException('No se registró el usuario');
       }
 
       return {
@@ -51,10 +69,10 @@ export class AuthService {
       };
 
     } catch (error) {
-       if (error instanceof ConflictException || error instanceof ForbiddenException) {
-         throw error;
-       }
-       throw new InternalServerErrorException(error.message);
+      if (error instanceof ConflictException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -89,10 +107,10 @@ export class AuthService {
         token,
       };
     } catch (error) {
-       if (error instanceof UnauthorizedException) {
-         throw error;
-       }
-       throw new InternalServerErrorException(error.message);
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 }
