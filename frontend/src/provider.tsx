@@ -5,6 +5,7 @@ import { HeroUIProvider } from "@heroui/system";
 import { useHref, useNavigate } from "react-router-dom";
 
 import { ThemeProvider } from "./contexts/theme-context";
+import { SessionProvider } from "./contexts/session-context";
 
 declare module "@react-types/shared" {
   interface RouterConfig {
@@ -17,9 +18,11 @@ export function Provider({ children }: { children: React.ReactNode }) {
 
   return (
     <HeroUIProvider navigate={navigate} useHref={useHref}>
-      <ThemeProvider>
-        {children}
-      </ThemeProvider>
+      <SessionProvider>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+      </SessionProvider>
     </HeroUIProvider>
   );
 }

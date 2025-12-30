@@ -1,20 +1,20 @@
 import * as yup from 'yup';
 
-export const getLoginSchema = (t: (key: string) => string) => {
+export const getLoginSchema = (t: (key: string, options?: any) => string) => {
   return yup.object({
-    email: yup
+    documento: yup
       .string()
-      .email(t('validation:email_invalid'))
-      .required(t('validation:required')),
-    password: yup
+      .required(t('validation:required'))
+      .min(6, t('validation:document_min'))
+      .max(10, t('validation:document_max')),
+    contrasena: yup
       .string()
-      .min(8, t('validation:password_min'))
-      .max(16, t('validation:password_max'))
+      .min(5, t('validation:password_min'))
       .required(t('validation:required')),
   });
 };
 
-export const getRegisterSchema = (t: (key: string) => string) => {
+export const getRegisterSchema = (t: (key: string, options?: any) => string) => {
   return yup.object({
     nombre: yup
       .string()
@@ -24,7 +24,7 @@ export const getRegisterSchema = (t: (key: string) => string) => {
       .string()
       .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, t('validation:only_letters'))
       .required(t('validation:required')),
-    correo: yup
+    email: yup
       .string()
       .email(t('validation:email_invalid'))
       .required(t('validation:required')),

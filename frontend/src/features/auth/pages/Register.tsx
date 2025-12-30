@@ -41,7 +41,7 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
-  
+
   // Image handling
   const [foto, setFoto] = useState<File | null>(null);
   const [fotoUrl, setFotoUrl] = useState<string>("");
@@ -84,50 +84,30 @@ const RegisterPage = () => {
     validationSchema: getRegisterSchema(t),
     onSubmit: async (values) => {
       setGeneralError(null);
+
       try {
-        // 1. Verificar correo (Adaptado de referencia)
-        const { data: correoExiste } = await axiosClient.get(`/usuarios/verificar/correo/${values.email}`);
-        if (correoExiste.existe) {
-          formik.setFieldError("email", t("validation:email_exists"));
-          setGeneralError(t("validation:email_exists"));
-          return;
+        const payload = {
+          tipoDocumento: values.tipo_documento,
+          documento: values.documento_identidad,
+          nombres: values.nombre,
+          apellidos: values.apellido,
+          correo: values.email,
+          contrasena: values.password,
+          foto: "" // Backend validation: z.string().url().optional().or(z.literal('')) - cannot be null
+        };
+
+        const response = await axiosClient.post("/auth/register", payload);
+
+        if (response.status === 200 || response.status === 201) {
+          navigate("/login");
         }
-
-        // 2. Verificar documento (Adaptado de referencia)
-        const { data: documentoExiste } = await axiosClient.get(`/usuarios/verificar/documento_identidad/${values.documento_identidad}`);
-        if (documentoExiste.existe) {
-          formik.setFieldError("documento_identidad", t("validation:document_exists"));
-           setGeneralError(t("validation:document_exists"));
-          return;
-        }
-
-        // 3. Preparar FormData
-        const formData = new FormData();
-        formData.append("nombre", values.nombre);
-        formData.append("apellido", values.apellido);
-        formData.append("correo", values.email);
-        formData.append("telefono", values.telefono);
-        formData.append("direccion", values.direccion);
-        formData.append("tipo_documento", values.tipo_documento);
-        formData.append("documento_identidad", values.documento_identidad);
-        formData.append("password", values.password);
-        formData.append("rol", "usuario"); // Default role
-        
-        if (foto) {
-          formData.append("img", foto);
-        }
-
-        // 4. Enviar
-        await axiosClient.post("/usuarios/registrar", formData, {
-            headers: { "Content-Type": "multipart/form-data" }
-        });
-
-        // 5. Éxito
-        navigate("/login");
 
       } catch (error: any) {
-         console.error("Error registration:", error);
-         setGeneralError(getErrorMessage(error, t));
+        if (error.response?.status === 409) {
+          setGeneralError(t("auth:errors.user_exists"));
+        } else {
+          setGeneralError(getErrorMessage(error, t));
+        }
       }
     },
   });
@@ -136,38 +116,38 @@ const RegisterPage = () => {
     <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-2xl w-full space-y-8 bg-content1 p-8 rounded-2xl shadow-lg">
         <div className="flex flex-col items-center">
-            {/* Logo o Avatar Upload */}
-            <div className="flex flex-col items-center mb-4 group cursor-pointer" onClick={handleAvatarClick}>
-                 <Avatar
-                    className="w-24 h-24 mb-2 transition-transform group-hover:scale-105"
-                    src={fotoUrl}
-                    showFallback
-                    fallback={<CameraIcon className="w-10 h-10 text-default-500" />}
-                 />
-                 <span className="text-xs text-primary font-medium">{t("auth:register.avatar_fallback")}</span>
-                 <input
-                    type="file"
-                    accept="image/*"
-                    ref={fileInputRef}
-                    className="hidden"
-                    onChange={handleImageChange}
-                 />
-            </div>
+          {/* Logo o Avatar Upload */}
+          <div className="flex flex-col items-center mb-4 group cursor-pointer" onClick={handleAvatarClick}>
+            <Avatar
+              className="w-24 h-24 mb-2 transition-transform group-hover:scale-105"
+              src={fotoUrl}
+              showFallback
+              fallback={<CameraIcon className="w-10 h-10 text-default-500" />}
+            />
+            <span className="text-xs text-primary font-medium">{t("auth:register.avatar_fallback")}</span>
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleImageChange}
+            />
+          </div>
 
           <h2 className="text-center text-3xl font-extrabold text-foreground">
             {t("auth:register.title")}
           </h2>
         </div>
-        
+
         {generalError && (
-            <div className={`p-3 rounded-md bg-danger-50 text-danger text-sm text-center border border-danger-200`}>
-                {generalError}
-            </div>
+          <div className={`p-3 rounded-md bg-danger-50 text-danger text-sm text-center border border-danger-200`}>
+            {generalError}
+          </div>
         )}
 
         <form className="mt-8 space-y-6" onSubmit={formik.handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Nombres */}
+            {/* Nombres */}
             <Input
               errorMessage={formik.errors.nombre}
               isInvalid={formik.touched.nombre && !!formik.errors.nombre}
@@ -178,10 +158,10 @@ const RegisterPage = () => {
               variant="bordered"
               onBlur={formik.handleBlur}
               onChange={formik.handleChange}
-              color={appColor} 
+              color={appColor}
             />
             {/* Apellidos */}
-             <Input
+            <Input
               errorMessage={formik.errors.apellido}
               isInvalid={formik.touched.apellido && !!formik.errors.apellido}
               label={t("auth:fields.lastname.label")}
@@ -191,7 +171,7 @@ const RegisterPage = () => {
               variant="bordered"
               onBlur={formik.handleBlur}
               onChange={formik.handleChange}
-              color={appColor} 
+              color={appColor}
             />
 
             {/* Email */}
@@ -207,11 +187,11 @@ const RegisterPage = () => {
               variant="bordered"
               onBlur={formik.handleBlur}
               onChange={formik.handleChange}
-              color={appColor} 
+              color={appColor}
             />
 
-             {/* Telefono */}
-             <Input
+            {/* Telefono */}
+            <Input
               errorMessage={formik.errors.telefono}
               isInvalid={formik.touched.telefono && !!formik.errors.telefono}
               label={t("auth:fields.phone.label")}
@@ -222,11 +202,11 @@ const RegisterPage = () => {
               variant="bordered"
               onBlur={formik.handleBlur}
               onChange={formik.handleChange}
-              color={appColor} 
+              color={appColor}
             />
 
-             {/* Direccion */}
-             <Input
+            {/* Direccion */}
+            <Input
               errorMessage={formik.errors.direccion}
               isInvalid={formik.touched.direccion && !!formik.errors.direccion}
               label={t("auth:fields.address.label")}
@@ -236,7 +216,7 @@ const RegisterPage = () => {
               variant="bordered"
               onBlur={formik.handleBlur}
               onChange={formik.handleChange}
-              color={appColor} 
+              color={appColor}
             />
 
             {/* Tipo Documento */}
@@ -250,17 +230,17 @@ const RegisterPage = () => {
               variant="bordered"
               onBlur={formik.handleBlur}
               onChange={formik.handleChange}
-              color={appColor} 
+              color={appColor}
             >
-                {documentTypes.map((doc) => (
-                    <SelectItem key={doc.key}>
-                        {doc.label}
-                    </SelectItem>
-                ))}
+              {documentTypes.map((doc) => (
+                <SelectItem key={doc.key}>
+                  {doc.label}
+                </SelectItem>
+              ))}
             </Select>
 
-             {/* Documento ID */}
-             <Input
+            {/* Documento ID */}
+            <Input
               errorMessage={formik.errors.documento_identidad}
               isInvalid={formik.touched.documento_identidad && !!formik.errors.documento_identidad}
               label={t("auth:fields.document_id.label")}
@@ -270,7 +250,7 @@ const RegisterPage = () => {
               variant="bordered"
               onBlur={formik.handleBlur}
               onChange={formik.handleChange}
-              color={appColor} 
+              color={appColor}
             />
 
             {/* Password */}
@@ -301,8 +281,8 @@ const RegisterPage = () => {
               onChange={formik.handleChange}
             />
 
-             {/* Confirm Password */}
-             <Input
+            {/* Confirm Password */}
+            <Input
               color={appColor}
               errorMessage={formik.errors.confirmPassword}
               isInvalid={formik.touched.confirmPassword && !!formik.errors.confirmPassword}
@@ -328,14 +308,14 @@ const RegisterPage = () => {
               {t("auth:register.submit")}
             </Button>
           </div>
-          
+
           <div className="text-center mt-4">
-             <p className="text-sm text-default-500">
-                {t("auth:register.has_account")}{' '}
-                <Link as={RouterLink} className="font-semibold" color={appColor === "default" ? "foreground" : (appColor as any)} to="/login">
-                  {t("auth:register.login_link")}
-                </Link>
-             </p>
+            <p className="text-sm text-default-500">
+              {t("auth:register.has_account")}{' '}
+              <Link as={RouterLink} className="font-semibold" color={appColor === "default" ? "foreground" : (appColor as any)} to="/login">
+                {t("auth:register.login_link")}
+              </Link>
+            </p>
           </div>
         </form>
       </div>
