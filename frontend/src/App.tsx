@@ -6,10 +6,6 @@ import { PageNotFound } from "@/pages/404";
 
 import IndexPage from "@/pages/index";
 import LandingPage from "@/pages/landing";
-import DocsPage from "@/pages/docs";
-import PricingPage from "@/pages/pricing";
-import BlogPage from "@/pages/blog";
-import AboutPage from "@/pages/about";
 import LoginPage from "@/features/auth/pages/Login";
 import RegisterPage from "@/features/auth/pages/Register";
 
@@ -22,10 +18,6 @@ function App() {
         <Route element={<LoginPage />} path="/login" />
         <Route element={<RegisterPage />} path="/register" />
         <Route element={<IndexPage />} path="/dashboard" />
-        <Route element={<DocsPage />} path="/docs" />
-        <Route element={<PricingPage />} path="/pricing" />
-        <Route element={<BlogPage />} path="/blog" />
-        <Route element={<AboutPage />} path="/about" />
         <Route element={<PageNotFound />} path="*" />
       </Routes>
     </CookieConsentProvider>
