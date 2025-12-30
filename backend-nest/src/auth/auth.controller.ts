@@ -1,4 +1,5 @@
-import { Controller, Post, Body, UsePipes } from '@nestjs/common';
+import { Controller, Post, Body, UsePipes, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register.dto';
 import { LoginUserDto } from './dto/login.dto';
@@ -6,12 +7,15 @@ import { ZodValidationPipe } from 'nestjs-zod';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('register')
-  @UsePipes(ZodValidationPipe)
-  async register(@Body() dto: RegisterUserDto) {
-    return this.authService.register(dto);
+  @UseInterceptors(FileInterceptor('foto'))
+  async register(
+    @Body() dto: RegisterUserDto,
+    @UploadedFile() foto?: Express.Multer.File,
+  ) {
+    return this.authService.register(dto, foto);
   }
 
   @Post('login')

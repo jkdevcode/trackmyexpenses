@@ -9,8 +9,8 @@ const registerUserSchema = z.object({
   correo: z.string().email('Email inválido'),
   contrasena: z.string().min(8, 'Mínimo 8 caracteres'),
   // .or(z.literal('')) es útil para campos opcionales en formularios
-  foto: z.string().url('URL inválida').optional().or(z.literal('')),
+  // Foto is handled by FileInterceptor, not Zod Body validation
 }).strict();
 
 // Remove spaces from error messages if needed to match exact strings, but generic valid messages are fine.
-export class RegisterUserDto extends createZodDto(registerUserSchema) {}
+export class RegisterUserDto extends createZodDto(registerUserSchema) { }
