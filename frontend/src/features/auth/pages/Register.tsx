@@ -86,17 +86,21 @@ const RegisterPage = () => {
       setGeneralError(null);
 
       try {
-        const payload = {
-          tipoDocumento: values.tipo_documento,
-          documento: values.documento_identidad,
-          nombres: values.nombre,
-          apellidos: values.apellido,
-          correo: values.email,
-          contrasena: values.password,
-          foto: "" // Backend validation: z.string().url().optional().or(z.literal('')) - cannot be null
-        };
+        const formData = new FormData();
+        formData.append("tipoDocumento", values.tipo_documento);
+        formData.append("documento", values.documento_identidad);
+        formData.append("nombres", values.nombre);
+        formData.append("apellidos", values.apellido);
+        formData.append("correo", values.email);
+        formData.append("contrasena", values.password);
 
-        const response = await axiosClient.post("/auth/register", payload);
+        if (foto) {
+          formData.append("foto", foto);
+        }
+
+        const response = await axiosClient.post("/auth/register", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
 
         if (response.status === 200 || response.status === 201) {
           navigate("/login");
