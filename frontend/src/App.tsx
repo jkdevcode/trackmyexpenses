@@ -10,6 +10,7 @@ import LoginPage from "@/features/auth/pages/Login";
 import RegisterPage from "@/features/auth/pages/Register";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { PublicOnlyRoute } from "@/features/auth/components/PublicOnlyRoute";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 function App() {
   return (
@@ -36,11 +37,14 @@ function App() {
         <Route
           element={
             <ProtectedRoute>
-              <IndexPage />
+              <AppLayout />
             </ProtectedRoute>
           }
-          path="/dashboard"
-        />
+        >
+          <Route index path="/dashboard" element={<IndexPage />} />
+          <Route path="/invoices" element={<div className="p-4">Facturas (WIP)</div>} />
+          <Route path="/settings" element={<div className="p-4">Ajustes (WIP)</div>} />
+        </Route>
         <Route element={<PageNotFound />} path="*" />
       </Routes>
     </CookieConsentProvider>
