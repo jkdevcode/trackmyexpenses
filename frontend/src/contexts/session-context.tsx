@@ -1,8 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 interface User {
   id: number;
-  email: string;
-  name: string;
+  nombres: string;
+  apellidos: string;
+  correo: string;
+  foto: string;
+
   // Add other user properties as needed
 }
 interface SessionContextType {

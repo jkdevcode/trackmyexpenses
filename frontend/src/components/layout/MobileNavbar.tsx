@@ -16,6 +16,12 @@ export const MobileNavbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const location = useLocation();
 
+    const ASSETS_URL = import.meta.env.VITE_ASSETS_URL;
+
+    const avatarUrl = user?.foto
+        ? `${ASSETS_URL}${user.foto}`
+        : "/default-avatar.png";
+
     const menuItems = [
         { label: t("navigation.dashboard"), href: "/dashboard", icon: <HomeIcon /> },
         { label: t("navigation.invoices"), href: "/invoices", icon: <InvoiceIcon /> },
@@ -43,7 +49,7 @@ export const MobileNavbar = () => {
                 <Avatar
                     isBordered
                     color={appColor}
-                    src={user?.img || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`}
+                    src={avatarUrl}
                     size="sm"
                 />
             </NavbarContent>
@@ -56,11 +62,12 @@ export const MobileNavbar = () => {
                             isBordered
                             color={appColor}
                             className="w-14 h-14"
-                            src={user?.img || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`}
+                            src={avatarUrl}
+                            alt="Avatar usuario"
                         />
                         <div className="flex flex-col">
-                            <span className="font-bold text-lg">{user?.name} {user?.lastname}</span>
-                            <span className="text-default-500 text-sm">{user?.email}</span>
+                            <span className={`font-bold text-${appColor} text-lg`}>{user?.nombres} {user?.apellidos}</span>
+                            <span className="text-default-500 font-medium text-sm">{user?.correo}</span>
                         </div>
                     </div>
 

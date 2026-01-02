@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { Tooltip } from "@heroui/tooltip";
-import { Link } from "@heroui/link";
+/* import { Link } from "@heroui/link"; */
 import { appColor } from "@/theme/theme.config";
 
 interface NavItemProps {
@@ -16,7 +16,7 @@ export const NavItem = ({ href, icon, label, isCollapsed }: NavItemProps) => {
             content={label}
             isDisabled={!isCollapsed}
             placement="right"
-            color="foreground"
+            color={appColor}
         >
             <NavLink
                 to={href}

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router-dom";
+/* import { useLocation } from "react-router-dom"; */
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
 import { Tooltip } from "@heroui/tooltip";
@@ -17,7 +17,11 @@ interface SidebarProps {
 export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
     const { t } = useTranslation();
     const { user, logout } = useSession();
-    const location = useLocation();
+    const ASSETS_URL = import.meta.env.VITE_ASSETS_URL;
+
+    const avatarUrl = user?.foto
+        ? `${ASSETS_URL}${user.foto}`
+        : "/default-avatar.png";
 
     const menuItems = [
         { label: t("navigation.dashboard"), href: "/dashboard", icon: <HomeIcon /> },
@@ -39,7 +43,7 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                 >
                     <Logo size={isCollapsed ? 32 : 40} />
                     {!isCollapsed && (
-                        <span className="font-bold text-xl whitespace-nowrap overflow-hidden">
+                        <span className={`font-bold text-xl text-${appColor} whitespace-nowrap overflow-hidden`}>
                             {t("app-name")}
                         </span>
                     )}
@@ -60,22 +64,23 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
             {/* Footer / User */}
             <div className="p-4 border-t border-divider">
                 <div className={`flex flex-col gap-4 ${isCollapsed ? "items-center" : ""}`}>
-                    <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="flex items-center gap-3 p-1 overflow-hidden">
                         <Avatar
                             isBordered
                             color={appColor}
                             size={isCollapsed ? "sm" : "md"}
-                            src={user?.img || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`}
+                            src={avatarUrl}
+                            alt="Avatar usuario"
                         />
                         {!isCollapsed && (
                             <div className="flex flex-col min-w-0">
-                                <span className="font-bold text-sm truncate">{user?.name} {user?.lastname}</span>
-                                <span className="text-default-500 text-xs truncate">{user?.email}</span>
+                                <span className={`font-bold text-${appColor} text-sm truncate`}>{user?.nombres} {user?.apellidos}</span>
+                                <span className="text-default-500 font-medium text-xs truncate">{user?.correo}</span>
                             </div>
                         )}
                     </div>
 
-                    <Tooltip content={t("auth.logout")} isDisabled={!isCollapsed} placement="right" color="danger">
+                    <Tooltip content={t("auth.logout")} isDisabled={!isCollapsed} placement="right" color={appColor}>
                         <Button
                             isIconOnly={isCollapsed}
                             className={`w-full ${isCollapsed ? "" : "justify-start gap-2"}`}
