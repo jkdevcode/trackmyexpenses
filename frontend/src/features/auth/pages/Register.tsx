@@ -7,6 +7,7 @@ import { Input } from "@heroui/input";
 import { Link } from "@heroui/link";
 import { Select, SelectItem } from "@heroui/select";
 import { Avatar } from "@heroui/avatar";
+import { addToast } from "@heroui/toast";
 
 import axiosClient from "@/lib/axiosClient";
 import { getErrorMessage } from "@/utils/errors";
@@ -40,7 +41,6 @@ const RegisterPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
-  const [generalError, setGeneralError] = useState<string | null>(null);
 
   // Image handling
   const [foto, setFoto] = useState<File | null>(null);
@@ -83,8 +83,6 @@ const RegisterPage = () => {
     },
     validationSchema: getRegisterSchema(t),
     onSubmit: async (values) => {
-      setGeneralError(null);
-
       try {
         const formData = new FormData();
         formData.append("tipoDocumento", values.tipo_documento);
@@ -103,15 +101,22 @@ const RegisterPage = () => {
         });
 
         if (response.status === 200 || response.status === 201) {
+          addToast({
+            title: t("auth:register.success"),
+            description: t("auth:register.success_description"),
+            color: appColor as any,
+            timeout: 3000,
+          });
           navigate("/login");
         }
 
       } catch (error: any) {
-        if (error.response?.status === 409) {
-          setGeneralError(t("auth:errors.user_exists"));
-        } else {
-          setGeneralError(getErrorMessage(error, t));
-        }
+        addToast({
+          title: t("auth:register.error"),
+          description: error.response?.status === 409 ? t("auth:errors.user_exists") : getErrorMessage(error, t),
+          color: "danger",
+          timeout: 5000,
+        });
       }
     },
   });
@@ -143,11 +148,6 @@ const RegisterPage = () => {
           </h2>
         </div>
 
-        {generalError && (
-          <div className={`p-3 rounded-md bg-danger-50 text-danger text-sm text-center border border-danger-200`}>
-            {generalError}
-          </div>
-        )}
 
         <form className="mt-8 space-y-6" onSubmit={formik.handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
