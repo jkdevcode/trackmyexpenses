@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Link } from "@heroui/link";
+import { addToast } from "@heroui/toast";
 
 import axiosClient from "@/lib/axiosClient";
 import { getErrorMessage } from "@/utils/errors";
@@ -18,7 +19,6 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useSession();
   const [isVisible, setIsVisible] = useState(false);
-  const [generalError, setGeneralError] = useState<string | null>(null);
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
@@ -29,29 +29,36 @@ const LoginPage = () => {
     },
     validationSchema: getLoginSchema(t),
     onSubmit: async (values) => {
-      setGeneralError(null);
       try {
         const response = await axiosClient.post("auth/login", {
-          documento: values.documento, // Ajustado para coincidir con backend legacy
+          documento: values.documento,
           contrasena: values.contrasena,
         });
 
         if (response.status === 200 || response.status === 201) {
           const { token, user } = response.data;
-          // Manejo robusto del usuario (array o objeto) según el código legacy
           const userInfo = Array.isArray(user) ? user[0] : user;
 
           login(token, userInfo);
 
-          // Redirección basada en rol (adaptada del código legacy)
-          // Asumiremos dashboard para todos por ahora, o mantendremos la lógica si las rutas existen
-          // En este caso, redirigiremos a /dashboard que es la nueva ruta principal
-          navigate("/dashboard");
+          addToast({
+            title: t("auth:login.success"),
+            description: t("auth:login.success_description"),
+            color: appColor as any,
+            variant: "flat",
+            timeout: 4000,
+          });
 
-          // Opcional: Mostrar toast de éxito si tuviéramos una librería de toast
+          navigate("/dashboard");
         }
       } catch (error: any) {
-        setGeneralError(getErrorMessage(error, t));
+        addToast({
+          title: t("auth:login.error"),
+          description: getErrorMessage(error, t),
+          color: "danger",
+          variant: "flat",
+          timeout: 5000,
+        });
       }
     },
   });
@@ -66,11 +73,6 @@ const LoginPage = () => {
           </h2>
         </div>
 
-        {generalError && (
-          <div className={`p-3 rounded-md bg-danger-50 text-danger text-sm text-center border border-danger-200`}>
-            {generalError}
-          </div>
-        )}
 
         <form className="mt-8 space-y-6" onSubmit={formik.handleSubmit}>
           <div className="rounded-md space-y-4">

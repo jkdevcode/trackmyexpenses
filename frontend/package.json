@@ -27,6 +27,7 @@
     "@heroui/switch": "^2.2.21-beta.2",
     "@heroui/system": "^2.4.19-beta.2",
     "@heroui/theme": "^2.4.18-beta.7",
+    "@heroui/toast": "^2.0.19",
     "@heroui/tooltip": "^2.2.20-beta.2",
     "@react-aria/visually-hidden": "3.8.22",
     "@react-types/shared": "^3.29.0",
