@@ -30,6 +30,7 @@
     "make": "Make",
     "beautiful": "beautiful",
     "language": "Language",
+    "theme": "Theme",
     "cookie-consent": "We use cookies on our website to give you the most relevant experience by remembering your preferences and repeat visits. By clicking <strong className=\"font-semibold\">\"Accept All\"</strong>, you consent to the use of ALL the cookies. Please read our",
     "cookie-policy": "Cookie Policy.",
     "accept-all": "Accept All",

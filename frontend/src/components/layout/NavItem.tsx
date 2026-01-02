@@ -16,7 +16,7 @@ export const NavItem = ({ href, icon, label, isCollapsed }: NavItemProps) => {
             content={label}
             isDisabled={!isCollapsed}
             placement="right"
-            color={appColor}
+            color="default"
         >
             <NavLink
                 to={href}
