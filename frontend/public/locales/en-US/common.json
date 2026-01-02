@@ -43,5 +43,13 @@
     "features": "Features",
     "how-it-works": "How it works",
     "create-account": "Create account",
-    "app-name": "TrackMyExpenses"
+    "app-name": "TrackMyExpenses",
+    "navigation": {
+        "dashboard": "Dashboard",
+        "invoices": "Invoices",
+        "settings": "Settings"
+    },
+    "auth": {
+        "logout": "Logout"
+    }
 }
