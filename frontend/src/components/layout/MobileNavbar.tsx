@@ -9,6 +9,8 @@ import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useSession } from "@/contexts/session-context";
 import { appColor } from "@/theme/theme.config";
 import { HomeIcon, InvoiceIcon, SettingsIcon, LogoutIcon, Logo } from "./LayoutIcons";
+import { ThemeSwitch } from "@/components/ui/theme-switch";
+import { LanguageSwitch } from "@/components/ui/language-switch";
 
 export const MobileNavbar = () => {
     const { t } = useTranslation();
@@ -56,23 +58,8 @@ export const MobileNavbar = () => {
 
             <NavbarMenu className="pt-6 bg-background/90 backdrop-blur-md">
                 <div className="flex flex-col gap-6 h-full">
-                    {/* User Info Section */}
-                    <div className="flex items-center gap-4 px-2 pb-6 border-b border-divider">
-                        <Avatar
-                            isBordered
-                            color={appColor}
-                            className="w-14 h-14"
-                            src={avatarUrl}
-                            alt="Avatar usuario"
-                        />
-                        <div className="flex flex-col">
-                            <span className={`font-bold text-${appColor} text-lg`}>{user?.nombres} {user?.apellidos}</span>
-                            <span className="text-default-500 font-medium text-sm">{user?.correo}</span>
-                        </div>
-                    </div>
-
                     {/* Navigation Links */}
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 px-2">
                         {menuItems.map((item, index) => {
                             const isActive = location.pathname === item.href;
                             return (
@@ -95,13 +82,43 @@ export const MobileNavbar = () => {
                         })}
                     </div>
 
+                    <div className="w-full h-px bg-divider" />
+
+                    {/* Settings Row: Language & Theme */}
+                    <NavbarMenuItem>
+                        <div className="flex items-center justify-between px-4 py-2">
+                            <span className="text-default-500 font-medium">{t("language")} / {t("theme")}</span>
+                            <div className="flex items-center gap-4">
+                                <LanguageSwitch availableLanguages={[{ code: "es-ES", nativeName: "Español", isRTL: false }, { code: "en-US", nativeName: "English", isRTL: false, isDefault: true }]} />
+                                <ThemeSwitch />
+                            </div>
+                        </div>
+                    </NavbarMenuItem>
+
+                    {/* User Info Section */}
+                    <NavbarMenuItem>
+                        <div className="flex items-center gap-4 px-4 py-2">
+                            <Avatar
+                                isBordered
+                                color={appColor}
+                                className="w-12 h-12"
+                                src={avatarUrl}
+                                alt="Avatar usuario"
+                            />
+                            <div className="flex flex-col">
+                                <span className={`font-bold text-${appColor} text-lg`}>{user?.nombres} {user?.apellidos}</span>
+                                <span className="text-default-500 font-medium text-sm">{user?.correo}</span>
+                            </div>
+                        </div>
+                    </NavbarMenuItem>
+
                     {/* Logout Button */}
-                    <div className="mt-auto pb-8">
+                    <NavbarMenuItem className="mt-auto pb-8 px-4">
                         <Button
-                            className="w-full justify-start gap-3 px-4"
+                            className="w-full justify-start gap-3"
                             variant="light"
                             color="danger"
-                            onClick={() => {
+                            onPress={() => {
                                 setIsMenuOpen(false);
                                 logout();
                             }}
@@ -109,7 +126,7 @@ export const MobileNavbar = () => {
                         >
                             {t("auth.logout")}
                         </Button>
-                    </div>
+                    </NavbarMenuItem>
                 </div>
             </NavbarMenu>
         </Navbar>

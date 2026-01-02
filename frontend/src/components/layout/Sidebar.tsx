@@ -8,6 +8,8 @@ import { useSession } from "@/contexts/session-context";
 import { appColor } from "@/theme/theme.config";
 import { NavItem } from "./NavItem";
 import { HomeIcon, InvoiceIcon, SettingsIcon, LogoutIcon, Logo } from "./LayoutIcons";
+import { ThemeSwitch } from "@/components/ui/theme-switch";
+import { LanguageSwitch } from "@/components/ui/language-switch";
 
 interface SidebarProps {
     isCollapsed: boolean;
@@ -64,6 +66,12 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
             {/* Footer / User */}
             <div className="p-4 border-t border-divider">
                 <div className={`flex flex-col gap-4 ${isCollapsed ? "items-center" : ""}`}>
+                    {/* Settings Row */}
+                    <div className={`flex items-center ${isCollapsed ? "flex-col gap-4" : "justify-between px-1"}`}>
+                        <LanguageSwitch availableLanguages={[{ code: "es-ES", nativeName: "Español", isRTL: false }, { code: "en-US", nativeName: "English", isRTL: false, isDefault: true }]} />
+                        <ThemeSwitch />
+                    </div>
+
                     <div className="flex items-center gap-3 p-1 overflow-hidden">
                         <Avatar
                             isBordered
@@ -80,7 +88,7 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                         )}
                     </div>
 
-                    <Tooltip content={t("auth.logout")} isDisabled={!isCollapsed} placement="right" color={appColor}>
+                    <Tooltip content={t("auth.logout")} isDisabled={!isCollapsed} placement="right" color="default">
                         <Button
                             isIconOnly={isCollapsed}
                             className={`w-full ${isCollapsed ? "" : "justify-start gap-2"}`}
