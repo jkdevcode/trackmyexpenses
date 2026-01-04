@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Delete, UseGuards, Request, Body, Param, ParseIntPipe, UsePipes } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, UseGuards, Request, Body, Param, ParseIntPipe, UsePipes } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -7,7 +7,7 @@ import { ZodValidationPipe } from 'nestjs-zod';
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get()
   async findAll() {
@@ -24,7 +24,7 @@ export class UserController {
     return this.userService.findOne(id);
   }
 
-  @Put(':id')
+  @Patch(':id')
   @UsePipes(ZodValidationPipe)
   async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto, @Request() req: any) {
     return this.userService.updateProfile(id, dto);
