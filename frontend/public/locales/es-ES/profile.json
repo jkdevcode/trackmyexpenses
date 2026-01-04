@@ -11,5 +11,14 @@
     },
     "sections": {
         "personal": "Datos Personales"
+    },
+    "security": {
+        "title": "Seguridad",
+        "current_password": "Contraseña Actual",
+        "new_password": "Nueva Contraseña",
+        "confirm_password": "Confirmar Contraseña",
+        "update_password": "Actualizar Contraseña",
+        "success": "Contraseña actualizada exitosamente",
+        "error": "Error al actualizar la contraseña"
     }
 }

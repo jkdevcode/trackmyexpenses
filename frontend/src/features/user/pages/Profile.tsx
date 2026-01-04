@@ -13,6 +13,7 @@ import { getErrorMessage } from "@/utils/errors";
 import { appColor } from "@/theme/theme.config";
 import { getProfileSchema } from "@/schemas/profile";
 import { CameraIcon } from "@/features/auth/pages/Register";
+import ChangePasswordCard from "../components/ChangePasswordCard";
 
 const ProfilePage = () => {
     const { t } = useTranslation(["profile", "auth", "validation"]);
@@ -107,7 +108,7 @@ const ProfilePage = () => {
     };
 
     return (
-        <div className="flex justify-center items-start p-4 bg-background min-h-full">
+        <div className="flex flex-col items-center p-4 bg-background min-h-full w-full gap-6">
             <Card className="max-w-4xl w-full shadow-lg rounded-2xl p-6">
                 <CardHeader className="flex flex-col items-center pb-0 pt-4">
                     <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
@@ -216,6 +217,7 @@ const ProfilePage = () => {
                     </form>
                 </CardBody>
             </Card>
+            <ChangePasswordCard />
         </div>
     );
 };
