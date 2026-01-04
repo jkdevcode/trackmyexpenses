@@ -1,9 +1,10 @@
-import type React from "react";
+import { Suspense, type ReactNode } from "react";
 import type { NavigateOptions } from "react-router-dom";
 
 import { HeroUIProvider } from "@heroui/system";
 import { ToastProvider } from "@heroui/toast";
 import { useHref, useNavigate } from "react-router-dom";
+import { Spinner } from "@heroui/spinner";
 
 import { ThemeProvider } from "./contexts/theme-context";
 import { SessionProvider } from "./contexts/session-context";
@@ -14,7 +15,7 @@ declare module "@react-types/shared" {
   }
 }
 
-export function Provider({ children }: { children: React.ReactNode }) {
+export function Provider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   return (
@@ -22,7 +23,9 @@ export function Provider({ children }: { children: React.ReactNode }) {
       <SessionProvider>
         <ThemeProvider>
           <ToastProvider />
-          {children}
+          <Suspense fallback={<div className="flex h-screen items-center justify-center"><Spinner size="lg" /></div>}>
+            {children}
+          </Suspense>
         </ThemeProvider>
       </SessionProvider>
     </HeroUIProvider>

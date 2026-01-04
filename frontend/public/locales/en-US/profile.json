@@ -1,0 +1,15 @@
+{
+    "title": "Profile Settings",
+    "save": "Save changes",
+    "cancel": "Cancel",
+    "reset": "Reset",
+    "success": "Profile updated successfully",
+    "error": "Error updating profile",
+    "avatar": {
+        "change": "Change photo",
+        "fallback": "Upload photo"
+    },
+    "sections": {
+        "personal": "Personal Data"
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "title": "Configuración de Perfil",
+    "save": "Guardar cambios",
+    "cancel": "Cancelar",
+    "reset": "Restablecer",
+    "success": "Perfil actualizado correctamente",
+    "error": "Error al actualizar el perfil",
+    "avatar": {
+        "change": "Cambiar foto",
+        "fallback": "Subir foto"
+    },
+    "sections": {
+        "personal": "Datos Personales"
+    }
+}
