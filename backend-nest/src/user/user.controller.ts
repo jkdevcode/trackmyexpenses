@@ -2,6 +2,7 @@ import { Controller, Get, Patch, Delete, UseGuards, Request, Body, Param, ParseI
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { FileInterceptor } from '@nestjs/platform-express';
 
@@ -23,6 +24,11 @@ export class UserController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.userService.findOne(id);
+  }
+
+  @Patch('change-password')
+  async changePassword(@Body() dto: ChangePasswordDto, @Request() req: any) {
+    return this.userService.changePassword(req.user.id, dto);
   }
 
   @Patch(':id')

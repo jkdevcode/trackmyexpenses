@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, ConflictException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import * as bcrypt from 'bcrypt';
 
 // Define explicit select object to reuse and ensure password exclusion
 const userSelect = {
@@ -116,6 +118,39 @@ export class UserService {
     } catch (error: any) {
       throw new InternalServerErrorException('Error al actualizar el perfil');
     }
+  }
+
+  async changePassword(userId: number, dto: ChangePasswordDto) {
+    const user = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Verificar contraseña actual
+    const isPasswordValid = await bcrypt.compare(dto.currentPassword, user.contrasena);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('La contraseña actual es incorrecta');
+    }
+
+    // Hashear nueva contraseña
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+
+    // Actualizar contraseña
+    await this.prisma.usuario.update({
+      where: { id: userId },
+      data: {
+        contrasena: hashedPassword,
+        fechaUltimaEdicion: new Date(),
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'Contraseña actualizada exitosamente',
+    };
   }
 
   async getAllUsers() {
