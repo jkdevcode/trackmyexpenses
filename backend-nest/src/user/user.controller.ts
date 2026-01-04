@@ -1,8 +1,9 @@
-import { Controller, Get, Patch, Delete, UseGuards, Request, Body, Param, ParseIntPipe, UsePipes } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, UseGuards, Request, Body, Param, ParseIntPipe, UsePipes, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -26,8 +27,14 @@ export class UserController {
 
   @Patch(':id')
   @UsePipes(ZodValidationPipe)
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto, @Request() req: any) {
-    return this.userService.updateProfile(id, dto);
+  @UseInterceptors(FileInterceptor('foto'))
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateUserDto,
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: any
+  ) {
+    return this.userService.updateProfile(id, dto, file);
   }
 
   @Delete(':id')

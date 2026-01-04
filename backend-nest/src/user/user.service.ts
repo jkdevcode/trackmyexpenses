@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as fs from 'fs';
+import * as path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 // Define explicit select object to reuse and ensure password exclusion
 const userSelect = {
@@ -36,7 +39,7 @@ export class UserService {
     };
   }
 
-  async updateProfile(userId: number, dto: UpdateUserDto) {
+  async updateProfile(userId: number, dto: UpdateUserDto, file?: Express.Multer.File) {
     // 1. Validar si el correo o documento ya existen para otro usuario
     if (dto.correo || dto.documento) {
       const exists = await this.prisma.usuario.findFirst({
@@ -63,7 +66,32 @@ export class UserService {
     if (dto.apellidos !== undefined) data.apellidos = dto.apellidos;
     if (dto.correo !== undefined) data.correo = dto.correo;
     if (dto.documento !== undefined) data.documento = dto.documento;
-    if (dto.foto !== undefined) data.foto = dto.foto;
+
+    // 3. Manejar la subida de la foto si existe
+    if (file) {
+      const uploadDir = path.join(process.cwd(), 'uploads');
+
+      // Asegurar que la carpeta existe
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      // Generar nombre de archivo único
+      const fileExt = path.extname(file.originalname);
+      const fileName = `${uuidv4()}${fileExt}`;
+      const filePath = path.join(uploadDir, fileName);
+
+      try {
+        fs.writeFileSync(filePath, file.buffer);
+        data.foto = `/uploads/${fileName}`;
+      } catch (error) {
+        console.error('Error saving file:', error);
+        throw new InternalServerErrorException('Error al guardar la imagen');
+      }
+    } else if (dto.foto !== undefined) {
+      // Si no hay archivo pero viene una URL/string en el DTO (ej. borrar foto)
+      data.foto = dto.foto;
+    }
 
     try {
       const updated = await this.prisma.usuario.update({
