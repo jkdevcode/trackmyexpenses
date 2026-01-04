@@ -2,7 +2,6 @@ import {
   createContext,
   useContext,
   useState,
-  useEffect,
   FC,
   ReactNode,
 } from "react";
@@ -25,20 +24,12 @@ const COOKIE_CONSENT_KEY = "cookie-consent-status";
 export const CookieConsentProvider: FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [cookieConsent, setCookieConsent] =
-    useState<CookieConsentStatus>("pending");
-
-  // Charger l'état des cookies depuis localStorage au démarrage
-  useEffect(() => {
+  const [cookieConsent, setCookieConsent] = useState<CookieConsentStatus>(() => {
     const savedConsent = localStorage.getItem(COOKIE_CONSENT_KEY);
-
-    if (
-      savedConsent &&
-      (savedConsent === "accepted" || savedConsent === "rejected") // or  (savedConsent === "accepted") for showing the banner until the user accepts
-    ) {
-      setCookieConsent(savedConsent);
-    }
-  }, []);
+    return (savedConsent === "accepted" || savedConsent === "rejected")
+      ? savedConsent as CookieConsentStatus
+      : "pending";
+  });
 
   const acceptCookies = () => {
     setCookieConsent("accepted");

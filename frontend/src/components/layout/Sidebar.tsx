@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-/* import { useLocation } from "react-router-dom"; */
+import { useNavigate } from "react-router-dom";
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
 import { Tooltip } from "@heroui/tooltip";
@@ -20,6 +20,8 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
     const { t } = useTranslation();
     const { user, logout } = useSession();
     const ASSETS_URL = import.meta.env.VITE_ASSETS_URL;
+
+    const navigate = useNavigate();
 
     const avatarUrl = user?.foto
         ? `${ASSETS_URL}${user.foto}`
@@ -72,13 +74,17 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                         <ThemeSwitch />
                     </div>
 
-                    <div className="flex items-center gap-3 p-1 overflow-hidden">
+                    <div
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-default-100 cursor-pointer transition-colors overflow-hidden group"
+                        onClick={() => navigate("/profile")}
+                    >
                         <Avatar
                             isBordered
                             color={appColor}
                             size={isCollapsed ? "sm" : "md"}
                             src={avatarUrl}
                             alt="Avatar usuario"
+                            className="group-hover:scale-105 transition-transform"
                         />
                         {!isCollapsed && (
                             <div className="flex flex-col min-w-0">

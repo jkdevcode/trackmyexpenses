@@ -4,7 +4,7 @@ import { Navbar, NavbarBrand, NavbarContent, NavbarMenu, NavbarMenuToggle, Navba
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
-import { Link as RouterLink, useLocation } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 
 import { useSession } from "@/contexts/session-context";
 import { appColor } from "@/theme/theme.config";
@@ -17,6 +17,7 @@ export const MobileNavbar = () => {
     const { user, logout } = useSession();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
 
     const ASSETS_URL = import.meta.env.VITE_ASSETS_URL;
 
@@ -53,6 +54,8 @@ export const MobileNavbar = () => {
                     color={appColor}
                     src={avatarUrl}
                     size="sm"
+                    className="cursor-pointer"
+                    onClick={() => navigate("/profile")}
                 />
             </NavbarContent>
 
@@ -97,11 +100,17 @@ export const MobileNavbar = () => {
 
                     {/* User Info Section */}
                     <NavbarMenuItem>
-                        <div className="flex items-center gap-4 px-4 py-2">
+                        <div
+                            className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-default-100 cursor-pointer transition-colors group"
+                            onClick={() => {
+                                setIsMenuOpen(false);
+                                navigate("/profile");
+                            }}
+                        >
                             <Avatar
                                 isBordered
                                 color={appColor}
-                                className="w-12 h-12"
+                                className="w-12 h-12 group-hover:scale-105 transition-transform"
                                 src={avatarUrl}
                                 alt="Avatar usuario"
                             />
