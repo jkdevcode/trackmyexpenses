@@ -1,0 +1,36 @@
+{
+  "title": "Panel de Control",
+  "subtitle": "Resumen de tu actividad financiera",
+  "stats": {
+    "total_invoices": "Facturas Totales",
+    "total_products": "Productos Detectados",
+    "total_spent": "Gasto Total",
+    "current_period": "Este Periodo",
+    "vs_last_period": "vs periodo anterior"
+  },
+  "filters": {
+    "day": "Día",
+    "week": "Semana",
+    "month": "Mes",
+    "year": "Año"
+  },
+  "charts": {
+    "revenue_title": "Gastos por Mes",
+    "invoices_title": "Facturas Procesadas"
+  },
+  "table": {
+    "title": "Actividad Reciente",
+    "headers": {
+      "date": "Fecha",
+      "provider": "Proveedor",
+      "total": "Total",
+      "items": "Items",
+      "status": "Estado"
+    },
+    "empty": "No hay facturas recientes."
+  },
+  "actions": {
+    "view_all": "Ver todas",
+    "export": "Exportar"
+  }
+}

@@ -4,11 +4,11 @@ import { CookieConsentProvider } from "@/contexts/cookie-consent-context";
 import { CookieConsent } from "@/components/ui/cookie-consent";
 import { PageNotFound } from "@/pages/404";
 
-import IndexPage from "@/pages/index";
 import LandingPage from "@/pages/landing";
 import LoginPage from "@/features/auth/pages/Login";
 import RegisterPage from "@/features/auth/pages/Register";
 import ProfilePage from "@/features/user/pages/Profile";
+import Dashboard from "@/features/dashboard/pages/Dashboard";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { PublicOnlyRoute } from "@/features/auth/components/PublicOnlyRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -42,7 +42,7 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index path="/dashboard" element={<IndexPage />} />
+          <Route index path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/invoices" element={<div className="p-4">Facturas (WIP)</div>} />
           <Route path="/settings" element={<div className="p-4">Ajustes (WIP)</div>} />
