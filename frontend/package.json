@@ -27,6 +27,7 @@
     "@heroui/snippet": "^2.2.24-beta.3",
     "@heroui/switch": "^2.2.21-beta.2",
     "@heroui/system": "^2.4.19-beta.2",
+    "@heroui/table": "^2.2.29",
     "@heroui/theme": "^2.4.18-beta.7",
     "@heroui/toast": "^2.0.19",
     "@heroui/tooltip": "^2.2.20-beta.2",
@@ -42,6 +43,7 @@
     "react-dom": "^19.1.1",
     "react-i18next": "^15.5.1",
     "react-router-dom": "^7.5.3",
+    "recharts": "^3.7.0",
     "tailwind-variants": "^1.0.0",
     "tailwindcss": "^4.1.11",
     "yup": "^1.7.1"

@@ -62,7 +62,7 @@ i18n
       fallbackLng,
     fallbackLng: fallbackLng,
 
-    ns: ["common", "auth", "landing", "validation", "profile"],
+    ns: ["common", "auth", "landing", "validation", "profile", "dashboard"],
     defaultNS: "common",
     interpolation: {
       escapeValue: false, // react already safes from xss
