@@ -4,6 +4,7 @@ import { DateFilter } from "../components/DateFilter";
 import { StatsCards } from "../components/StatsCards";
 import { RevenueChart } from "../components/RevenueChart";
 import { InvoicesTable } from "../components/InvoicesTable";
+import { AverageTicketChart } from "../components/AverageTicketChart";
 import { useDashboardData } from "../hooks/useDashboardData";
 
 const Dashboard = () => {
@@ -46,6 +47,16 @@ const Dashboard = () => {
                     className="lg:col-span-1 bg-content1 rounded-2xl shadow-sm border border-default-100 p-6"
                 >
                     <InvoicesTable invoices={recentInvoices} loading={loading} />
+                </motion.section>
+
+                {/* Average Ticket Chart - Full Width Bottom */}
+                <motion.section
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="lg:col-span-2"
+                >
+                    <AverageTicketChart data={chartData} loading={loading} />
                 </motion.section>
             </div>
         </div>

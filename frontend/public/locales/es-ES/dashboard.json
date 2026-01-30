@@ -16,7 +16,12 @@
   },
   "charts": {
     "revenue_title": "Gastos por Mes",
-    "invoices_title": "Facturas Procesadas"
+    "invoices_title": "Facturas Procesadas",
+    "average_ticket_title": "Ticket Promedio",
+    "legend": {
+      "total": "Total Gastado",
+      "average": "Promedio"
+    }
   },
   "table": {
     "title": "Actividad Reciente",

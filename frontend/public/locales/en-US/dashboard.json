@@ -16,7 +16,12 @@
     },
     "charts": {
         "revenue_title": "Expenses by Month",
-        "invoices_title": "Processed Invoices"
+        "invoices_title": "Processed Invoices",
+        "average_ticket_title": "Average Ticket",
+        "legend": {
+            "total": "Total Spent",
+            "average": "Average"
+        }
     },
     "table": {
         "title": "Recent Activity",
