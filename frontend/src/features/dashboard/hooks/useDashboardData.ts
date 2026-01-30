@@ -15,6 +15,7 @@ export interface DashboardStats {
 export interface ExpenseData {
     name: string;
     value: number;
+    average?: number;
 }
 
 export interface Invoice {
@@ -88,12 +89,14 @@ export const useDashboardData = () => {
             // Chart Data (Group by Month)
             const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
             const chartMap = new Map<number, number>(); // monthIndex -> total
+            const countMap = new Map<number, number>(); // monthIndex -> count
 
             // Initialize last 6 months
             for (let i = 5; i >= 0; i--) {
                 const d = new Date();
                 d.setMonth(d.getMonth() - i);
                 chartMap.set(d.getMonth(), 0);
+                countMap.set(d.getMonth(), 0);
             }
 
             invoices.forEach(inv => {
@@ -101,17 +104,17 @@ export const useDashboardData = () => {
                     const m = inv.rawDate.getMonth();
                     if (chartMap.has(m)) {
                         chartMap.set(m, (chartMap.get(m) || 0) + inv.total);
+                        countMap.set(m, (countMap.get(m) || 0) + 1);
                     }
                 }
             });
 
             const processedChartData: ExpenseData[] = Array.from(chartMap.entries()).map(([monthIndex, value]) => ({
                 name: monthNames[monthIndex],
-                value
-            })).sort((a, b) => {
-                // This sort might be tricky with year wrapping, but for simple "last 6 months" generated logically above, 
-                // we can just map the pre-generated keys in order if we cared about order. 
-                // For now, let's keep it simple.
+                value,
+                average: (countMap.get(monthIndex) || 0) > 0 ? value / countMap.get(monthIndex)! : 0
+            })).sort(() => {
+                // Keep insertion order (chronological for last 6 months generated)
                 return 0;
             });
             // Re-sort chart data based on the key generation order to rely on map insertion order or strict logic if needed

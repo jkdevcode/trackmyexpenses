@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import {
     Table,
     TableHeader,
@@ -7,6 +8,7 @@ import {
     TableCell,
     getKeyValue,
 } from "@heroui/table";
+import { Pagination } from "@heroui/pagination";
 import { Chip } from "@heroui/chip";
 import { useTranslation } from "react-i18next";
 import { Invoice } from "../hooks/useDashboardData";
@@ -25,6 +27,17 @@ const statusColorMap: Record<string, "success" | "warning" | "danger" | "default
 
 export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
     const { t, i18n } = useTranslation("dashboard");
+    const [page, setPage] = useState(1);
+
+    const rowsPerPage = 2;
+    const pages = Math.ceil(invoices.length / rowsPerPage);
+
+    const items = useMemo(() => {
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        return invoices.slice(start, end);
+    }, [page, invoices]);
 
     if (loading) {
         return <div className="h-64 w-full animate-pulse bg-default-100 rounded-lg" />;
@@ -55,7 +68,7 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
     };
 
     return (
-        <div className="w-full">
+        <div className="w-10/12 lg:w-full">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">{t("table.title")}</h3>
             </div>
@@ -67,6 +80,21 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
                     td: "py-3 border-b border-default-100 last:border-0"
                 }}
                 isStriped={false}
+                bottomContent={
+                    pages > 1 ? (
+                        <div className="flex w-full justify-center">
+                            <Pagination
+                                isCompact
+                                showControls
+                                showShadow
+                                color={appColor}
+                                page={page}
+                                total={pages}
+                                onChange={(page: number) => setPage(page)}
+                            />
+                        </div>
+                    ) : null
+                }
             >
                 <TableHeader columns={columns}>
                     {(column) => (
@@ -78,8 +106,8 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
                         </TableColumn>
                     )}
                 </TableHeader>
-                <TableBody items={invoices} emptyContent={t("table.empty")}>
-                    {(item) => (
+                <TableBody items={items} emptyContent={t("table.empty")}>
+                    {(item: Invoice) => (
                         <TableRow key={item.id} className="hover:bg-default-50 cursor-pointer transition-colors">
                             {(columnKey) => {
                                 const cellValue = getKeyValue(item, columnKey);
