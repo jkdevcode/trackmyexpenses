@@ -39,11 +39,12 @@ export const useDashboardData = () => {
         setLoading(true);
         try {
             const [facturasRes, productosRes] = await Promise.all([
-                axiosClient.get("/facturas"),
+                axiosClient.get(`/facturas?period=${filter}`),
                 axiosClient.get("/productos"),
             ]);
 
             const facturasRaw = facturasRes.data.facturas || [];
+            const apiStats = facturasRes.data.stats || {};
             const productosRaw = productosRes.data.productos || [];
 
             // Process Invoices
@@ -60,38 +61,29 @@ export const useDashboardData = () => {
             // Sort by date desc
             invoices.sort((a, b) => (b.rawDate?.getTime() || 0) - (a.rawDate?.getTime() || 0));
 
-            // Calculate Stats
-            const totalInvoices = invoices.length;
-            const totalProducts = productosRaw.length;
-            const totalSpent = invoices.reduce((acc, curr) => acc + curr.total, 0);
-
-            // Filter logic (Client-side for now)
-            const now = new Date();
-            let currentPeriodInvoices = 0;
-
-            const filteredInvoices = invoices.filter(inv => {
-                if (!inv.rawDate) return false;
-                const invoiceDate = inv.rawDate;
-
-                if (filter === 'day') {
-                    return invoiceDate.toDateString() === now.toDateString();
-                } else if (filter === 'month') {
-                    return invoiceDate.getMonth() === now.getMonth() && invoiceDate.getFullYear() === now.getFullYear();
-                } else if (filter === 'year') {
-                    return invoiceDate.getFullYear() === now.getFullYear();
-                }
-                // 'week' logic is a bit more complex, fallback to month or implement if needed
-                return invoiceDate.getMonth() === now.getMonth() && invoiceDate.getFullYear() === now.getFullYear();
+            // Populate Stats from Backend
+            // We use backend provided stats for period info and totals, but we still need totalProducts from products response
+            setStats({
+                totalInvoices: apiStats.totalInvoices || 0,
+                totalProducts: productosRaw.length,
+                totalSpent: apiStats.totalSpending || 0,
+                currentPeriodInvoices: apiStats.currentPeriodInvoices || 0,
+                spendingTrend: apiStats.spendingTrend || 0,
             });
 
-            currentPeriodInvoices = filteredInvoices.length;
+            // Chart Data (Group by Month) - NOTE: This will now only show data available in the current filtered view
+            // If the user wants "Trend for last 6 months" INDEPENDENT of filter, we'd need a separate endpoint or request.
+            // For now, consistent behavior is that everything filters.
 
-            // Chart Data (Group by Month)
             const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
             const chartMap = new Map<number, number>(); // monthIndex -> total
             const countMap = new Map<number, number>(); // monthIndex -> count
 
-            // Initialize last 6 months
+            // If filter is 'year' or default, showing months makes sense.
+            // If filter is 'day', this chart might look empty. 
+            // We'll keep the logic generic for now based on returned data.
+
+            // Initialize last 6 months (optional: if filtered by year, maybe show all months of year? Keeping existing logic for now)
             for (let i = 5; i >= 0; i--) {
                 const d = new Date();
                 d.setMonth(d.getMonth() - i);
@@ -117,16 +109,7 @@ export const useDashboardData = () => {
                 // Keep insertion order (chronological for last 6 months generated)
                 return 0;
             });
-            // Re-sort chart data based on the key generation order to rely on map insertion order or strict logic if needed
-            // Actually, standard map iteration follows insertion order.
 
-            setStats({
-                totalInvoices,
-                totalProducts,
-                totalSpent,
-                currentPeriodInvoices,
-                spendingTrend: 0, // Need historical data for real trend
-            });
 
             setChartData(processedChartData);
             setRecentInvoices(invoices.slice(0, 5));
