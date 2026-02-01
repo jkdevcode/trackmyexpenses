@@ -13,7 +13,7 @@ export type HerouiColor =
   | "danger";
 
 export const THEME_CONFIG = {
-  appColor: "warning" as HerouiColor,
+  appColor: "danger" as HerouiColor,
 };
 
 export const appColor = THEME_CONFIG.appColor;
