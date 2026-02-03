@@ -9,6 +9,7 @@ import LoginPage from "@/features/auth/pages/Login";
 import RegisterPage from "@/features/auth/pages/Register";
 import ProfilePage from "@/features/user/pages/Profile";
 import Dashboard from "@/features/dashboard/pages/Dashboard";
+import { NewInvoicePage } from "@/pages/NewInvoicePage";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { PublicOnlyRoute } from "@/features/auth/components/PublicOnlyRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -44,7 +45,7 @@ function App() {
         >
           <Route index path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/invoices" element={<div className="p-4">Facturas (WIP)</div>} />
+          <Route path="/invoices" element={<NewInvoicePage />} />
           <Route path="/settings" element={<div className="p-4">Ajustes (WIP)</div>} />
         </Route>
         <Route element={<PageNotFound />} path="*" />

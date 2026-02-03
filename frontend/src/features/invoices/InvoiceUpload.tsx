@@ -1,0 +1,111 @@
+import { useState } from "react";
+import { Card, CardBody } from "@heroui/card";
+import { Button } from "@heroui/button";
+import { useTranslation } from "react-i18next";
+import { appColor } from "@/theme/theme.config";
+import axiosClient from "@/lib/axiosClient";
+import { ScanResponse } from "./types";
+import { addToast } from "@heroui/toast";
+
+interface InvoiceUploadProps {
+    onScanComplete: (data: ScanResponse) => void;
+}
+
+export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
+    const { t } = useTranslation("invoices"); // Assuming 'invoices' namespace
+    const [loading, setLoading] = useState(false);
+    const [dragActive, setDragActive] = useState(false);
+
+    const handleFile = async (file: File) => {
+        if (!file.type.startsWith("image/")) {
+            addToast({ title: "Error", description: t("upload.invalid_type"), color: "danger" });
+            return;
+        }
+
+        setLoading(true);
+        const formData = new FormData();
+        formData.append("image", file);
+
+        try {
+            const res = await axiosClient.post<ScanResponse>("/facturas/ocr", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            onScanComplete(res.data);
+            addToast({ title: "Éxito", description: t("upload.success"), color: "success" });
+        } catch (error) {
+            console.error(error);
+            addToast({ title: "Error", description: t("upload.error"), color: "danger" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFile(e.dataTransfer.files[0]);
+        }
+    };
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            handleFile(e.target.files[0]);
+        }
+    };
+
+    return (
+        <Card className={`w-full max-w-xl mx-auto border-2 border-dashed transition-colors ${dragActive ? `border-${appColor}-500 bg-${appColor}-50` : "border-default-300"}`}>
+            <CardBody className="py-12 flex flex-col items-center justify-center gap-4 text-center"
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+            >
+                <div className={`p-4 rounded-full bg-default-100 text-4xl mb-2`}>
+                    📄
+                </div>
+
+                <div className="space-y-1">
+                    <h3 className="text-xl font-semibold">{t("upload.title", "Sube tu factura")}</h3>
+                    <p className="text-default-500 text-sm">
+                        {t("upload.subtitle", "Arrastra una imagen o haz clic para seleccionar")}
+                    </p>
+                </div>
+
+                <div className="flex gap-2 mt-2">
+                    <input
+                        id="invoice-upload"
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleChange}
+                        disabled={loading}
+                    />
+                    <Button
+                        color={appColor}
+                        isLoading={loading}
+                        onPress={() => document.getElementById("invoice-upload")?.click()}
+                    >
+                        {loading ? t("upload.processing", "Procesando...") : t("upload.select_file", "Seleccionar Archivo")}
+                    </Button>
+                </div>
+
+                <p className="text-xs text-default-400 mt-2">
+                    JPEG, PNG, WEBP (Max 5MB)
+                </p>
+            </CardBody>
+        </Card>
+    );
+};
