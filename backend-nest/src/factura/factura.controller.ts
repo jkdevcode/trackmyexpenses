@@ -6,6 +6,8 @@ import { AddProductoFacturaDto } from './dto/add-producto.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ZodValidationPipe } from 'nestjs-zod';
 
+import { GetFacturasQueryDto } from './dto/get-facturas-query.dto';
+
 @Controller('facturas')
 @UseGuards(JwtAuthGuard)
 export class FacturaController {
@@ -18,8 +20,9 @@ export class FacturaController {
   }
 
   @Get()
-  async findAll(@Request() req: any, @Query('period') period?: PeriodFilter) {
-    return this.facturaService.findAll(req.user.id, period);
+  @UsePipes(ZodValidationPipe)
+  async findAll(@Request() req: any, @Query() query: GetFacturasQueryDto) {
+    return this.facturaService.findAll(req.user.id, query.period);
   }
 
   @Post(':id/productos')
