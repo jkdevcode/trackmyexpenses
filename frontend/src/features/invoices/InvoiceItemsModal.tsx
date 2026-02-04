@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { appColor } from "@/theme/theme.config";
 import { useState, useMemo } from "react";
 import { ProductSuggestion } from "./types";
-import { DeleteIcon } from "@/components/ui/icons";
+import { DeleteIcon, SearchIcon } from "@/components/ui/icons";
 
 interface InvoiceItemsModalProps {
     isOpen: boolean;
@@ -71,20 +71,20 @@ export const InvoiceItemsModal = ({ isOpen, onClose, products, onProductsChange 
         <Modal isOpen={isOpen} onClose={onClose} size="5xl" scrollBehavior="inside">
             <ModalContent>
                 <ModalHeader className="flex flex-col gap-1">
-                    {t("modal.title", "Detalle de Productos")}
+                    {t("modal.title")}
                     <span className="text-sm font-normal text-default-500">
-                        {products.length} {t("modal.items_count", "items encontrados")}
+                        {products.length} {t("modal.items_count")}
                     </span>
                 </ModalHeader>
                 <ModalBody>
                     <div className="flex justify-between items-center mb-4">
                         <Input
-                            placeholder={t("modal.search", "Buscar producto...")}
+                            placeholder={t("modal.search")}
                             value={filterValue}
                             onValueChange={setFilterValue}
                             className="max-w-xs"
                             size="sm"
-                            startContent="🔍"
+                            startContent={<SearchIcon className="text-default-400" />}
                         />
                     </div>
 
@@ -104,12 +104,12 @@ export const InvoiceItemsModal = ({ isOpen, onClose, products, onProductsChange 
                         ) : null
                     }>
                         <TableHeader>
-                            <TableColumn>PRODUCTO</TableColumn>
-                            <TableColumn>CANT</TableColumn>
-                            <TableColumn>UNIDAD</TableColumn>
-                            <TableColumn>PRECIO UNIT.</TableColumn>
-                            <TableColumn>TOTAL</TableColumn>
-                            <TableColumn>ACCIONES</TableColumn>
+                            <TableColumn>{t("modal.columns.product")}</TableColumn>
+                            <TableColumn>{t("modal.columns.qty")}</TableColumn>
+                            <TableColumn>{t("modal.columns.unit")}</TableColumn>
+                            <TableColumn>{t("modal.columns.price")}</TableColumn>
+                            <TableColumn>{t("modal.columns.total")}</TableColumn>
+                            <TableColumn>{t("modal.columns.actions")}</TableColumn>
                         </TableHeader>
                         <TableBody items={items}>
                             {(item: ProductSuggestion) => {
@@ -178,7 +178,7 @@ export const InvoiceItemsModal = ({ isOpen, onClose, products, onProductsChange 
                 </ModalBody>
                 <ModalFooter>
                     <Button color={appColor} onPress={onClose}>
-                        {t("modal.close", "Cerrar")}
+                        {t("modal.close")}
                     </Button>
                 </ModalFooter>
             </ModalContent>

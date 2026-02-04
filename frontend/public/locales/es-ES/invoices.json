@@ -1,0 +1,56 @@
+{
+  "page": {
+    "title": "Nueva Factura"
+  },
+  "upload": {
+    "title": "Sube tu factura",
+    "subtitle": "Arrastra una imagen o haz clic para seleccionar",
+    "select_file": "Seleccionar Archivo",
+    "processing": "Procesando...",
+    "success": "Imagen procesada correctamente",
+    "error": "Error al procesar la imagen",
+    "invalid_type": "Por favor, sube solo archivos de imagen"
+  },
+  "form": {
+    "title": "Revisión de Factura",
+    "subtitle": "Verifica los datos extraídos antes de guardar.",
+    "provider": "Lugar de Compra",
+    "nit": "NIT Proveedor",
+    "date": "Fecha",
+    "payment_method": "Método de Pago",
+    "total": "Total a Pagar (Auto-calculado)",
+    "total_desc": "Calculado basándose en la lista de productos.",
+    "products_title": "Detalle de Productos",
+    "items": "Items",
+    "edit": "Ampliar / Editar",
+    "cancel": "Cancelar",
+    "save": "Guardar Factura"
+  },
+  "summary": {
+    "products_detected": "Productos detectados",
+    "calculated_total": "Total Calculado",
+    "view_details": "Ver Productos"
+  },
+  "modal": {
+    "title": "Detalle de Productos",
+    "items_count": "items encontrados",
+    "search": "Buscar producto...",
+    "close": "Cerrar",
+    "columns": {
+        "product": "PRODUCTO",
+        "qty": "CANT",
+        "unit": "UNIDAD",
+        "price": "PRECIO UNIT.",
+        "total": "TOTAL",
+        "actions": "ACCIONES"
+    }
+  },
+  "confirm": {
+    "title": "Confirmar Registro",
+    "message": "¿Estás seguro de que deseas registrar esta factura?",
+    "products": "Productos",
+    "total": "Total a Pagar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar y Guardar"
+  }
+}

@@ -105,16 +105,16 @@ export const NewInvoicePage = () => {
             {/* Confirmation Dialog */}
             <Modal isOpen={isConfirmOpen} onClose={onConfirmClose}>
                 <ModalContent>
-                    <ModalHeader className="flex flex-col gap-1">{t("confirm.title", "Confirmar Registro")}</ModalHeader>
+                    <ModalHeader className="flex flex-col gap-1">{t("confirm.title")}</ModalHeader>
                     <ModalBody>
-                        <p>{t("confirm.message", "¿Estás seguro de que deseas registrar esta factura?")}</p>
+                        <p>{t("confirm.message")}</p>
                         <div className="bg-default-100 p-4 rounded-lg space-y-2 mt-2">
                             <div className="flex justify-between">
-                                <span className="font-semibold">{t("confirm.products", "Productos:")}</span>
+                                <span className="font-semibold">{t("confirm.products")}:</span>
                                 <span>{pendingData?.products.length}</span>
                             </div>
                             <div className="flex justify-between text-lg">
-                                <span className="font-bold">{t("confirm.total", "Total a Pagar:")}</span>
+                                <span className="font-bold">{t("confirm.total")}:</span>
                                 <span className={`font-bold text-${appColor}-600`}>
                                     ${new Intl.NumberFormat('es-CO').format(pendingData?.formData.totalPagar || 0)}
                                 </span>
@@ -123,10 +123,10 @@ export const NewInvoicePage = () => {
                     </ModalBody>
                     <ModalFooter>
                         <Button color="danger" variant="light" onPress={onConfirmClose}>
-                            {t("confirm.cancel", "Cancelar")}
+                            {t("confirm.cancel")}
                         </Button>
                         <Button color="primary" onPress={handleConfirmSave} isLoading={saving}>
-                            {t("confirm.confirm", "Confirmar y Guardar")}
+                            {t("confirm.confirm")}
                         </Button>
                     </ModalFooter>
                 </ModalContent>
