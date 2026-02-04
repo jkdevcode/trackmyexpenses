@@ -6,6 +6,7 @@ import { appColor } from "@/theme/theme.config";
 import axiosClient from "@/lib/axiosClient";
 import { ScanResponse } from "./types";
 import { addToast } from "@heroui/toast";
+import { GalleryIcon } from "@/components/ui/icons";
 
 interface InvoiceUploadProps {
     onScanComplete: (data: ScanResponse) => void;
@@ -73,14 +74,14 @@ export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
             >
-                <div className={`p-4 rounded-full bg-default-100 text-4xl mb-2`}>
-                    📄
+                <div className={`p-4 rounded-full bg-default-100 text-${appColor}-500 mb-2`}>
+                    <GalleryIcon size={48} />
                 </div>
 
                 <div className="space-y-1">
-                    <h3 className="text-xl font-semibold">{t("upload.title", "Sube tu factura")}</h3>
+                    <h3 className="text-xl font-semibold">{t("upload.title")}</h3>
                     <p className="text-default-500 text-sm">
-                        {t("upload.subtitle", "Arrastra una imagen o haz clic para seleccionar")}
+                        {t("upload.subtitle")}
                     </p>
                 </div>
 
@@ -98,7 +99,7 @@ export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
                         isLoading={loading}
                         onPress={() => document.getElementById("invoice-upload")?.click()}
                     >
-                        {loading ? t("upload.processing", "Procesando...") : t("upload.select_file", "Seleccionar Archivo")}
+                        {loading ? t("upload.processing") : t("upload.select_file")}
                     </Button>
                 </div>
 

@@ -1,0 +1,56 @@
+{
+  "page": {
+    "title": "New Invoice"
+  },
+  "upload": {
+    "title": "Upload your invoice",
+    "subtitle": "Drag an image or click to select",
+    "select_file": "Select File",
+    "processing": "Processing...",
+    "success": "Image processed successfully",
+    "error": "Error processing image",
+    "invalid_type": "Please upload image files only"
+  },
+  "form": {
+    "title": "Invoice Review",
+    "subtitle": "Verifyextracted data before saving.",
+    "provider": "Purchase Location",
+    "nit": "Provider NIT",
+    "date": "Date",
+    "payment_method": "Payment Method",
+    "total": "Total to Pay (Auto-calculated)",
+    "total_desc": "Calculated based on the product list.",
+    "products_title": "Product Details",
+    "items": "Items",
+    "edit": "Expand / Edit",
+    "cancel": "Cancel",
+    "save": "Save Invoice"
+  },
+  "summary": {
+    "products_detected": "Products detected",
+    "calculated_total": "Calculated Total",
+    "view_details": "View Products"
+  },
+  "modal": {
+    "title": "Product Details",
+    "items_count": "items found",
+    "search": "Search product...",
+    "close": "Close",
+    "columns": {
+        "product": "PRODUCT",
+        "qty": "QTY",
+        "unit": "UNIT",
+        "price": "UNIT PRICE",
+        "total": "TOTAL",
+        "actions": "ACTIONS"
+    }
+  },
+  "confirm": {
+    "title": "Confirm Registration",
+    "message": "Are you sure you want to register this invoice?",
+    "products": "Products",
+    "total": "Total to Pay",
+    "cancel": "Cancel",
+    "confirm": "Confirm and Save"
+  }
+}

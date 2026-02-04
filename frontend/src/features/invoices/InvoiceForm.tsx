@@ -4,6 +4,8 @@ import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { useDisclosure } from "@heroui/modal";
 import { Select, SelectItem } from "@heroui/select";
+import { DatePicker } from "@heroui/date-picker";
+import { parseDate, getLocalTimeZone, today } from "@internationalized/date";
 import { useTranslation } from "react-i18next";
 import { appColor } from "@/theme/theme.config";
 import { ParsedInvoice, ProductSuggestion } from "./types";
@@ -50,50 +52,53 @@ export const InvoiceForm = ({ initialData, onSave, onCancel, saving }: InvoiceFo
         <div className="space-y-6 max-w-4xl mx-auto">
             <Card>
                 <CardHeader className="flex flex-col items-start gap-1 pb-0">
-                    <h2 className="text-xl font-bold">{t("form.title", "Revisión de Factura")}</h2>
-                    <p className="text-sm text-default-500">{t("form.subtitle", "Verifica los datos extraídos antes de guardar.")}</p>
+                    <h2 className="text-xl font-bold">{t("form.title")}</h2>
+                    <p className="text-sm text-default-500">{t("form.subtitle")}</p>
                 </CardHeader>
                 <CardBody className="gap-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input
-                            label={t("form.provider", "Lugar de Compra")}
+                            label={t("form.provider")}
                             value={lugarCompra}
                             onValueChange={setLugarCompra}
                             variant="bordered"
+                            isRequired
                         />
                         <Input
-                            label={t("form.nit", "NIT Proveedor")}
+                            label={t("form.nit")}
                             value={nitProveedor}
                             onValueChange={setNitProveedor}
                             variant="bordered"
                         />
-                        <Input
-                            type="date"
-                            label={t("form.date", "Fecha")}
-                            value={fecha}
-                            onValueChange={setFecha}
+                        <DatePicker
+                            label={t("form.date")}
+                            value={fecha ? parseDate(fecha) : today(getLocalTimeZone())}
+                            onChange={(date: any) => setFecha(date ? date.toString() : "")}
                             variant="bordered"
+                            isRequired
+                            maxValue={today(getLocalTimeZone())}
                         />
                         <Select
-                            label={t("form.payment_method", "Método de Pago")}
+                            label={t("form.payment_method")}
                             selectedKeys={[metodoPago]}
                             onChange={(e) => setMetodoPago(e.target.value)}
                             variant="bordered"
+                            isRequired
                         >
-                            <SelectItem key="EFECTIVO">Efectivo</SelectItem>
-                            <SelectItem key="TARJETA_CREDITO">Tarjeta Crédito</SelectItem>
-                            <SelectItem key="TARJETA_DEBITO">Tarjeta Débito</SelectItem>
-                            <SelectItem key="TRANSFERENCIA">Transferencia</SelectItem>
-                            <SelectItem key="OTRO">Otro</SelectItem>
+                            <SelectItem key="EFECTIVO">{t("common.cash", "Efectivo")}</SelectItem>
+                            <SelectItem key="TARJETA_CREDITO">{t("common.credit_card", "Tarjeta Crédito")}</SelectItem>
+                            <SelectItem key="TARJETA_DEBITO">{t("common.debit_card", "Tarjeta Débito")}</SelectItem>
+                            <SelectItem key="TRANSFERENCIA">{t("common.transfer", "Transferencia")}</SelectItem>
+                            <SelectItem key="OTRO">{t("common.other", "Otro")}</SelectItem>
                         </Select>
                     </div>
 
                     <div className="border-t border-default-200 pt-4 mt-2">
                         <Input
-                            label={t("form.total", "Total a Pagar (Auto-calculado)")}
+                            label={t("form.total")}
                             value={`$ ${new Intl.NumberFormat('es-CO').format(totalPagar)}`}
                             readOnly
-                            description={t("form.total_desc", "Calculado basándose en la lista de productos.")}
+                            description={t("form.total_desc")}
                             className="font-bold text-lg"
                             color={appColor}
                         />
@@ -103,7 +108,7 @@ export const InvoiceForm = ({ initialData, onSave, onCancel, saving }: InvoiceFo
 
             {/* Products Section */}
             <div>
-                <h3 className="text-lg font-semibold mb-2 ml-1">{t("form.products_title", "Detalle de Productos")}</h3>
+                <h3 className="text-lg font-semibold mb-2 ml-1">{t("form.products_title")}</h3>
 
                 {products.length > 10 ? (
                     <InvoiceSummary
@@ -114,9 +119,9 @@ export const InvoiceForm = ({ initialData, onSave, onCancel, saving }: InvoiceFo
                 ) : (
                     <Card className="p-4">
                         <div className="flex justify-between items-center mb-4">
-                            <span className="font-semibold">{products.length} {t("form.items", "Items")}</span>
+                            <span className="font-semibold">{products.length} {t("form.items")}</span>
                             <Button size="sm" variant="flat" onPress={onOpen}>
-                                {t("form.edit", "Ampliar / Editar")}
+                                {t("form.edit")}
                             </Button>
                         </div>
                         <ul className="space-y-2">
@@ -133,10 +138,10 @@ export const InvoiceForm = ({ initialData, onSave, onCancel, saving }: InvoiceFo
 
             <div className="flex gap-4 justify-end pt-4">
                 <Button color="danger" variant="flat" onPress={onCancel}>
-                    {t("form.cancel", "Cancelar")}
+                    {t("form.cancel")}
                 </Button>
                 <Button color={appColor} onPress={handleSubmit} isLoading={saving}>
-                    {t("form.save", "Guardar Factura")}
+                    {t("form.save")}
                 </Button>
             </div>
 
