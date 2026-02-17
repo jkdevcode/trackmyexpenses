@@ -1,13 +1,19 @@
-import { Injectable, NotFoundException, UnauthorizedException, ConflictException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  ConflictException,
+  ForbiddenException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import * as fs from 'fs';
-import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
+import { StorageService } from '../infra/storage/storage.service';
 
-// Define explicit select object to reuse and ensure password exclusion
 const userSelect = {
   id: true,
   tipoDocumento: true,
@@ -22,7 +28,10 @@ const userSelect = {
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private storage: StorageService,
+  ) {}
 
   async me(userId: number) {
     const user = await this.prisma.usuario.findUnique({
@@ -41,26 +50,38 @@ export class UserService {
     };
   }
 
-  async updateProfile(userId: number, dto: UpdateUserDto, file?: Express.Multer.File) {
-    // 1. Validar si el correo o documento ya existen para otro usuario
+  async updateProfile(
+    userId: number,
+    dto: UpdateUserDto,
+    fileBuffer?: Buffer,
+    originalName?: string,
+  ) {
     if (dto.correo || dto.documento) {
+      const orConditions: { correo?: string; documento?: string }[] = [];
+
+      if (dto.correo) {
+        orConditions.push({ correo: dto.correo });
+      }
+
+      if (dto.documento) {
+        orConditions.push({ documento: dto.documento });
+      }
+
       const exists = await this.prisma.usuario.findFirst({
         where: {
-          OR: [
-            dto.correo ? { correo: dto.correo } : undefined,
-            dto.documento ? { documento: dto.documento } : undefined,
-          ].filter(Boolean) as any,
+          OR: orConditions,
           NOT: { id: userId },
         },
       });
 
       if (exists) {
-        throw new ConflictException('El correo o documento ya está en uso por otro usuario');
+        throw new ConflictException(
+          'El correo o documento ya esta en uso por otro usuario',
+        );
       }
     }
 
-    // 2. Construir el objeto data dinámicamente para actualización parcial (seguridad)
-    const data: any = {
+    const data: Prisma.UsuarioUpdateInput = {
       fechaUltimaEdicion: new Date(),
     };
 
@@ -69,29 +90,16 @@ export class UserService {
     if (dto.correo !== undefined) data.correo = dto.correo;
     if (dto.documento !== undefined) data.documento = dto.documento;
 
-    // 3. Manejar la subida de la foto si existe
-    if (file) {
-      const uploadDir = path.join(process.cwd(), 'uploads');
-
-      // Asegurar que la carpeta existe
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
-      // Generar nombre de archivo único
-      const fileExt = path.extname(file.originalname);
-      const fileName = `${uuidv4()}${fileExt}`;
-      const filePath = path.join(uploadDir, fileName);
-
+    if (fileBuffer) {
       try {
-        fs.writeFileSync(filePath, file.buffer);
-        data.foto = `/uploads/${fileName}`;
-      } catch (error) {
-        console.error('Error saving file:', error);
+        const extMatch = originalName?.match(/\.[^./\\]+$/);
+        const fileExt = extMatch?.[0] ?? '';
+        const fileName = `${uuidv4()}${fileExt}`;
+        data.foto = await this.storage.upload(fileBuffer, fileName);
+      } catch {
         throw new InternalServerErrorException('Error al guardar la imagen');
       }
     } else if (dto.foto !== undefined) {
-      // Si no hay archivo pero viene una URL/string en el DTO (ej. borrar foto)
       data.foto = dto.foto;
     }
 
@@ -115,7 +123,7 @@ export class UserService {
         message: 'Perfil actualizado exitosamente',
         user: updated,
       };
-    } catch (error: any) {
+    } catch {
       throw new InternalServerErrorException('Error al actualizar el perfil');
     }
   }
@@ -129,16 +137,16 @@ export class UserService {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    // Verificar contraseña actual
-    const isPasswordValid = await bcrypt.compare(dto.currentPassword, user.contrasena);
+    const isPasswordValid = await bcrypt.compare(
+      dto.currentPassword,
+      user.contrasena,
+    );
     if (!isPasswordValid) {
-      throw new UnauthorizedException('La contraseña actual es incorrecta');
+      throw new UnauthorizedException('La contrasena actual es incorrecta');
     }
 
-    // Hashear nueva contraseña
     const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
 
-    // Actualizar contraseña
     await this.prisma.usuario.update({
       where: { id: userId },
       data: {
@@ -149,7 +157,7 @@ export class UserService {
 
     return {
       status: 200,
-      message: 'Contraseña actualizada exitosamente',
+      message: 'Contrasena actualizada exitosamente',
     };
   }
 
@@ -182,17 +190,11 @@ export class UserService {
     return {
       status: 200,
       message: 'Usuario obtenido exitosamente',
-      user
+      user,
     };
   }
 
   async deleteUser(id: number, currentUserId: number) {
-    if (isNaN(id)) {
-      // NestJS param parsing usually handles this if ParseIntPipe is used, 
-      // but logic requires manually checking in some cases if pipe not strict.
-      // We will rely on Controller Pipe.
-    }
-
     const userExists = await this.prisma.usuario.findUnique({
       where: { id },
     });
