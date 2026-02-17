@@ -1,14 +1,19 @@
-import { Injectable, InternalServerErrorException, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AddProductoFacturaDto } from './dto/add-producto.dto';
 import { CreateFacturaDto } from './dto/create-factura.dto';
-import { v4 as uuidv4 } from 'uuid';
 import { Prisma } from '@prisma/client';
 
 import { PeriodFilter } from './factura.types';
 
 @Injectable()
 export class FacturaService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(userId: number, dto: CreateFacturaDto) {
     try {
@@ -21,7 +26,7 @@ export class FacturaService {
       const factura = await this.prisma.factura.create({
         data: {
           codigoFactura: codigoFactura,
-          metodoPago: dto.metodoPago as any, // Enum cast
+          metodoPago: dto.metodoPago, // Enum cast
           lugarCompra: dto.lugarCompra || 'Comercio Desconocido',
           nitProveedor: dto.nitProveedor,
           fechaHoraCompra: new Date(dto.fecha),
@@ -42,11 +47,16 @@ export class FacturaService {
     }
   }
 
-  async findAll(userId: number, period: PeriodFilter = 'month') {
+  async findAll(
+    userId: number,
+    period: PeriodFilter = 'month',
+    page = 1,
+    limit = 20,
+  ) {
     try {
       const now = new Date();
-      let startDate = new Date();
-      let endDate = new Date();
+      const startDate = new Date();
+      const endDate = new Date();
       let prevStartDate = new Date();
       let prevEndDate = new Date();
 
@@ -63,7 +73,7 @@ export class FacturaService {
           prevEndDate.setDate(now.getDate() - 1);
           prevEndDate.setHours(23, 59, 59, 999);
           break;
-        case 'week':
+        case 'week': {
           // Current week (starting Monday)
           const day = now.getDay();
           const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
@@ -75,6 +85,7 @@ export class FacturaService {
           prevEndDate.setDate(prevStartDate.getDate() + 6);
           prevEndDate.setHours(23, 59, 59, 999);
           break;
+        }
         case 'year':
           startDate.setMonth(0, 1);
 
@@ -95,24 +106,41 @@ export class FacturaService {
       }
 
       // Fetch current period invoices
-      const facturas = await this.prisma.factura.findMany({
-        where: {
-          usuarioId: userId,
-          fechaHoraCompra: {
-            gte: startDate,
-            lte: endDate
-          }
+      const where = {
+        usuarioId: userId,
+        fechaHoraCompra: {
+          gte: startDate,
+          lte: endDate,
         },
+      };
+
+      const skip = (page - 1) * limit;
+
+      const facturas = await this.prisma.factura.findMany({
+        where,
         orderBy: {
           fechaHoraCompra: 'desc',
+        },
+        skip,
+        take: limit,
+      });
+
+      const total = await this.prisma.factura.count({
+        where,
+      });
+
+      const currentPeriodAggregate = await this.prisma.factura.aggregate({
+        where,
+        _sum: {
+          totalPagar: true,
         },
       });
 
       // Calculate current stats
-      const currentPeriodInvoices = facturas.length;
-      const totalSpending = facturas.reduce((sum, f) => sum + Number(f.totalPagar), 0);
+      const currentPeriodInvoices = total;
+      const totalSpending = Number(currentPeriodAggregate._sum.totalPagar) || 0;
       const totalInvoices = await this.prisma.factura.count({
-        where: { usuarioId: userId }
+        where: { usuarioId: userId },
       });
 
       // Fetch previous period total for trend
@@ -121,20 +149,22 @@ export class FacturaService {
           usuarioId: userId,
           fechaHoraCompra: {
             gte: prevStartDate,
-            lte: prevEndDate
-          }
+            lte: prevEndDate,
+          },
         },
         _sum: {
-          totalPagar: true
-        }
+          totalPagar: true,
+        },
       });
 
-      const prevTotalSpending = Number(prevFacturasAggregate._sum.totalPagar) || 0;
+      const prevTotalSpending =
+        Number(prevFacturasAggregate._sum.totalPagar) || 0;
 
       // Calculate trend
       let spendingTrend = 0;
       if (prevTotalSpending > 0) {
-        spendingTrend = ((totalSpending - prevTotalSpending) / prevTotalSpending) * 100;
+        spendingTrend =
+          ((totalSpending - prevTotalSpending) / prevTotalSpending) * 100;
       } else if (totalSpending > 0) {
         spendingTrend = 100; // 100% increase if previous was 0 and current is > 0
       }
@@ -142,13 +172,19 @@ export class FacturaService {
       return {
         status: 200,
         message: 'Facturas obtenidas exitosamente',
+        data: facturas,
         facturas,
+        pagination: {
+          page,
+          limit,
+          total,
+        },
         stats: {
           currentPeriodInvoices,
           totalSpending,
           spendingTrend: Number(spendingTrend.toFixed(1)),
-          totalInvoices
-        }
+          totalInvoices,
+        },
       };
     } catch (error) {
       console.error('Error al obtener facturas:', error);
@@ -156,20 +192,21 @@ export class FacturaService {
     }
   }
 
-  async addProducto(userId: number, facturaId: number, dto: any) {
-    // dto is { productoId, cantidad, descuento } from AddProductoFacturaDto
-
+  async addProducto(
+    userId: number,
+    facturaId: number,
+    dto: AddProductoFacturaDto,
+  ) {
     // Check Factura ownership
-    const factura = await this.prisma.factura.findUnique({
-      where: { id: facturaId },
+    const factura = await this.prisma.factura.findFirst({
+      where: {
+        id: facturaId,
+        usuarioId: userId,
+      },
     });
 
     if (!factura) {
       throw new NotFoundException('Factura no encontrada');
-    }
-
-    if (factura.usuarioId !== userId) {
-      throw new ForbiddenException('No tienes permiso para modificar esta factura');
     }
 
     // Check Producto existence
@@ -201,8 +238,8 @@ export class FacturaService {
           },
         });
 
-        // Recalculate total for safety or just increment? 
-        // Safer to sum all products again or increment. 
+        // Recalculate total for safety or just increment?
+        // Safer to sum all products again or increment.
         // Let's increment current total + new item total.
         // Wait, current total might be stale? Transaction ensures isolation mostly.
         // But better is implicit calc.
@@ -211,13 +248,13 @@ export class FacturaService {
         const updatedFactura = await tx.factura.update({
           where: { id: facturaId },
           data: {
-            totalPagar: { increment: precioTotal }
+            totalPagar: { increment: precioTotal },
           },
           include: {
             productos: {
-              include: { producto: true }
-            }
-          }
+              include: { producto: true },
+            },
+          },
         });
 
         return { fp, updatedFactura };
@@ -226,15 +263,21 @@ export class FacturaService {
       return {
         status: 201,
         message: 'Producto agregado a factura exitosamente',
-        data: result
+        data: result,
       };
-
-    } catch (error) {
-      if (error.code === 'P2002') { // Unique constraint violation? (facturaId, productoId)
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         throw new ConflictException('El producto ya está en la factura');
       }
+
       console.error('Error agregando producto:', error);
-      throw new InternalServerErrorException('Error al agregar producto a factura');
+
+      throw new InternalServerErrorException(
+        'Error al agregar producto a factura',
+      );
     }
   }
 }
