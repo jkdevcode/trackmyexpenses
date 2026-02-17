@@ -1,23 +1,39 @@
-import { Injectable, ConflictException, UnauthorizedException, ForbiddenException, InternalServerErrorException, Body, UploadedFile } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  ForbiddenException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterUserDto } from './dto/register.dto';
 import { LoginUserDto } from './dto/login.dto';
+import { StorageService } from '../infra/storage/storage.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) { }
+    private storage: StorageService,
+  ) {}
 
   async register(
-    @Body() dto: RegisterUserDto,
-    @UploadedFile() foto?: Express.Multer.File
+    dto: RegisterUserDto,
+    fotoBuffer?: Buffer,
+    fotoOriginalName?: string,
   ) {
     try {
-      const { tipoDocumento, documento, nombres, apellidos, correo, contrasena } = dto;
+      const {
+        tipoDocumento,
+        documento,
+        nombres,
+        apellidos,
+        correo,
+        contrasena,
+      } = dto;
 
       const exists = await this.prisma.usuario.findFirst({
         where: {
@@ -32,18 +48,12 @@ export class AuthService {
       const hashedPassword = await bcrypt.hash(contrasena, 10); // BCRYPT_SALT_ROUNDS=10
 
       let fotoPath = null;
-      if (foto) {
-        const fs = await import('fs');
-        const path = await import('path');
-        const uploadDir = path.join(process.cwd(), 'uploads', 'users');
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
+      if (fotoBuffer) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = path.extname(foto.originalname);
-        const filename = `user-${uniqueSuffix}${ext}`;
-        fs.writeFileSync(path.join(uploadDir, filename), foto.buffer);
-        fotoPath = `/uploads/users/${filename}`;
+        const extMatch = fotoOriginalName?.match(/\.[^./\\]+$/);
+        const ext = extMatch?.[0] ?? '';
+        const filename = `users/user-${uniqueSuffix}${ext}`;
+        fotoPath = await this.storage.upload(fotoBuffer, filename);
       }
 
       const newUser = await this.prisma.usuario.create({
@@ -67,19 +77,26 @@ export class AuthService {
         status: 200,
         message: `Se registró con éxito el usuario ${nombres} ${apellidos}`,
       };
-
-    } catch (error) {
-      if (error instanceof ConflictException || error instanceof ForbiddenException) {
+    } catch (error: unknown) {
+      if (
+        error instanceof ConflictException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new InternalServerErrorException(error.message);
+      if (error instanceof Error) {
+        throw new InternalServerErrorException(error.message);
+      }
+      throw new InternalServerErrorException('Error interno del servidor');
     }
   }
 
   async login(dto: LoginUserDto) {
     try {
       const { documento, contrasena } = dto;
-      const user = await this.prisma.usuario.findUnique({ where: { documento } });
+      const user = await this.prisma.usuario.findUnique({
+        where: { documento },
+      });
 
       if (!user) {
         throw new UnauthorizedException('Credenciales inválidas');
@@ -106,11 +123,13 @@ export class AuthService {
         },
         token,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      throw new InternalServerErrorException(error.message);
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'Error interno del servidor',
+      );
     }
   }
 }
