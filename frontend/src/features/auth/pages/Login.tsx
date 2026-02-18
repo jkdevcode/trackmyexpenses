@@ -36,10 +36,10 @@ const LoginPage = () => {
         });
 
         if (response.status === 200 || response.status === 201) {
-          const { token, user } = response.data;
+          const { user } = response.data;
           const userInfo = Array.isArray(user) ? user[0] : user;
 
-          login(token, userInfo);
+          login(userInfo);
 
           addToast({
             title: t("auth:login.success"),

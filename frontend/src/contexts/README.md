@@ -3,7 +3,7 @@
 Global state providers using React Context API.
 
 ## Key Contexts
-*   **`SessionContext`**: Manages user authentication state, tokens, and session persistence.
+*   **`SessionContext`**: Manages authenticated user state. Session token is handled by HttpOnly cookies on the backend/browser side.
 *   **`ThemeContext`**: Controls light/dark mode theme switching.
 *   **`CookieConsentContext`**: Manages user consent for cookies.
 
