@@ -28,7 +28,6 @@ describe('TextParserHelper', () => {
   describe('detectWeightOrUnit', () => {
       it('should detect kg', () => {
           const r = TextParserHelper.detectWeightOrUnit('MANZANA ROJA 1.5 KG');
-          console.log('Detected KG:', r);
           expect(r).toEqual({ cantidad: 1.5, unidad: 'kg' });
       });
 

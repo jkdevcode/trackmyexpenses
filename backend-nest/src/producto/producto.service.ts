@@ -1,10 +1,19 @@
-import { Injectable, InternalServerErrorException, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
+import { Logger } from 'nestjs-pino';
 
 @Injectable()
 export class ProductoService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private logger: Logger,
+  ) {}
 
   async create(dto: CreateProductoDto) {
     try {
@@ -30,9 +39,9 @@ export class ProductoService {
         message: 'Producto creado exitosamente',
         producto,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof ConflictException) throw error;
-      console.error('Error al crear producto:', error);
+      this.logger.error({ msg: 'Error al crear producto', error });
       throw new InternalServerErrorException('Error al crear producto');
     }
   }
@@ -49,15 +58,15 @@ export class ProductoService {
         productos,
         total: productos.length,
       };
-    } catch (error) {
-       console.error('Error al obtener productos:', error);
-       throw new InternalServerErrorException('Error al obtener productos');
+    } catch (error: unknown) {
+      this.logger.error({ msg: 'Error al obtener productos', error });
+      throw new InternalServerErrorException('Error al obtener productos');
     }
   }
 
   async findOne(id: number) {
-     const producto = await this.prisma.producto.findUnique({ where: { id } });
-     if (!producto) throw new NotFoundException('Producto no encontrado');
-     return producto;
+    const producto = await this.prisma.producto.findUnique({ where: { id } });
+    if (!producto) throw new NotFoundException('Producto no encontrado');
+    return producto;
   }
 }

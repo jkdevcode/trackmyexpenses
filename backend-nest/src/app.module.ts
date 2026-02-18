@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { ServeStaticModule } from '@nestjs/serve-static'; 
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { LoggerModule } from 'nestjs-pino';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -11,15 +14,60 @@ import { UserModule } from './user/user.module';
 import { FacturaModule } from './factura/factura.module';
 import { ProductoModule } from './producto/producto.module';
 import { FacturaOcrModule } from './factura-ocr/factura-ocr.module';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { RequestLoggingInterceptor } from './common/interceptors/request-logging.interceptor';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    LoggerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const env = configService.get<string>('NODE_ENV', 'development');
+        const level = configService.get<string>(
+          'LOG_LEVEL',
+          env === 'production' ? 'info' : 'debug',
+        );
+
+        return {
+          pinoHttp: {
+            level,
+            autoLogging: false,
+            redact: ['req.headers.authorization'],
+            genReqId: (req) => {
+              const requestIdHeader = req.headers['x-request-id'];
+              if (
+                typeof requestIdHeader === 'string' &&
+                requestIdHeader.trim() !== ''
+              ) {
+                return requestIdHeader;
+              }
+              return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+            },
+          },
+        };
+      },
+    }),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const ttlSeconds = Number(
+          configService.get<string>('THROTTLE_TTL', '60'),
+        );
+        const limit = Number(configService.get<string>('THROTTLE_LIMIT', '120'));
+
+        return [
+          {
+            ttl: ttlSeconds * 1000,
+            limit,
+          },
+        ];
+      },
+    }),
     ServeStaticModule.forRoot({
-      // Subimos dos niveles para salir de 'dist/src' y llegar a la raíz del proyecto
-      rootPath: join(__dirname, '..', '..', 'uploads'), 
+      rootPath: join(__dirname, '..', '..', 'uploads'),
       serveRoot: '/uploads',
-      exclude: ['/api/(.*)'], // Asegura que no interfiera con tu API
+      exclude: ['/api/(.*)'],
     }),
     PrismaModule,
     HealthModule,
@@ -30,6 +78,11 @@ import { FacturaOcrModule } from './factura-ocr/factura-ocr.module';
     FacturaOcrModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_FILTER, useClass: GlobalExceptionFilter },
+    { provide: APP_INTERCEPTOR, useClass: RequestLoggingInterceptor },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}
