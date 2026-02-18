@@ -3,6 +3,31 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { Request } from 'express';
+
+function extractTokenFromCookies(req: Request): string | null {
+  const tokenFromParsedCookies = (req as Request & { cookies?: Record<string, string> }).cookies?.token;
+  if (typeof tokenFromParsedCookies === 'string' && tokenFromParsedCookies.trim() !== '') {
+    return tokenFromParsedCookies;
+  }
+
+  const rawCookie = req.headers.cookie;
+  if (!rawCookie) {
+    return null;
+  }
+
+  const tokenCookie = rawCookie
+    .split(';')
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith('token='));
+
+  if (!tokenCookie) {
+    return null;
+  }
+
+  const [, token] = tokenCookie.split('=');
+  return token ? decodeURIComponent(token) : null;
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -11,7 +36,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private prisma: PrismaService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (request: Request) => extractTokenFromCookies(request),
+      ]),
       ignoreExpiration: false,
       secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
     });
@@ -20,6 +47,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     const user = await this.prisma.usuario.findUnique({
       where: { id: payload.id },
+      select: { id: true },
     });
     if (!user) {
       throw new UnauthorizedException();

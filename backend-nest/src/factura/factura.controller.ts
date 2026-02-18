@@ -49,6 +49,15 @@ export class FacturaController {
     );
   }
 
+  @Get('stats')
+  @UsePipes(ZodValidationPipe)
+  async stats(
+    @Request() req: RequestWithUser,
+    @Query() query: GetFacturasQueryDto,
+  ) {
+    return this.facturaService.getStats(req.user.id, query.period);
+  }
+
   @Post(':id/productos')
   @UsePipes(ZodValidationPipe)
   async addProducto(

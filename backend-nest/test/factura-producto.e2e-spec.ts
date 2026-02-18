@@ -5,7 +5,7 @@ import { AppModule } from './../src/app.module';
 
 describe('FacturaProducto Interaction (e2e)', () => {
   let app: INestApplication;
-  let authToken: string;
+  let authCookie: string;
   let productId: number;
   let facturaId: number;
 
@@ -34,12 +34,12 @@ describe('FacturaProducto Interaction (e2e)', () => {
       documento: testUser.documento,
       contrasena: testUser.contrasena,
     });
-    authToken = loginRes.body.token;
+    authCookie = loginRes.headers['set-cookie'][0].split(';')[0];
 
     // Create Product
     const prodRes = await request(app.getHttpServer())
       .post('/api/productos')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Cookie', authCookie)
       .send({
         codigo: `P-${uniqueId}`,
         nombre: 'Integration Product',
@@ -50,7 +50,7 @@ describe('FacturaProducto Interaction (e2e)', () => {
     // Create Factura
     const factRes = await request(app.getHttpServer())
       .post('/api/facturas')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Cookie', authCookie)
       .send({
         fecha: new Date().toISOString(),
         total: 100.00, // Initial manually set total
@@ -66,7 +66,7 @@ describe('FacturaProducto Interaction (e2e)', () => {
   it('POST /api/facturas/:id/productos - Add Product to Factura', () => {
     return request(app.getHttpServer())
       .post(`/api/facturas/${facturaId}/productos`)
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Cookie', authCookie)
       .send({
         productoId: productId,
         cantidad: 2,

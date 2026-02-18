@@ -12,6 +12,23 @@ import { RegisterUserDto } from './dto/register.dto';
 import { LoginUserDto } from './dto/login.dto';
 import { StorageService } from '../infra/storage/storage.service';
 
+type LoginResult = {
+  token: string;
+  response: {
+    status: number;
+    message: string;
+    user: {
+      id: number;
+      documento: string;
+      nombres: string;
+      apellidos: string;
+      correo: string;
+      foto: string | null;
+      fechaIngreso: Date;
+    };
+  };
+};
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -91,11 +108,21 @@ export class AuthService {
     }
   }
 
-  async login(dto: LoginUserDto) {
+  async login(dto: LoginUserDto): Promise<LoginResult> {
     try {
       const { documento, contrasena } = dto;
       const user = await this.prisma.usuario.findUnique({
         where: { documento },
+        select: {
+          id: true,
+          documento: true,
+          nombres: true,
+          apellidos: true,
+          correo: true,
+          foto: true,
+          fechaIngreso: true,
+          contrasena: true,
+        },
       });
 
       if (!user) {
@@ -110,18 +137,20 @@ export class AuthService {
       const token = this.jwtService.sign({ id: user.id });
 
       return {
-        status: 200,
-        message: 'Login exitoso',
-        user: {
-          id: user.id,
-          documento: user.documento,
-          nombres: user.nombres,
-          apellidos: user.apellidos,
-          correo: user.correo,
-          foto: user.foto,
-          fechaIngreso: user.fechaIngreso,
-        },
         token,
+        response: {
+          status: 200,
+          message: 'Login exitoso',
+          user: {
+            id: user.id,
+            documento: user.documento,
+            nombres: user.nombres,
+            apellidos: user.apellidos,
+            correo: user.correo,
+            foto: user.foto,
+            fechaIngreso: user.fechaIngreso,
+          },
+        },
       };
     } catch (error: unknown) {
       if (error instanceof UnauthorizedException) {

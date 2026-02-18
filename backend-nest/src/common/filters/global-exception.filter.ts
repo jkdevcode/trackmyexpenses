@@ -4,8 +4,11 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Injectable,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { Logger } from 'nestjs-pino';
+import { RequestContext } from '../context/request-context';
 
 type ErrorResponseBody = {
   success: false;
@@ -20,7 +23,10 @@ type ErrorResponseBody = {
 };
 
 @Catch()
+@Injectable()
 export class GlobalExceptionFilter implements ExceptionFilter {
+  constructor(private readonly logger: Logger) {}
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -51,17 +57,28 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       }
     }
 
+    const requestId = request.id ?? RequestContext.getRequestId();
+
     const body: ErrorResponseBody = {
       success: false,
       timestamp: new Date().toISOString(),
       path: request.originalUrl,
       method: request.method,
-      requestId: request.id ?? null,
+      requestId,
       error: {
         code,
         message,
       },
     };
+
+    this.logger.error({
+      msg: 'Unhandled request exception',
+      requestId,
+      method: request.method,
+      path: request.originalUrl,
+      status,
+      error: exception instanceof Error ? exception.message : exception,
+    });
 
     response.status(status).json(body);
   }

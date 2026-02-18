@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { Logger } from 'nestjs-pino';
+import { RequestContext } from '../common/context/request-context';
 
 @Injectable()
 export class ProductoService {
@@ -41,7 +42,11 @@ export class ProductoService {
       };
     } catch (error: unknown) {
       if (error instanceof ConflictException) throw error;
-      this.logger.error({ msg: 'Error al crear producto', error });
+      this.logger.error({
+        msg: 'Error al crear producto',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
       throw new InternalServerErrorException('Error al crear producto');
     }
   }
@@ -59,7 +64,11 @@ export class ProductoService {
         total: productos.length,
       };
     } catch (error: unknown) {
-      this.logger.error({ msg: 'Error al obtener productos', error });
+       this.logger.error({
+         msg: 'Error al obtener productos',
+         requestId: RequestContext.getRequestId(),
+         error,
+       });
       throw new InternalServerErrorException('Error al obtener productos');
     }
   }

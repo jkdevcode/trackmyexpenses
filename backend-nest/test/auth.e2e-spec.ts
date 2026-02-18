@@ -56,9 +56,11 @@ describe('AuthController (e2e)', () => {
       })
       .expect(201) 
       .expect((res) => {
-        expect(res.body.token).toBeDefined();
+        expect(res.body.token).toBeUndefined();
         expect(res.body.user).toBeDefined();
         expect(res.body.user.documento).toBe(testUser.documento);
+        expect(res.headers['set-cookie']).toBeDefined();
+        expect(res.headers['set-cookie'][0]).toContain('token=');
       });
   });
 

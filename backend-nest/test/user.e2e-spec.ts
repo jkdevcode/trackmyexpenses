@@ -5,7 +5,7 @@ import { AppModule } from './../src/app.module';
 
 describe('UserController (e2e)', () => {
   let app: INestApplication;
-  let authToken: string;
+  let authCookie: string;
   let userId: number;
 
   const randomString = Math.random().toString(36).substring(7);
@@ -40,7 +40,7 @@ describe('UserController (e2e)', () => {
         contrasena: testUser.contrasena,
       });
 
-    authToken = loginRes.body.token;
+    authCookie = loginRes.headers['set-cookie'][0].split(';')[0];
     userId = loginRes.body.user.id;
   });
 
@@ -51,7 +51,7 @@ describe('UserController (e2e)', () => {
   it('/api/users (GET)', () => {
     return request(app.getHttpServer())
       .get('/api/users')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Cookie', authCookie)
       .expect(200)
       .expect((res) => {
         expect(res.body.users).toBeInstanceOf(Array);
@@ -64,7 +64,7 @@ describe('UserController (e2e)', () => {
   it('/api/users/:id (GET)', () => {
     return request(app.getHttpServer())
       .get(`/api/users/${userId}`)
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Cookie', authCookie)
       .expect(200)
       .expect((res) => {
         expect(res.body.user.id).toBe(userId);
@@ -73,11 +73,11 @@ describe('UserController (e2e)', () => {
       });
   });
 
-  it('/api/users/:id (PUT)', () => {
+  it('/api/users/:id (PATCH)', () => {
     const newName = 'UpdatedName';
     return request(app.getHttpServer())
-      .put(`/api/users/${userId}`)
-      .set('Authorization', `Bearer ${authToken}`)
+      .patch(`/api/users/${userId}`)
+      .set('Cookie', authCookie)
       .send({
         nombres: newName,
       })
@@ -93,7 +93,7 @@ describe('UserController (e2e)', () => {
      // We will try to delete the testUser itself at the end.
      return request(app.getHttpServer())
       .delete(`/api/users/${userId}`)
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Cookie', authCookie)
       // .expect(200) 
       // Wait, deleteUser checks if id === currentUserId and throws Forbidden
       // "No puedes eliminar tu propia cuenta" (Service logic)
