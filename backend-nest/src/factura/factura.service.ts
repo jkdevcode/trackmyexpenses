@@ -8,12 +8,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AddProductoFacturaDto } from './dto/add-producto.dto';
 import { CreateFacturaDto } from './dto/create-factura.dto';
 import { Prisma } from '@prisma/client';
+import { Logger } from 'nestjs-pino';
 
 import { PeriodFilter } from './factura.types';
 
 @Injectable()
 export class FacturaService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private logger: Logger,
+  ) {}
 
   async create(userId: number, dto: CreateFacturaDto) {
     try {
@@ -41,8 +45,8 @@ export class FacturaService {
         message: 'Factura creada exitosamente',
         factura,
       };
-    } catch (error) {
-      console.error('Error al crear factura:', error);
+    } catch (error: unknown) {
+      this.logger.error({ msg: 'Error al crear factura', error });
       throw new InternalServerErrorException('Error al crear factura');
     }
   }
@@ -186,8 +190,8 @@ export class FacturaService {
           totalInvoices,
         },
       };
-    } catch (error) {
-      console.error('Error al obtener facturas:', error);
+    } catch (error: unknown) {
+      this.logger.error({ msg: 'Error al obtener facturas', error });
       throw new InternalServerErrorException('Error al obtener facturas');
     }
   }
@@ -273,7 +277,7 @@ export class FacturaService {
         throw new ConflictException('El producto ya está en la factura');
       }
 
-      console.error('Error agregando producto:', error);
+      this.logger.error({ msg: 'Error agregando producto', error });
 
       throw new InternalServerErrorException(
         'Error al agregar producto a factura',
