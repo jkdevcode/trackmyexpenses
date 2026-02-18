@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ZodValidationPipe, cleanupOpenApiDoc } from 'nestjs-zod';
 import { Logger } from 'nestjs-pino';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -12,15 +13,25 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
+  const corsOrigin = configService.get<string>('CORS_ORIGIN');
 
   app.setGlobalPrefix('api');
-  app.enableCors();
+  app.enableCors({
+    origin: corsOrigin ? corsOrigin.split(',').map((origin) => origin.trim()) : true,
+    credentials: true,
+  });
+  app.use(cookieParser());
   app.useGlobalPipes(new ZodValidationPipe());
 
   const config = new DocumentBuilder()
     .setTitle('API Auth')
     .setDescription('Backend escalable con Zod')
     .setVersion('1.0')
+    .addCookieAuth('token', {
+      type: 'apiKey',
+      in: 'cookie',
+      name: 'token',
+    })
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

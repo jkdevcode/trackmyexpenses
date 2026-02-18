@@ -5,7 +5,7 @@ import { AppModule } from './../src/app.module';
 
 describe('FacturaController (e2e)', () => {
   let app: INestApplication;
-  let authToken: string;
+  let authCookie: string;
 
   const uniqueId = Date.now().toString().slice(-8);
   const testUser = {
@@ -32,7 +32,7 @@ describe('FacturaController (e2e)', () => {
       documento: testUser.documento,
       contrasena: testUser.contrasena,
     });
-    authToken = loginRes.body.token;
+    authCookie = loginRes.headers['set-cookie'][0].split(';')[0];
   });
 
   afterAll(async () => {
@@ -42,7 +42,7 @@ describe('FacturaController (e2e)', () => {
   it('/api/facturas (POST) - Create Factura', () => {
     return request(app.getHttpServer())
       .post('/api/facturas')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Cookie', authCookie)
       .send({
         fecha: new Date().toISOString(),
         total: 150.00,
@@ -60,7 +60,7 @@ describe('FacturaController (e2e)', () => {
   it('/api/facturas (GET) - List Facturas', () => {
     return request(app.getHttpServer())
       .get('/api/facturas')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Cookie', authCookie)
       .expect(200)
       .expect((res) => {
         expect(res.body.facturas).toBeInstanceOf(Array);
@@ -72,7 +72,7 @@ describe('FacturaController (e2e)', () => {
   it('/api/facturas (POST) - Fail Validation', () => {
     return request(app.getHttpServer())
       .post('/api/facturas')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Cookie', authCookie)
       .send({
         fecha: 'invalid-date', // Invalid
         total: -50 // Negative

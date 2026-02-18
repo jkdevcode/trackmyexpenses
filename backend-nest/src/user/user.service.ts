@@ -10,7 +10,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { StorageService } from '../infra/storage/storage.service';
 
@@ -72,6 +72,7 @@ export class UserService {
           OR: orConditions,
           NOT: { id: userId },
         },
+        select: { id: true },
       });
 
       if (exists) {
@@ -94,7 +95,7 @@ export class UserService {
       try {
         const extMatch = originalName?.match(/\.[^./\\]+$/);
         const fileExt = extMatch?.[0] ?? '';
-        const fileName = `${uuidv4()}${fileExt}`;
+        const fileName = `${randomUUID()}${fileExt}`;
         data.foto = await this.storage.upload(fileBuffer, fileName);
       } catch {
         throw new InternalServerErrorException('Error al guardar la imagen');
@@ -131,6 +132,10 @@ export class UserService {
   async changePassword(userId: number, dto: ChangePasswordDto) {
     const user = await this.prisma.usuario.findUnique({
       where: { id: userId },
+      select: {
+        id: true,
+        contrasena: true,
+      },
     });
 
     if (!user) {
@@ -197,6 +202,7 @@ export class UserService {
   async deleteUser(id: number, currentUserId: number) {
     const userExists = await this.prisma.usuario.findUnique({
       where: { id },
+      select: { id: true },
     });
 
     if (!userExists) {

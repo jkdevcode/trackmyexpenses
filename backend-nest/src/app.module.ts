@@ -5,6 +5,8 @@ import { join } from 'path';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { CacheModule } from '@nestjs/cache-manager';
+import { createKeyv } from '@keyv/redis';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -13,7 +15,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { FacturaModule } from './factura/factura.module';
 import { ProductoModule } from './producto/producto.module';
-import { FacturaOcrModule } from './factura-ocr/factura-ocr.module';
+import { FacturaOcrModule } from './modules/factura-ocr/factura-ocr.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { RequestLoggingInterceptor } from './common/interceptors/request-logging.interceptor';
 
@@ -45,6 +47,23 @@ import { RequestLoggingInterceptor } from './common/interceptors/request-logging
               return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
             },
           },
+        };
+      },
+    }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): any => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        const ttl = Number(configService.get<string>('CACHE_TTL_MS', '600000'));
+
+        if (!redisUrl) {
+          return { ttl, stores: [] };
+        }
+
+        return {
+          ttl,
+          stores: [createKeyv(redisUrl)],
         };
       },
     }),

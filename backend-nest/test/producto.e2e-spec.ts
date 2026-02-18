@@ -5,7 +5,7 @@ import { AppModule } from './../src/app.module';
 
 describe('ProductoController (e2e)', () => {
   let app: INestApplication;
-  let authToken: string;
+  let authCookie: string;
 
   const uniqueId = Date.now().toString().slice(-6);
   const testUser = {
@@ -32,7 +32,7 @@ describe('ProductoController (e2e)', () => {
       documento: testUser.documento,
       contrasena: testUser.contrasena,
     });
-    authToken = loginRes.body.token;
+    authCookie = loginRes.headers['set-cookie'][0].split(';')[0];
   });
 
   afterAll(async () => {
@@ -48,7 +48,7 @@ describe('ProductoController (e2e)', () => {
   it('/api/productos (POST) - Create Producto', () => {
     return request(app.getHttpServer())
       .post('/api/productos')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Cookie', authCookie)
       .send(testProduct)
       .expect(201)
       .expect((res) => {
@@ -60,7 +60,7 @@ describe('ProductoController (e2e)', () => {
   it('/api/productos (GET) - List Productos', () => {
     return request(app.getHttpServer())
       .get('/api/productos')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Cookie', authCookie)
       .expect(200)
       .expect((res) => {
         expect(res.body.productos).toBeInstanceOf(Array);
@@ -71,7 +71,7 @@ describe('ProductoController (e2e)', () => {
   it('/api/productos (POST) - Fail Duplicate Code', () => {
     return request(app.getHttpServer())
       .post('/api/productos')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Cookie', authCookie)
       .send(testProduct)
       .expect(409);
   });
