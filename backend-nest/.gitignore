@@ -2,7 +2,8 @@
 /dist
 /node_modules
 /build
-/uploads
+uploads/*
+!uploads/.gitkeep
 
 # Logs
 logs
