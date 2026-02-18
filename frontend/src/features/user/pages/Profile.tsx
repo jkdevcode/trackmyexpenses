@@ -17,7 +17,7 @@ import ChangePasswordCard from "../components/ChangePasswordCard";
 
 const ProfilePage = () => {
     const { t } = useTranslation(["profile", "auth", "validation"]);
-    const { user, login, token } = useSession();
+    const { user, login } = useSession();
 
     const ASSETS_URL = import.meta.env.VITE_ASSETS_URL;
 
@@ -85,9 +85,7 @@ const ProfilePage = () => {
                     });
 
                     // Update session context with new user data
-                    if (token) {
-                        login(token, response.data.user);
-                    }
+                    login(response.data.user);
                 }
 
             } catch (error: any) {
