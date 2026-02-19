@@ -5,13 +5,14 @@ import { Input } from "@heroui/input";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { addToast } from "@heroui/toast";
 
-import axiosClient from "@/lib/axiosClient";
 import { appColor } from "@/theme/theme.config";
 import { getChangePasswordSchema } from "@/schemas/profile";
 import { getErrorMessage } from "@/utils/errors";
+import { useChangePasswordMutation } from "../api";
 
 const ChangePasswordCard = () => {
     const { t } = useTranslation(["profile", "auth", "validation"]);
+    const changePasswordMutation = useChangePasswordMutation();
 
     const formik = useFormik({
         initialValues: {
@@ -22,7 +23,7 @@ const ChangePasswordCard = () => {
         validationSchema: getChangePasswordSchema(t),
         onSubmit: async (values, { resetForm }) => {
             try {
-                await axiosClient.patch("/users/change-password", values);
+                await changePasswordMutation.mutateAsync(values);
 
                 addToast({
                     title: t("profile:security.success"),
@@ -94,7 +95,7 @@ const ChangePasswordCard = () => {
                         <Button
                             className="font-semibold shadow-md w-full sm:w-auto"
                             color={appColor}
-                            isLoading={formik.isSubmitting}
+                            isLoading={changePasswordMutation.isPending}
                             type="submit"
                             variant="solid"
                             isDisabled={!formik.isValid || !formik.dirty}

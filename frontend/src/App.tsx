@@ -13,42 +13,49 @@ import { NewInvoicePage } from "@/pages/NewInvoicePage";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { PublicOnlyRoute } from "@/features/auth/components/PublicOnlyRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { AppErrorBoundary } from "@/components/error/AppErrorBoundary";
 
 function App() {
   return (
     <CookieConsentProvider>
       <CookieConsent />
       <Routes>
-        <Route element={<LandingPage />} path="/" />
+        <Route element={<AppErrorBoundary><LandingPage /></AppErrorBoundary>} path="/" />
         <Route
           element={
-            <PublicOnlyRoute>
-              <LoginPage />
-            </PublicOnlyRoute>
+            <AppErrorBoundary>
+              <PublicOnlyRoute>
+                <LoginPage />
+              </PublicOnlyRoute>
+            </AppErrorBoundary>
           }
           path="/login"
         />
         <Route
           element={
-            <PublicOnlyRoute>
-              <RegisterPage />
-            </PublicOnlyRoute>
+            <AppErrorBoundary>
+              <PublicOnlyRoute>
+                <RegisterPage />
+              </PublicOnlyRoute>
+            </AppErrorBoundary>
           }
           path="/register"
         />
         <Route
           element={
-            <ProtectedRoute>
-              <AppLayout />
-            </ProtectedRoute>
+            <AppErrorBoundary fallbackTitle="Error en el layout de la aplicacion">
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            </AppErrorBoundary>
           }
         >
-          <Route index path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/invoices" element={<NewInvoicePage />} />
+          <Route index path="/dashboard" element={<AppErrorBoundary><Dashboard /></AppErrorBoundary>} />
+          <Route path="/profile" element={<AppErrorBoundary><ProfilePage /></AppErrorBoundary>} />
+          <Route path="/invoices" element={<AppErrorBoundary><NewInvoicePage /></AppErrorBoundary>} />
           <Route path="/settings" element={<div className="p-4">Ajustes (WIP)</div>} />
         </Route>
-        <Route element={<PageNotFound />} path="*" />
+        <Route element={<AppErrorBoundary><PageNotFound /></AppErrorBoundary>} path="*" />
       </Routes>
     </CookieConsentProvider>
   );

@@ -3,18 +3,18 @@ import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 import { appColor } from "@/theme/theme.config";
-import axiosClient from "@/lib/axiosClient";
 import { ScanResponse } from "./types";
 import { addToast } from "@heroui/toast";
 import { GalleryIcon } from "@/components/ui/icons";
+import { useScanInvoiceMutation } from "./api";
 
 interface InvoiceUploadProps {
     onScanComplete: (data: ScanResponse) => void;
 }
 
 export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
-    const { t } = useTranslation("invoices"); // Assuming 'invoices' namespace
-    const [loading, setLoading] = useState(false);
+    const { t } = useTranslation("invoices");
+    const scanInvoiceMutation = useScanInvoiceMutation();
     const [dragActive, setDragActive] = useState(false);
 
     const handleFile = async (file: File) => {
@@ -23,21 +23,13 @@ export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
             return;
         }
 
-        setLoading(true);
-        const formData = new FormData();
-        formData.append("image", file);
-
         try {
-            const res = await axiosClient.post<ScanResponse>("/facturas/ocr", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-            onScanComplete(res.data);
-            addToast({ title: "Éxito", description: t("upload.success"), color: "success" });
+            const data = await scanInvoiceMutation.mutateAsync(file);
+            onScanComplete(data as ScanResponse);
+            addToast({ title: "Exito", description: t("upload.success"), color: "success" });
         } catch (error) {
             console.error(error);
             addToast({ title: "Error", description: t("upload.error"), color: "danger" });
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -92,14 +84,14 @@ export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
                         className="hidden"
                         accept="image/*"
                         onChange={handleChange}
-                        disabled={loading}
+                        disabled={scanInvoiceMutation.isPending}
                     />
                     <Button
                         color={appColor}
-                        isLoading={loading}
+                        isLoading={scanInvoiceMutation.isPending}
                         onPress={() => document.getElementById("invoice-upload")?.click()}
                     >
-                        {loading ? t("upload.processing") : t("upload.select_file")}
+                        {scanInvoiceMutation.isPending ? t("upload.processing") : t("upload.select_file")}
                     </Button>
                 </div>
 

@@ -1,5 +1,7 @@
-import { useState, useMemo } from "react";
-import { Input /* Textarea */ } from "@heroui/input";
+import { useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { useDisclosure } from "@heroui/modal";
@@ -11,12 +13,20 @@ import { appColor } from "@/theme/theme.config";
 import { ParsedInvoice, ProductSuggestion } from "./types";
 import { InvoiceSummary } from "./InvoiceSummary";
 import { InvoiceItemsModal } from "./InvoiceItemsModal";
+import { getInvoiceSchema } from "@/schemas/invoice";
 
 interface InvoiceFormProps {
   initialData: ParsedInvoice;
-  onSave: (data: any, products: ProductSuggestion[]) => void;
+  onSave: (data: InvoiceFormValues & { totalPagar: number }, products: ProductSuggestion[]) => void;
   onCancel: () => void;
   saving: boolean;
+}
+
+export interface InvoiceFormValues {
+  lugarCompra: string;
+  nitProveedor: string;
+  fechaHoraCompra: string;
+  metodoPago: string;
 }
 
 export const InvoiceForm = ({
@@ -28,41 +38,36 @@ export const InvoiceForm = ({
   const { t } = useTranslation("invoices");
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // Form State
-  const [lugarCompra, setLugarCompra] = useState(
-    initialData.empresa?.nombre || "",
-  );
-  const [nitProveedor, setNitProveedor] = useState(
-    initialData.empresa?.nit || "",
-  );
-  const [fecha, setFecha] = useState(
-    initialData.fecha || new Date().toISOString().split("T")[0],
-  );
-  const [metodoPago, setMetodoPago] = useState("EFECTIVO");
-
-  // Products State (Source of Truth for Totals)
   const [products, setProducts] = useState<ProductSuggestion[]>(
     initialData.productos || [],
   );
 
-  // Calculated Total
   const totalPagar = useMemo(() => {
     return products.reduce((acc, curr) => acc + (curr.precioTotal || 0), 0);
   }, [products]);
 
-  const handleSubmit = () => {
-    const formData = {
-      lugarCompra,
-      nitProveedor,
-      fechaHoraCompra: new Date(fecha).toISOString(), // Ensure ISO format
-      metodoPago,
-      totalPagar, // Read-only value passed for confirmation
-    };
-    onSave(formData, products);
+  const {
+    control,
+    handleSubmit,
+    register,
+    formState: { errors, touchedFields },
+  } = useForm<InvoiceFormValues>({
+    defaultValues: {
+      lugarCompra: initialData.empresa?.nombre || "",
+      nitProveedor: initialData.empresa?.nit || "",
+      fechaHoraCompra: initialData.fecha || new Date().toISOString().split("T")[0],
+      metodoPago: "EFECTIVO",
+    },
+    resolver: yupResolver(getInvoiceSchema(t)),
+    mode: "onTouched",
+  });
+
+  const submitForm = (values: InvoiceFormValues) => {
+    onSave({ ...values, totalPagar }, products);
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <form className="space-y-6 max-w-4xl mx-auto" onSubmit={handleSubmit(submitForm)}>
       <Card>
         <CardHeader className="flex flex-col items-start gap-1 pb-0">
           <h2 className="text-xl font-bold">{t("form.title")}</h2>
@@ -71,47 +76,65 @@ export const InvoiceForm = ({
         <CardBody className="gap-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
+              errorMessage={errors.lugarCompra?.message}
+              isInvalid={!!touchedFields.lugarCompra && !!errors.lugarCompra}
               label={t("form.provider")}
-              value={lugarCompra}
-              onValueChange={setLugarCompra}
               variant="bordered"
               isRequired
+              {...register("lugarCompra")}
             />
             <Input
+              errorMessage={errors.nitProveedor?.message}
+              isInvalid={!!touchedFields.nitProveedor && !!errors.nitProveedor}
               label={t("form.nit")}
-              value={nitProveedor}
-              onValueChange={setNitProveedor}
               variant="bordered"
+              {...register("nitProveedor")}
             />
-            <DatePicker
-              label={t("form.date")}
-              value={fecha ? parseDate(fecha) : today(getLocalTimeZone())}
-              onChange={(date: any) => setFecha(date ? date.toString() : "")}
-              variant="bordered"
-              isRequired
-              maxValue={today(getLocalTimeZone())}
+            <Controller
+              control={control}
+              name="fechaHoraCompra"
+              render={({ field }) => (
+                <DatePicker
+                  label={t("form.date")}
+                  value={field.value ? parseDate(field.value.split("T")[0]) : today(getLocalTimeZone())}
+                  onChange={(date: any) => field.onChange(date ? date.toString() : "")}
+                  variant="bordered"
+                  isRequired
+                  maxValue={today(getLocalTimeZone())}
+                  isInvalid={!!touchedFields.fechaHoraCompra && !!errors.fechaHoraCompra}
+                  errorMessage={errors.fechaHoraCompra?.message}
+                />
+              )}
             />
-            <Select
-              label={t("form.payment_method")}
-              selectedKeys={[metodoPago]}
-              onChange={(e) => setMetodoPago(e.target.value)}
-              variant="bordered"
-              isRequired
-            >
-              <SelectItem key="EFECTIVO">
-                {t("common.cash", "Efectivo")}
-              </SelectItem>
-              <SelectItem key="TARJETA_CREDITO">
-                {t("common.credit_card", "Tarjeta Crédito")}
-              </SelectItem>
-              <SelectItem key="TARJETA_DEBITO">
-                {t("common.debit_card", "Tarjeta Débito")}
-              </SelectItem>
-              <SelectItem key="TRANSFERENCIA">
-                {t("common.transfer", "Transferencia")}
-              </SelectItem>
-              <SelectItem key="OTRO">{t("common.other", "Otro")}</SelectItem>
-            </Select>
+            <Controller
+              control={control}
+              name="metodoPago"
+              render={({ field }) => (
+                <Select
+                  label={t("form.payment_method")}
+                  selectedKeys={[field.value]}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  variant="bordered"
+                  isRequired
+                  isInvalid={!!touchedFields.metodoPago && !!errors.metodoPago}
+                  errorMessage={errors.metodoPago?.message}
+                >
+                  <SelectItem key="EFECTIVO">
+                    {t("common.cash", "Efectivo")}
+                  </SelectItem>
+                  <SelectItem key="TARJETA_CREDITO">
+                    {t("common.credit_card", "Tarjeta Credito")}
+                  </SelectItem>
+                  <SelectItem key="TARJETA_DEBITO">
+                    {t("common.debit_card", "Tarjeta Debito")}
+                  </SelectItem>
+                  <SelectItem key="TRANSFERENCIA">
+                    {t("common.transfer", "Transferencia")}
+                  </SelectItem>
+                  <SelectItem key="OTRO">{t("common.other", "Otro")}</SelectItem>
+                </Select>
+              )}
+            />
           </div>
 
           <div className="border-t border-default-200 pt-4 mt-2">
@@ -127,7 +150,6 @@ export const InvoiceForm = ({
         </CardBody>
       </Card>
 
-      {/* Products Section */}
       <div>
         <h3 className="text-lg font-semibold mb-2 ml-1">
           {t("form.products_title")}
@@ -172,7 +194,7 @@ export const InvoiceForm = ({
         <Button color="danger" variant="flat" onPress={onCancel}>
           {t("form.cancel")}
         </Button>
-        <Button color={appColor} onPress={handleSubmit} isLoading={saving}>
+        <Button color={appColor} type="submit" isLoading={saving}>
           {t("form.save")}
         </Button>
       </div>
@@ -183,6 +205,6 @@ export const InvoiceForm = ({
         products={products}
         onProductsChange={setProducts}
       />
-    </div>
+    </form>
   );
 };

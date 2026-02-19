@@ -1,67 +1,72 @@
 import { useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { useFormik } from "formik";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { useTranslation } from "react-i18next";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Link } from "@heroui/link";
 import { addToast } from "@heroui/toast";
 
-import axiosClient from "@/lib/axiosClient";
 import { getErrorMessage } from "@/utils/errors";
 import { appColor } from "@/theme/theme.config";
 import { EyeFilledIcon, EyeSlashFilledIcon, Logo } from "@/components/ui/icons";
 import { getLoginSchema } from "@/schemas/auth";
 import { useSession } from "@/contexts/session-context";
+import { useLoginMutation } from "../api";
+
+interface LoginFormValues {
+  documento: string;
+  contrasena: string;
+}
 
 const LoginPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useSession();
   const [isVisible, setIsVisible] = useState(false);
+  const loginMutation = useLoginMutation();
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
-  const formik = useFormik({
-    initialValues: {
+  const {
+    handleSubmit,
+    register,
+    formState: { errors, touchedFields },
+  } = useForm<LoginFormValues>({
+    defaultValues: {
       documento: "",
       contrasena: "",
     },
-    validationSchema: getLoginSchema(t),
-    onSubmit: async (values) => {
-      try {
-        const response = await axiosClient.post("auth/login", {
-          documento: values.documento,
-          contrasena: values.contrasena,
-        });
-
-        if (response.status === 200 || response.status === 201) {
-          const { user } = response.data;
-          const userInfo = Array.isArray(user) ? user[0] : user;
-
-          login(userInfo);
-
-          addToast({
-            title: t("auth:login.success"),
-            description: t("auth:login.success_description"),
-            color: appColor as any,
-            variant: "flat",
-            timeout: 4000,
-          });
-
-          navigate("/dashboard");
-        }
-      } catch (error: any) {
-        addToast({
-          title: t("auth:login.error"),
-          description: getErrorMessage(error, t),
-          color: "danger",
-          variant: "flat",
-          timeout: 5000,
-        });
-      }
-    },
+    resolver: yupResolver(getLoginSchema(t)),
+    mode: "onTouched",
   });
+
+  const onSubmit = async (values: LoginFormValues) => {
+    try {
+      const data = await loginMutation.mutateAsync(values);
+      const userInfo = Array.isArray(data.user) ? data.user[0] : data.user;
+      login(userInfo);
+
+      addToast({
+        title: t("auth:login.success"),
+        description: t("auth:login.success_description"),
+        color: appColor as any,
+        variant: "flat",
+        timeout: 4000,
+      });
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      addToast({
+        title: t("auth:login.error"),
+        description: getErrorMessage(error, t),
+        color: "danger",
+        variant: "flat",
+        timeout: 5000,
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
@@ -74,20 +79,17 @@ const LoginPage = () => {
         </div>
 
 
-        <form className="mt-8 space-y-6" onSubmit={formik.handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="rounded-md space-y-4">
             <Input
-              errorMessage={formik.errors.documento}
-              isInvalid={formik.touched.documento && !!formik.errors.documento}
+              errorMessage={errors.documento?.message}
+              isInvalid={!!touchedFields.documento && !!errors.documento}
               label={t("auth:fields.documento.label")}
-              name="documento"
               placeholder={t("auth:fields.documento.placeholder")}
               type="text"
-              value={formik.values.documento}
               variant="bordered"
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
               color={appColor}
+              {...register("documento")}
             />
             <Input
               color={appColor}
@@ -104,16 +106,13 @@ const LoginPage = () => {
                   )}
                 </button>
               }
-              errorMessage={formik.errors.contrasena}
-              isInvalid={formik.touched.contrasena && !!formik.errors.contrasena}
+              errorMessage={errors.contrasena?.message}
+              isInvalid={!!touchedFields.contrasena && !!errors.contrasena}
               label={t("auth:fields.password.label")}
-              name="contrasena"
               placeholder={t("auth:fields.password.placeholder")}
-              type={isVisible ? "text" : "contrasena"}
-              value={formik.values.contrasena}
+              type={isVisible ? "text" : "password"}
               variant="bordered"
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
+              {...register("contrasena")}
             />
           </div>
 
@@ -129,7 +128,7 @@ const LoginPage = () => {
             <Button
               className="w-full font-semibold shadow-lg"
               color={appColor}
-              isLoading={formik.isSubmitting}
+              isLoading={loginMutation.isPending}
               type="submit"
               variant="solid"
             >
