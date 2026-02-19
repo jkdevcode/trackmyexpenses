@@ -18,6 +18,8 @@ export default [
       parser: tsParser,
       globals: {
         // Ajout des globals du navigateur
+        File: "readonly",
+        FormData: "readonly",
         document: "readonly",
         localStorage: "readonly",
         window: "readonly",
