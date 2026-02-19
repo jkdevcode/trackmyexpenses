@@ -52,5 +52,13 @@
     "total": "Total to Pay",
     "cancel": "Cancel",
     "confirm": "Confirm and Save"
+  },
+  "toast": {
+    "success": "Success",
+    "error": "Error",
+    "save_success_title": "Invoice Saved",
+    "save_success_desc": "The invoice has been registered successfully.",
+    "save_error_title": "Error",
+    "save_error_desc": "Could not save the invoice."
   }
 }

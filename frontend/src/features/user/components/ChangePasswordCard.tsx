@@ -27,7 +27,7 @@ const ChangePasswordCard = () => {
 
         addToast({
           title: t("profile:security.success"),
-          color: appColor as any,
+          color: "success",
           timeout: 3000,
         });
         resetForm();

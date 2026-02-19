@@ -51,7 +51,7 @@ const LoginPage = () => {
       addToast({
         title: t("auth:login.success"),
         description: t("auth:login.success_description"),
-        color: appColor as any,
+        color: "success",
         variant: "flat",
         timeout: 4000,
       });

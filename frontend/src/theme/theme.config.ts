@@ -9,11 +9,11 @@ export type HerouiColor =
   | "primary"
   | "secondary"
   | "success"
-  | "warning"
-  | "danger";
+  | "warning";
+/*   | "danger"; */
 
 export const THEME_CONFIG = {
-  appColor: "dangdefaulter" as HerouiColor,
+  appColor: "default" as HerouiColor,
 };
 
 export const appColor = THEME_CONFIG.appColor;
@@ -29,5 +29,5 @@ export const THEME_COLOR_MAP: Record<
   secondary: { light: "147, 51, 234", dark: "147, 51, 234" }, // purple-600
   success: { light: "23, 201, 100", dark: "23, 201, 100" }, // green-500
   warning: { light: "245, 165, 36", dark: "245, 165, 36" }, // yellow-500
-  danger: { light: "243, 18, 96", dark: "243, 18, 96" }, // red-500
+  /* danger: { light: "243, 18, 96", dark: "243, 18, 96" }, // red-500 */
 };

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InvoiceUpload } from "@/features/invoices/InvoiceUpload";
 import { InvoiceForm } from "@/features/invoices/InvoiceForm";
-import { ScanResponse, ProductSuggestion } from "@/features/invoices/types";
+import { ScanResponse, ProductSuggestion, ConfirmFacturaDto } from "@/features/invoices/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { addToast } from "@heroui/toast";
 import { useNavigate } from "react-router-dom";
@@ -52,38 +52,38 @@ export const NewInvoicePage = () => {
     onConfirmClose(); // Close dialog, show loading on Form button if needed, or global loading
 
     try {
-      const payload = {
+      const payload: ConfirmFacturaDto = {
         factura: {
-          fechaHoraCompra: pendingData.formData.fechaHoraCompra,
+          fechaHoraCompra: new Date(pendingData.formData.fechaHoraCompra).toISOString(),
           metodoPago: pendingData.formData.metodoPago,
-          lugarCompra: pendingData.formData.lugarCompra,
-          nitProveedor: pendingData.formData.nitProveedor,
-          // totalPagar is calculated by backend or passed? Service ignores it and recalcs,
-          // but we pass it effectively via the products loop.
-          // DTO allows optional.
+          lugarCompra: pendingData.formData.lugarCompra.trim(),
+          nitProveedor: pendingData.formData.nitProveedor?.trim() || undefined,
+          totalPagar: pendingData.formData.totalPagar,
         },
-        productos: pendingData.products.map((p) => ({
-          nombreDetectado: p.nombreDetected,
-          precioUnitario: p.precioUnitario,
-          cantidadDetectada: p.cantidad,
-          unidadDetectada: p.unidad,
-          descuentoDetectado: 0, // Default for now
-        })),
+        productos: pendingData.products
+          .filter((p) => p.nombreDetected && p.nombreDetected.trim() !== "")
+          .map((p) => ({
+            nombreDetectado: p.nombreDetected.trim(),
+            precioUnitario: Number(p.precioUnitario),
+            cantidadDetectada: Number(p.cantidad),
+            unidadDetectada: p.unidad || "u",
+            descuentoDetectado: 0,
+          })),
       };
 
       await confirmInvoiceMutation.mutateAsync(payload);
 
       addToast({
-        title: "Factura Guardada",
-        description: "La factura se ha registrado exitosamente.",
+        title: t("toast.save_success_title"),
+        description: t("toast.save_success_desc"),
         color: "success",
       });
       navigate("/dashboard");
     } catch (error) {
       console.error("Error saving invoice:", error);
       addToast({
-        title: "Error",
-        description: "No se pudo guardar la factura.",
+        title: t("toast.save_error_title"),
+        description: t("toast.save_error_desc"),
         color: "danger",
       });
     }

@@ -20,7 +20,7 @@ export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       addToast({
-        title: "Error",
+        title: t("toast.error"),
         description: t("upload.invalid_type"),
         color: "danger",
       });
@@ -31,14 +31,14 @@ export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
       const data = await scanInvoiceMutation.mutateAsync(file);
       onScanComplete(data as ScanResponse);
       addToast({
-        title: "Exito",
+        title: t("toast.success"),
         description: t("upload.success"),
         color: "success",
       });
     } catch (error) {
       console.error(error);
       addToast({
-        title: "Error",
+        title: t("toast.error"),
         description: t("upload.error"),
         color: "danger",
       });
