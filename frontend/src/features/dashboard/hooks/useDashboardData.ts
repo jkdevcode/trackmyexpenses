@@ -35,7 +35,9 @@ interface DashboardViewModel {
   recentInvoices: Invoice[];
 }
 
-const getDashboardData = async (filter: DateFilterType): Promise<DashboardViewModel> => {
+const getDashboardData = async (
+  filter: DateFilterType,
+): Promise<DashboardViewModel> => {
   const [facturasRes, productosRes] = await Promise.all([
     axiosClient.get(`/facturas?period=${filter}`),
     axiosClient.get("/productos"),
@@ -55,7 +57,9 @@ const getDashboardData = async (filter: DateFilterType): Promise<DashboardViewMo
     rawDate: new Date(f.fechaHoraCompra),
   }));
 
-  invoices.sort((a, b) => (b.rawDate?.getTime() || 0) - (a.rawDate?.getTime() || 0));
+  invoices.sort(
+    (a, b) => (b.rawDate?.getTime() || 0) - (a.rawDate?.getTime() || 0),
+  );
 
   const stats: DashboardStats = {
     totalInvoices: apiStats.totalInvoices || 0,
@@ -65,7 +69,20 @@ const getDashboardData = async (filter: DateFilterType): Promise<DashboardViewMo
     spendingTrend: apiStats.spendingTrend || 0,
   };
 
-  const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const monthNames = [
+    "Ene",
+    "Feb",
+    "Mar",
+    "Abr",
+    "May",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dic",
+  ];
   const chartMap = new Map<number, number>();
   const countMap = new Map<number, number>();
 
@@ -86,11 +103,16 @@ const getDashboardData = async (filter: DateFilterType): Promise<DashboardViewMo
     countMap.set(month, (countMap.get(month) || 0) + 1);
   });
 
-  const chartData: ExpenseData[] = Array.from(chartMap.entries()).map(([monthIndex, value]) => ({
-    name: monthNames[monthIndex],
-    value,
-    average: (countMap.get(monthIndex) || 0) > 0 ? value / (countMap.get(monthIndex) || 1) : 0,
-  }));
+  const chartData: ExpenseData[] = Array.from(chartMap.entries()).map(
+    ([monthIndex, value]) => ({
+      name: monthNames[monthIndex],
+      value,
+      average:
+        (countMap.get(monthIndex) || 0) > 0
+          ? value / (countMap.get(monthIndex) || 1)
+          : 0,
+    }),
+  );
 
   return {
     stats,

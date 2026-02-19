@@ -1,41 +1,41 @@
 {
-    "title": "Dashboard",
-    "subtitle": "Overview of your financial activity",
-    "stats": {
-        "total_invoices": "Total Invoices",
-        "total_products": "Products Detected",
-        "total_spent": "Total Spent",
-        "current_period": "This Period",
-        "vs_last_period": "vs last period"
-    },
-    "filters": {
-        "day": "Day",
-        "week": "Week",
-        "month": "Month",
-        "year": "Year"
-    },
-    "charts": {
-        "revenue_title": "Expenses by Month",
-        "invoices_title": "Processed Invoices",
-        "average_ticket_title": "Average Ticket",
-        "legend": {
-            "total": "Total Spent",
-            "average": "Average"
-        }
-    },
-    "table": {
-        "title": "Recent Activity",
-        "headers": {
-            "date": "Date",
-            "provider": "Provider",
-            "total": "Total",
-            "items": "Items",
-            "status": "Status"
-        },
-        "empty": "No recent invoices."
-    },
-    "actions": {
-        "view_all": "View All",
-        "export": "Export"
+  "title": "Dashboard",
+  "subtitle": "Overview of your financial activity",
+  "stats": {
+    "total_invoices": "Total Invoices",
+    "total_products": "Products Detected",
+    "total_spent": "Total Spent",
+    "current_period": "This Period",
+    "vs_last_period": "vs last period"
+  },
+  "filters": {
+    "day": "Day",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year"
+  },
+  "charts": {
+    "revenue_title": "Expenses by Month",
+    "invoices_title": "Processed Invoices",
+    "average_ticket_title": "Average Ticket",
+    "legend": {
+      "total": "Total Spent",
+      "average": "Average"
     }
+  },
+  "table": {
+    "title": "Recent Activity",
+    "headers": {
+      "date": "Date",
+      "provider": "Provider",
+      "total": "Total",
+      "items": "Items",
+      "status": "Status"
+    },
+    "empty": "No recent invoices."
+  },
+  "actions": {
+    "view_all": "View All",
+    "export": "Export"
+  }
 }

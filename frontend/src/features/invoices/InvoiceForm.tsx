@@ -17,7 +17,10 @@ import { getInvoiceSchema } from "@/schemas/invoice";
 
 interface InvoiceFormProps {
   initialData: ParsedInvoice;
-  onSave: (data: InvoiceFormValues & { totalPagar: number }, products: ProductSuggestion[]) => void;
+  onSave: (
+    data: InvoiceFormValues & { totalPagar: number },
+    products: ProductSuggestion[],
+  ) => void;
   onCancel: () => void;
   saving: boolean;
 }
@@ -55,7 +58,8 @@ export const InvoiceForm = ({
     defaultValues: {
       lugarCompra: initialData.empresa?.nombre || "",
       nitProveedor: initialData.empresa?.nit || "",
-      fechaHoraCompra: initialData.fecha || new Date().toISOString().split("T")[0],
+      fechaHoraCompra:
+        initialData.fecha || new Date().toISOString().split("T")[0],
       metodoPago: "EFECTIVO",
     },
     resolver: yupResolver(getInvoiceSchema(t)),
@@ -67,7 +71,10 @@ export const InvoiceForm = ({
   };
 
   return (
-    <form className="space-y-6 max-w-4xl mx-auto" onSubmit={handleSubmit(submitForm)}>
+    <form
+      className="space-y-6 max-w-4xl mx-auto"
+      onSubmit={handleSubmit(submitForm)}
+    >
       <Card>
         <CardHeader className="flex flex-col items-start gap-1 pb-0">
           <h2 className="text-xl font-bold">{t("form.title")}</h2>
@@ -96,12 +103,20 @@ export const InvoiceForm = ({
               render={({ field }) => (
                 <DatePicker
                   label={t("form.date")}
-                  value={field.value ? parseDate(field.value.split("T")[0]) : today(getLocalTimeZone())}
-                  onChange={(date: any) => field.onChange(date ? date.toString() : "")}
+                  value={
+                    field.value
+                      ? parseDate(field.value.split("T")[0])
+                      : today(getLocalTimeZone())
+                  }
+                  onChange={(date: any) =>
+                    field.onChange(date ? date.toString() : "")
+                  }
                   variant="bordered"
                   isRequired
                   maxValue={today(getLocalTimeZone())}
-                  isInvalid={!!touchedFields.fechaHoraCompra && !!errors.fechaHoraCompra}
+                  isInvalid={
+                    !!touchedFields.fechaHoraCompra && !!errors.fechaHoraCompra
+                  }
                   errorMessage={errors.fechaHoraCompra?.message}
                 />
               )}
@@ -131,7 +146,9 @@ export const InvoiceForm = ({
                   <SelectItem key="TRANSFERENCIA">
                     {t("common.transfer", "Transferencia")}
                   </SelectItem>
-                  <SelectItem key="OTRO">{t("common.other", "Otro")}</SelectItem>
+                  <SelectItem key="OTRO">
+                    {t("common.other", "Otro")}
+                  </SelectItem>
                 </Select>
               )}
             />

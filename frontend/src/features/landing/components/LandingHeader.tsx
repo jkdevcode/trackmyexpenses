@@ -35,7 +35,12 @@ export const LandingHeader = () => {
       </NavbarContent>
       <NavbarContent justify="end">
         <NavbarItem className="hidden lg:flex">
-          <Link color={appColor === "default" ? "foreground" : (appColor as any)} href="/login">{t("login")}</Link>
+          <Link
+            color={appColor === "default" ? "foreground" : (appColor as any)}
+            href="/login"
+          >
+            {t("login")}
+          </Link>
         </NavbarItem>
         <NavbarItem>
           <Button as={Link} color={appColor} href="/register" variant="flat">

@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - main
-#   release:
-#     types: [published]
-#   schedule:
-#     - cron: '0 0 * * 0' # every Sunday at midnight
+  #   release:
+  #     types: [published]
+  #   schedule:
+  #     - cron: '0 0 * * 0' # every Sunday at midnight
   workflow_dispatch:
 
 permissions:

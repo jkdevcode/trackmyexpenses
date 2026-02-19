@@ -37,12 +37,12 @@
     "search": "Buscar producto...",
     "close": "Cerrar",
     "columns": {
-        "product": "PRODUCTO",
-        "qty": "CANT",
-        "unit": "UNIDAD",
-        "price": "PRECIO UNIT.",
-        "total": "TOTAL",
-        "actions": "ACCIONES"
+      "product": "PRODUCTO",
+      "qty": "CANT",
+      "unit": "UNIDAD",
+      "price": "PRECIO UNIT.",
+      "total": "TOTAL",
+      "actions": "ACCIONES"
     }
   },
   "confirm": {

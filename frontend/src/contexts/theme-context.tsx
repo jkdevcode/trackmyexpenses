@@ -61,7 +61,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       setDarkTheme,
       toggleTheme,
     }),
-    [theme, isDark, isLight]
+    [theme, isDark, isLight],
   );
 
   return (
@@ -70,9 +70,9 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useTheme = () => {
-    const context = useContext(ThemeContext);
-    if (!context) {
-        throw new Error("useTheme must be used within a ThemeProvider");
-    }
-    return context;
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error("useTheme must be used within a ThemeProvider");
+  }
+  return context;
 };
