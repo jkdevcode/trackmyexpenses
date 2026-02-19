@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { useFormik } from "formik";
+import { Controller, useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { useTranslation } from "react-i18next";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
@@ -9,11 +10,11 @@ import { Select, SelectItem } from "@heroui/select";
 import { Avatar } from "@heroui/avatar";
 import { addToast } from "@heroui/toast";
 
-import axiosClient from "@/lib/axiosClient";
 import { getErrorMessage } from "@/utils/errors";
 import { appColor } from "@/theme/theme.config";
 import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/ui/icons";
 import { getRegisterSchema } from "@/schemas/auth";
+import { useRegisterMutation } from "../api";
 
 // Icono para el avatar fallback
 export const CameraIcon = (props: any) => {
@@ -36,11 +37,24 @@ export const CameraIcon = (props: any) => {
   );
 };
 
+interface RegisterFormValues {
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string;
+  direccion: string;
+  tipo_documento: string;
+  documento_identidad: string;
+  password: string;
+  confirmPassword: string;
+}
+
 
 const RegisterPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
+  const registerMutation = useRegisterMutation();
 
   // Image handling
   const [foto, setFoto] = useState<File | null>(null);
@@ -69,57 +83,47 @@ const RegisterPage = () => {
     { key: "pasaporte", label: t("auth:document_types.pasaport") },
   ];
 
-  const formik = useFormik({
-    initialValues: {
+  const {
+    control,
+    handleSubmit,
+    register,
+    formState: { errors, touchedFields },
+  } = useForm<RegisterFormValues>({
+    defaultValues: {
       nombre: "",
       apellido: "",
-      email: "", // mapeado a 'correo' en backend
+      email: "",
       telefono: "",
       direccion: "",
       tipo_documento: "",
       documento_identidad: "",
       password: "",
-      confirmPassword: ""
+      confirmPassword: "",
     },
-    validationSchema: getRegisterSchema(t),
-    onSubmit: async (values) => {
-      try {
-        const formData = new FormData();
-        formData.append("tipoDocumento", values.tipo_documento);
-        formData.append("documento", values.documento_identidad);
-        formData.append("nombres", values.nombre);
-        formData.append("apellidos", values.apellido);
-        formData.append("correo", values.email);
-        formData.append("contrasena", values.password);
-
-        if (foto) {
-          formData.append("foto", foto);
-        }
-
-        const response = await axiosClient.post("/auth/register", formData, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
-
-        if (response.status === 200 || response.status === 201) {
-          addToast({
-            title: t("auth:register.success"),
-            description: t("auth:register.success_description"),
-            color: appColor as any,
-            timeout: 3000,
-          });
-          navigate("/login");
-        }
-
-      } catch (error: any) {
-        addToast({
-          title: t("auth:register.error"),
-          description: error.response?.status === 409 ? t("auth:errors.user_exists") : getErrorMessage(error, t),
-          color: "danger",
-          timeout: 5000,
-        });
-      }
-    },
+    resolver: yupResolver(getRegisterSchema(t)),
+    mode: "onTouched",
   });
+
+  const onSubmit = async (values: RegisterFormValues) => {
+    try {
+      await registerMutation.mutateAsync({ ...values, foto });
+
+      addToast({
+        title: t("auth:register.success"),
+        description: t("auth:register.success_description"),
+        color: appColor as any,
+        timeout: 3000,
+      });
+      navigate("/login");
+    } catch (error: any) {
+      addToast({
+        title: t("auth:register.error"),
+        description: error.response?.status === 409 ? t("auth:errors.user_exists") : getErrorMessage(error, t),
+        color: "danger",
+        timeout: 5000,
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
@@ -149,112 +153,100 @@ const RegisterPage = () => {
         </div>
 
 
-        <form className="mt-8 space-y-6" onSubmit={formik.handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Nombres */}
             <Input
-              errorMessage={formik.errors.nombre}
-              isInvalid={formik.touched.nombre && !!formik.errors.nombre}
+              errorMessage={errors.nombre?.message}
+              isInvalid={!!touchedFields.nombre && !!errors.nombre}
               label={t("auth:fields.name.label")}
-              name="nombre"
               placeholder={t("auth:fields.name.placeholder")}
-              value={formik.values.nombre}
               variant="bordered"
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
               color={appColor}
+              {...register("nombre")}
             />
             {/* Apellidos */}
             <Input
-              errorMessage={formik.errors.apellido}
-              isInvalid={formik.touched.apellido && !!formik.errors.apellido}
+              errorMessage={errors.apellido?.message}
+              isInvalid={!!touchedFields.apellido && !!errors.apellido}
               label={t("auth:fields.lastname.label")}
-              name="apellido"
               placeholder={t("auth:fields.lastname.placeholder")}
-              value={formik.values.apellido}
               variant="bordered"
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
               color={appColor}
+              {...register("apellido")}
             />
 
             {/* Email */}
             <Input
               className="md:col-span-2"
-              errorMessage={formik.errors.email}
-              isInvalid={formik.touched.email && !!formik.errors.email}
+              errorMessage={errors.email?.message}
+              isInvalid={!!touchedFields.email && !!errors.email}
               label={t("auth:fields.email.label")}
-              name="email"
               type="email"
               placeholder={t("auth:fields.email.placeholder")}
-              value={formik.values.email}
               variant="bordered"
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
               color={appColor}
+              {...register("email")}
             />
 
             {/* Telefono */}
             <Input
-              errorMessage={formik.errors.telefono}
-              isInvalid={formik.touched.telefono && !!formik.errors.telefono}
+              errorMessage={errors.telefono?.message}
+              isInvalid={!!touchedFields.telefono && !!errors.telefono}
               label={t("auth:fields.phone.label")}
-              name="telefono"
               type="tel"
               placeholder={t("auth:fields.phone.placeholder")}
-              value={formik.values.telefono}
               variant="bordered"
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
               color={appColor}
+              {...register("telefono")}
             />
 
             {/* Direccion */}
             <Input
-              errorMessage={formik.errors.direccion}
-              isInvalid={formik.touched.direccion && !!formik.errors.direccion}
+              errorMessage={errors.direccion?.message}
+              isInvalid={!!touchedFields.direccion && !!errors.direccion}
               label={t("auth:fields.address.label")}
-              name="direccion"
               placeholder={t("auth:fields.address.placeholder")}
-              value={formik.values.direccion}
               variant="bordered"
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
               color={appColor}
+              {...register("direccion")}
             />
 
             {/* Tipo Documento */}
-            <Select
-              errorMessage={formik.errors.tipo_documento}
-              isInvalid={formik.touched.tipo_documento && !!formik.errors.tipo_documento}
-              label={t("auth:fields.document_type.label")}
+            <Controller
+              control={control}
               name="tipo_documento"
-              placeholder={t("auth:fields.document_type.placeholder")}
-              selectedKeys={formik.values.tipo_documento ? [formik.values.tipo_documento] : []}
-              variant="bordered"
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
-              color={appColor}
-            >
-              {documentTypes.map((doc) => (
-                <SelectItem key={doc.key}>
-                  {doc.label}
-                </SelectItem>
-              ))}
-            </Select>
+              render={({ field }) => (
+                <Select
+                  errorMessage={errors.tipo_documento?.message}
+                  isInvalid={!!touchedFields.tipo_documento && !!errors.tipo_documento}
+                  label={t("auth:fields.document_type.label")}
+                  name={field.name}
+                  placeholder={t("auth:fields.document_type.placeholder")}
+                  selectedKeys={field.value ? [field.value] : []}
+                  variant="bordered"
+                  onBlur={field.onBlur}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  color={appColor}
+                >
+                  {documentTypes.map((doc) => (
+                    <SelectItem key={doc.key}>
+                      {doc.label}
+                    </SelectItem>
+                  ))}
+                </Select>
+              )}
+            />
 
             {/* Documento ID */}
             <Input
-              errorMessage={formik.errors.documento_identidad}
-              isInvalid={formik.touched.documento_identidad && !!formik.errors.documento_identidad}
+              errorMessage={errors.documento_identidad?.message}
+              isInvalid={!!touchedFields.documento_identidad && !!errors.documento_identidad}
               label={t("auth:fields.document_id.label")}
-              name="documento_identidad"
               placeholder={t("auth:fields.document_id.placeholder")}
-              value={formik.values.documento_identidad}
               variant="bordered"
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
               color={appColor}
+              {...register("documento_identidad")}
             />
 
             {/* Password */}
@@ -273,31 +265,25 @@ const RegisterPage = () => {
                   )}
                 </button>
               }
-              errorMessage={formik.errors.password}
-              isInvalid={formik.touched.password && !!formik.errors.password}
+              errorMessage={errors.password?.message}
+              isInvalid={!!touchedFields.password && !!errors.password}
               label={t("auth:fields.password.label")}
-              name="password"
               placeholder={t("auth:fields.password.placeholder")}
               type={isVisible ? "text" : "password"}
-              value={formik.values.password}
               variant="bordered"
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
+              {...register("password")}
             />
 
             {/* Confirm Password */}
             <Input
               color={appColor}
-              errorMessage={formik.errors.confirmPassword}
-              isInvalid={formik.touched.confirmPassword && !!formik.errors.confirmPassword}
+              errorMessage={errors.confirmPassword?.message}
+              isInvalid={!!touchedFields.confirmPassword && !!errors.confirmPassword}
               label={t("auth:fields.confirm_password.label")}
-              name="confirmPassword"
               placeholder={t("auth:fields.confirm_password.placeholder")}
               type="password"
-              value={formik.values.confirmPassword}
               variant="bordered"
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
+              {...register("confirmPassword")}
             />
           </div>
 
@@ -305,7 +291,7 @@ const RegisterPage = () => {
             <Button
               className="w-full font-semibold shadow-lg"
               color={appColor}
-              isLoading={formik.isSubmitting}
+              isLoading={registerMutation.isPending}
               type="submit"
               variant="solid"
             >

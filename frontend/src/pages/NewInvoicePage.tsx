@@ -5,18 +5,18 @@ import { InvoiceUpload } from "@/features/invoices/InvoiceUpload";
 import { InvoiceForm } from "@/features/invoices/InvoiceForm";
 import { ScanResponse, ProductSuggestion } from "@/features/invoices/types";
 import { motion, AnimatePresence } from "framer-motion";
-import axiosClient from "@/lib/axiosClient";
 import { addToast } from "@heroui/toast";
 import { useNavigate } from "react-router-dom";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { appColor } from "@/theme/theme.config";
+import { useConfirmInvoiceMutation } from "@/features/invoices/api";
 
 export const NewInvoicePage = () => {
     const { t } = useTranslation("invoices");
     const [step, setStep] = useState<"upload" | "edit">("upload");
     const [scanData, setScanData] = useState<ScanResponse | null>(null);
-    const [saving, setSaving] = useState(false);
+    const confirmInvoiceMutation = useConfirmInvoiceMutation();
     const navigate = useNavigate();
 
     // Confirmation Dialog State
@@ -35,7 +35,6 @@ export const NewInvoicePage = () => {
 
     const handleConfirmSave = async () => {
         if (!pendingData) return;
-        setSaving(true);
         onConfirmClose(); // Close dialog, show loading on Form button if needed, or global loading
 
         try {
@@ -58,7 +57,7 @@ export const NewInvoicePage = () => {
                 }))
             };
 
-            await axiosClient.post("/facturas/ocr/confirmar", payload);
+            await confirmInvoiceMutation.mutateAsync(payload);
 
             addToast({ title: "Factura Guardada", description: "La factura se ha registrado exitosamente.", color: "success" });
             navigate("/dashboard");
@@ -66,7 +65,6 @@ export const NewInvoicePage = () => {
         } catch (error) {
             console.error("Error saving invoice:", error);
             addToast({ title: "Error", description: "No se pudo guardar la factura.", color: "danger" });
-            setSaving(false);
         }
     };
 
@@ -96,7 +94,7 @@ export const NewInvoicePage = () => {
                             initialData={scanData.parsed}
                             onSave={handlePreSave}
                             onCancel={() => setStep("upload")}
-                            saving={saving}
+                            saving={confirmInvoiceMutation.isPending}
                         />
                     </motion.div>
                 )}
@@ -125,7 +123,7 @@ export const NewInvoicePage = () => {
                         <Button color="danger" variant="light" onPress={onConfirmClose}>
                             {t("confirm.cancel")}
                         </Button>
-                        <Button color="primary" onPress={handleConfirmSave} isLoading={saving}>
+                        <Button color="primary" onPress={handleConfirmSave} isLoading={confirmInvoiceMutation.isPending}>
                             {t("confirm.confirm")}
                         </Button>
                     </ModalFooter>
