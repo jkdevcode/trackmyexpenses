@@ -1,9 +1,13 @@
 import { useState } from "react";
 
 import { useTranslation } from "react-i18next";
-import { InvoiceUpload } from "@/features/invoices/InvoiceUpload";
-import { InvoiceForm } from "@/features/invoices/InvoiceForm";
-import { ScanResponse, ProductSuggestion, ConfirmFacturaDto } from "@/features/invoices/types";
+import { InvoiceUpload } from "@/features/invoices/components/InvoiceUpload";
+import { InvoiceForm } from "@/features/invoices/components/InvoiceForm";
+import type {
+  ScanResponse,
+  ProductSuggestion,
+  ConfirmFacturaDto,
+} from "@/features/invoices/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { addToast } from "@heroui/toast";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +21,7 @@ import {
 } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { appColor } from "@/theme/theme.config";
-import { useConfirmInvoiceMutation } from "@/features/invoices/api";
+import { useConfirmInvoiceMutation } from "@/features/invoices/hooks/useInvoiceMutations";
 
 export const NewInvoicePage = () => {
   const { t } = useTranslation("invoices");

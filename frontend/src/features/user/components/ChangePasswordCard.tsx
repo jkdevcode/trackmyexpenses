@@ -8,7 +8,7 @@ import { addToast } from "@heroui/toast";
 import { appColor } from "@/theme/theme.config";
 import { getChangePasswordSchema } from "@/schemas/profile";
 import { getErrorMessage } from "@/utils/errors";
-import { useChangePasswordMutation } from "../api";
+import { useChangePasswordMutation } from "../hooks/useUserMutations";
 
 const ChangePasswordCard = () => {
   const { t } = useTranslation(["profile", "auth", "validation"]);

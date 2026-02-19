@@ -10,7 +10,7 @@ import { DatePicker } from "@heroui/date-picker";
 import { parseDate, getLocalTimeZone, today } from "@internationalized/date";
 import { useTranslation } from "react-i18next";
 import { appColor } from "@/theme/theme.config";
-import { ParsedInvoice, ProductSuggestion } from "./types";
+import type { ParsedInvoice, ProductSuggestion } from "../types";
 import { InvoiceSummary } from "./InvoiceSummary";
 import { InvoiceItemsModal } from "./InvoiceItemsModal";
 import { getInvoiceSchema } from "@/schemas/invoice";

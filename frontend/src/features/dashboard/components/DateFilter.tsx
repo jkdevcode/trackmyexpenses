@@ -1,7 +1,7 @@
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 import { appColor } from "@/theme/theme.config";
-import { DateFilterType } from "../hooks/useDashboardData";
+import type { DateFilterType } from "../types";
 
 interface DateFilterProps {
   filter: DateFilterType;

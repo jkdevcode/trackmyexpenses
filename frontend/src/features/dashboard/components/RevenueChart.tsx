@@ -9,7 +9,7 @@ import {
 } from "recharts";
 import { useTranslation } from "react-i18next";
 import { Card, CardBody, CardHeader } from "@heroui/card";
-import { ExpenseData } from "../hooks/useDashboardData";
+import type { ExpenseData } from "../types";
 import { THEME_COLOR_MAP, appColor } from "@/theme/theme.config";
 
 interface RevenueChartProps {

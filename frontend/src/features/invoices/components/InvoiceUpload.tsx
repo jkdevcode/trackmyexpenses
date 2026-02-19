@@ -3,10 +3,10 @@ import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 import { appColor } from "@/theme/theme.config";
-import { ScanResponse } from "./types";
 import { addToast } from "@heroui/toast";
 import { GalleryIcon } from "@/components/ui/icons";
-import { useScanInvoiceMutation } from "./api";
+import type { ScanResponse } from "../types";
+import { useScanInvoiceMutation } from "../hooks/useInvoiceMutations";
 
 interface InvoiceUploadProps {
   onScanComplete: (data: ScanResponse) => void;
