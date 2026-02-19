@@ -113,7 +113,7 @@ const RegisterPage = () => {
       addToast({
         title: t("auth:register.success"),
         description: t("auth:register.success_description"),
-        color: appColor as any,
+        color: "success",
         timeout: 3000,
       });
       navigate("/login");

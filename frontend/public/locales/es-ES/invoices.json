@@ -52,5 +52,13 @@
     "total": "Total a Pagar",
     "cancel": "Cancelar",
     "confirm": "Confirmar y Guardar"
+  },
+  "toast": {
+    "success": "Éxito",
+    "error": "Error",
+    "save_success_title": "Factura Guardada",
+    "save_success_desc": "La factura se ha registrado exitosamente.",
+    "save_error_title": "Error",
+    "save_error_desc": "No se pudo guardar la factura."
   }
 }

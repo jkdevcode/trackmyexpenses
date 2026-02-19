@@ -73,7 +73,7 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
   };
 
   return (
-    <div className="w-10/12 lg:w-full">
+    <div className="w-full">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">{t("table.title")}</h3>
       </div>
@@ -130,7 +130,7 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
                       <TableCell>
                         <div className="flex flex-col">
                           <span
-                            className="font-medium text-foreground text-sm truncate max-w-[120px] sm:max-w-xs"
+                            className="font-medium text-foreground text-sm truncate max-w-xs xl:max-w-44 2xl:max-w-64"
                             title={item.provider}
                           >
                             {item.provider}

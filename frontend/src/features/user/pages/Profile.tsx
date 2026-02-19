@@ -68,7 +68,7 @@ const ProfilePage = () => {
         if (!response) {
           addToast({
             title: t("profile:success"),
-            color: appColor as any,
+            color: "success",
             timeout: 3000,
           });
           return;
@@ -76,7 +76,7 @@ const ProfilePage = () => {
 
         addToast({
           title: t("profile:success"),
-          color: appColor as any,
+          color: "success",
           timeout: 3000,
         });
 
