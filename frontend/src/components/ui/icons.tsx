@@ -323,5 +323,3 @@ export const GalleryIcon = (props: IconSvgProps) => {
     </svg>
   );
 };
-
-

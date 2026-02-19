@@ -37,12 +37,12 @@
     "search": "Search product...",
     "close": "Close",
     "columns": {
-        "product": "PRODUCT",
-        "qty": "QTY",
-        "unit": "UNIT",
-        "price": "UNIT PRICE",
-        "total": "TOTAL",
-        "actions": "ACTIONS"
+      "product": "PRODUCT",
+      "qty": "QTY",
+      "unit": "UNIT",
+      "price": "UNIT PRICE",
+      "total": "TOTAL",
+      "actions": "ACTIONS"
     }
   },
   "confirm": {

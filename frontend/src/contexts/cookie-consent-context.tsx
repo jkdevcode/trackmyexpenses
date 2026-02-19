@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  FC,
-  ReactNode,
-} from "react";
+import { createContext, useContext, useState, FC, ReactNode } from "react";
 
 export type CookieConsentStatus = "pending" | "accepted" | "rejected";
 
@@ -24,12 +18,14 @@ const COOKIE_CONSENT_KEY = "cookie-consent-status";
 export const CookieConsentProvider: FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [cookieConsent, setCookieConsent] = useState<CookieConsentStatus>(() => {
-    const savedConsent = localStorage.getItem(COOKIE_CONSENT_KEY);
-    return (savedConsent === "accepted" || savedConsent === "rejected")
-      ? savedConsent as CookieConsentStatus
-      : "pending";
-  });
+  const [cookieConsent, setCookieConsent] = useState<CookieConsentStatus>(
+    () => {
+      const savedConsent = localStorage.getItem(COOKIE_CONSENT_KEY);
+      return savedConsent === "accepted" || savedConsent === "rejected"
+        ? (savedConsent as CookieConsentStatus)
+        : "pending";
+    },
+  );
 
   const acceptCookies = () => {
     setCookieConsent("accepted");

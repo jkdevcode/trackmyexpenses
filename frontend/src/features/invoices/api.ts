@@ -1,6 +1,6 @@
+import type { ConfirmFacturaDto, ScanResponse } from "./types";
 import { useMutation } from "@tanstack/react-query";
 import axiosClient from "@/lib/axiosClient";
-import type { ConfirmFacturaDto, ScanResponse } from "./types";
 
 export const useScanInvoiceMutation = () =>
   useMutation({

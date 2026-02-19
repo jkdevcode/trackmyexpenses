@@ -32,7 +32,9 @@ export class AppErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-[40vh] flex flex-col items-center justify-center gap-4 p-6 text-center">
-          <h2 className="text-xl font-semibold">{this.props.fallbackTitle ?? "Ocurrio un error inesperado"}</h2>
+          <h2 className="text-xl font-semibold">
+            {this.props.fallbackTitle ?? "Ocurrio un error inesperado"}
+          </h2>
           <p className="text-default-500 max-w-xl">
             Esta seccion fallo. Puedes intentar recargar la vista.
           </p>

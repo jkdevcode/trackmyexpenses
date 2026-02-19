@@ -28,7 +28,13 @@ export function Provider({ children }: { children: ReactNode }) {
           <ThemeProvider>
             <ToastProvider />
             <AppErrorBoundary>
-              <Suspense fallback={<div className="flex h-screen items-center justify-center"><Spinner size="lg" /></div>}>
+              <Suspense
+                fallback={
+                  <div className="flex h-screen items-center justify-center">
+                    <Spinner size="lg" />
+                  </div>
+                }
+              >
                 {children}
               </Suspense>
             </AppErrorBoundary>

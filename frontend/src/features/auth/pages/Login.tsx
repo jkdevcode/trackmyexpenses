@@ -78,7 +78,6 @@ const LoginPage = () => {
           </h2>
         </div>
 
-
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="rounded-md space-y-4">
             <Input
@@ -118,7 +117,14 @@ const LoginPage = () => {
 
           <div className="flex items-center justify-between">
             <div className="text-sm">
-              <Link as={RouterLink} color={appColor === "default" ? "foreground" : (appColor as any)} href="#" to="/forgot-contrasena">
+              <Link
+                as={RouterLink}
+                color={
+                  appColor === "default" ? "foreground" : (appColor as any)
+                }
+                href="#"
+                to="/forgot-contrasena"
+              >
                 {t("auth:login.forgot_password")}
               </Link>
             </div>
@@ -138,8 +144,15 @@ const LoginPage = () => {
 
           <div className="text-center mt-4">
             <p className="text-sm text-default-500">
-              {t("auth:login.no_account")}{' '}
-              <Link as={RouterLink} className="font-semibold" color={appColor === "default" ? "foreground" : (appColor as any)} to="/register">
+              {t("auth:login.no_account")}{" "}
+              <Link
+                as={RouterLink}
+                className="font-semibold"
+                color={
+                  appColor === "default" ? "foreground" : (appColor as any)
+                }
+                to="/register"
+              >
                 {t("auth:login.register_link")}
               </Link>
             </p>

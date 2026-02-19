@@ -20,7 +20,14 @@ function App() {
     <CookieConsentProvider>
       <CookieConsent />
       <Routes>
-        <Route element={<AppErrorBoundary><LandingPage /></AppErrorBoundary>} path="/" />
+        <Route
+          element={
+            <AppErrorBoundary>
+              <LandingPage />
+            </AppErrorBoundary>
+          }
+          path="/"
+        />
         <Route
           element={
             <AppErrorBoundary>
@@ -50,12 +57,44 @@ function App() {
             </AppErrorBoundary>
           }
         >
-          <Route index path="/dashboard" element={<AppErrorBoundary><Dashboard /></AppErrorBoundary>} />
-          <Route path="/profile" element={<AppErrorBoundary><ProfilePage /></AppErrorBoundary>} />
-          <Route path="/invoices" element={<AppErrorBoundary><NewInvoicePage /></AppErrorBoundary>} />
-          <Route path="/settings" element={<div className="p-4">Ajustes (WIP)</div>} />
+          <Route
+            index
+            path="/dashboard"
+            element={
+              <AppErrorBoundary>
+                <Dashboard />
+              </AppErrorBoundary>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <AppErrorBoundary>
+                <ProfilePage />
+              </AppErrorBoundary>
+            }
+          />
+          <Route
+            path="/invoices"
+            element={
+              <AppErrorBoundary>
+                <NewInvoicePage />
+              </AppErrorBoundary>
+            }
+          />
+          <Route
+            path="/settings"
+            element={<div className="p-4">Ajustes (WIP)</div>}
+          />
         </Route>
-        <Route element={<AppErrorBoundary><PageNotFound /></AppErrorBoundary>} path="*" />
+        <Route
+          element={
+            <AppErrorBoundary>
+              <PageNotFound />
+            </AppErrorBoundary>
+          }
+          path="*"
+        />
       </Routes>
     </CookieConsentProvider>
   );

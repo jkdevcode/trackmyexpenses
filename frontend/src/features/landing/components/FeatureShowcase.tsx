@@ -15,7 +15,9 @@ export const FeatureShowcase = () => {
               {t("landing:features-title-highlight")}
             </span>
           </h2>
-          <p className="text-lg text-default-500">{t("landing:features-desc")}</p>
+          <p className="text-lg text-default-500">
+            {t("landing:features-desc")}
+          </p>
           <ul className="space-y-4">
             <li className="flex items-center gap-3">
               <div
