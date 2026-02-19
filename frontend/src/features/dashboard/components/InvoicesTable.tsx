@@ -11,7 +11,7 @@ import {
 import { Pagination } from "@heroui/pagination";
 import { Chip } from "@heroui/chip";
 import { useTranslation } from "react-i18next";
-import { Invoice } from "../hooks/useDashboardData";
+import type { Invoice } from "../types";
 import { appColor } from "@/theme/theme.config";
 
 interface InvoicesTableProps {

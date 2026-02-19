@@ -1,7 +1,7 @@
 import { Card, CardBody } from "@heroui/card";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { DashboardStats } from "../hooks/useDashboardData";
+import type { DashboardStats } from "../types";
 import { appColor } from "@/theme/theme.config";
 
 interface StatsCardsProps {

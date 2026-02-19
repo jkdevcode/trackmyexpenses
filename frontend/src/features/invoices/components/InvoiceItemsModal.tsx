@@ -19,8 +19,8 @@ import { Pagination } from "@heroui/pagination";
 import { useTranslation } from "react-i18next";
 import { appColor } from "@/theme/theme.config";
 import { useState, useMemo } from "react";
-import { ProductSuggestion } from "./types";
 import { DeleteIcon, SearchIcon } from "@/components/ui/icons";
+import type { ProductSuggestion } from "../types";
 
 interface InvoiceItemsModalProps {
   isOpen: boolean;

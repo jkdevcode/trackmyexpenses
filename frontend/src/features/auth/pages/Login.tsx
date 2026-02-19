@@ -13,7 +13,7 @@ import { appColor } from "@/theme/theme.config";
 import { EyeFilledIcon, EyeSlashFilledIcon, Logo } from "@/components/ui/icons";
 import { getLoginSchema } from "@/schemas/auth";
 import { useSession } from "@/contexts/session-context";
-import { useLoginMutation } from "../api";
+import { useLoginMutation } from "../hooks/useAuthMutations";
 
 interface LoginFormValues {
   documento: string;

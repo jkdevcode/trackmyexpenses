@@ -5,12 +5,12 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { HeroUIProvider } from "@heroui/system";
 import { ToastProvider } from "@heroui/toast";
 import { useHref, useNavigate } from "react-router-dom";
-import { Spinner } from "@heroui/spinner";
 
 import { ThemeProvider } from "./contexts/theme-context";
 import { SessionProvider } from "./contexts/session-context";
 import { queryClient } from "./lib/queryClient";
 import { AppErrorBoundary } from "./components/error/AppErrorBoundary";
+import { LoadingSpinner } from "./components/ui/LoadingSpinner";
 
 declare module "@react-types/shared" {
   interface RouterConfig {
@@ -29,11 +29,7 @@ export function Provider({ children }: { children: ReactNode }) {
             <ToastProvider />
             <AppErrorBoundary>
               <Suspense
-                fallback={
-                  <div className="flex h-screen items-center justify-center">
-                    <Spinner size="lg" />
-                  </div>
-                }
+                fallback={<LoadingSpinner />}
               >
                 {children}
               </Suspense>

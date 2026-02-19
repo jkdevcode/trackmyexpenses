@@ -11,9 +11,9 @@ import { useSession } from "@/contexts/session-context";
 import { getErrorMessage } from "@/utils/errors";
 import { appColor } from "@/theme/theme.config";
 import { getProfileSchema } from "@/schemas/profile";
-import { CameraIcon } from "@/features/auth/pages/Register";
+import { CameraIcon } from "@/components/ui/CameraIcon";
 import ChangePasswordCard from "../components/ChangePasswordCard";
-import { useUpdateProfileMutation } from "../api";
+import { useUpdateProfileMutation } from "../hooks/useUserMutations";
 
 const ProfilePage = () => {
   const { t } = useTranslation(["profile", "auth", "validation"]);

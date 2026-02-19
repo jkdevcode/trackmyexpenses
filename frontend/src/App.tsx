@@ -1,19 +1,27 @@
+import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import { CookieConsentProvider } from "@/contexts/cookie-consent-context";
 import { CookieConsent } from "@/components/ui/cookie-consent";
-import { PageNotFound } from "@/pages/404";
-
-import LandingPage from "@/pages/landing";
-import LoginPage from "@/features/auth/pages/Login";
-import RegisterPage from "@/features/auth/pages/Register";
-import ProfilePage from "@/features/user/pages/Profile";
-import Dashboard from "@/features/dashboard/pages/Dashboard";
-import { NewInvoicePage } from "@/pages/NewInvoicePage";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { PublicOnlyRoute } from "@/features/auth/components/PublicOnlyRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AppErrorBoundary } from "@/components/error/AppErrorBoundary";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+
+const LandingPage = lazy(() => import("@/pages/landing"));
+const LoginPage = lazy(() => import("@/features/auth/pages/Login"));
+const RegisterPage = lazy(() => import("@/features/auth/pages/Register"));
+const ProfilePage = lazy(() => import("@/features/user/pages/Profile"));
+const Dashboard = lazy(() => import("@/features/dashboard/pages/Dashboard"));
+const NewInvoicePage = lazy(() =>
+  import("@/pages/NewInvoicePage").then((module) => ({
+    default: module.NewInvoicePage,
+  })),
+);
+const PageNotFound = lazy(() =>
+  import("@/pages/404").then((module) => ({ default: module.PageNotFound })),
+);
 
 function App() {
   return (
@@ -23,7 +31,11 @@ function App() {
         <Route
           element={
             <AppErrorBoundary>
-              <LandingPage />
+              <Suspense
+                fallback={<LoadingSpinner message="Cargando inicio..." />}
+              >
+                <LandingPage />
+              </Suspense>
             </AppErrorBoundary>
           }
           path="/"
@@ -32,7 +44,11 @@ function App() {
           element={
             <AppErrorBoundary>
               <PublicOnlyRoute>
-                <LoginPage />
+                <Suspense
+                  fallback={<LoadingSpinner message="Cargando login..." />}
+                >
+                  <LoginPage />
+                </Suspense>
               </PublicOnlyRoute>
             </AppErrorBoundary>
           }
@@ -42,7 +58,11 @@ function App() {
           element={
             <AppErrorBoundary>
               <PublicOnlyRoute>
-                <RegisterPage />
+                <Suspense
+                  fallback={<LoadingSpinner message="Cargando registro..." />}
+                >
+                  <RegisterPage />
+                </Suspense>
               </PublicOnlyRoute>
             </AppErrorBoundary>
           }
@@ -62,7 +82,11 @@ function App() {
             path="/dashboard"
             element={
               <AppErrorBoundary>
-                <Dashboard />
+                <Suspense
+                  fallback={<LoadingSpinner message="Cargando dashboard..." />}
+                >
+                  <Dashboard />
+                </Suspense>
               </AppErrorBoundary>
             }
           />
@@ -70,7 +94,11 @@ function App() {
             path="/profile"
             element={
               <AppErrorBoundary>
-                <ProfilePage />
+                <Suspense
+                  fallback={<LoadingSpinner message="Cargando perfil..." />}
+                >
+                  <ProfilePage />
+                </Suspense>
               </AppErrorBoundary>
             }
           />
@@ -78,7 +106,11 @@ function App() {
             path="/invoices"
             element={
               <AppErrorBoundary>
-                <NewInvoicePage />
+                <Suspense
+                  fallback={<LoadingSpinner message="Cargando facturas..." />}
+                >
+                  <NewInvoicePage />
+                </Suspense>
               </AppErrorBoundary>
             }
           />
@@ -90,7 +122,11 @@ function App() {
         <Route
           element={
             <AppErrorBoundary>
-              <PageNotFound />
+              <Suspense
+                fallback={<LoadingSpinner message="Cargando pagina..." />}
+              >
+                <PageNotFound />
+              </Suspense>
             </AppErrorBoundary>
           }
           path="*"
