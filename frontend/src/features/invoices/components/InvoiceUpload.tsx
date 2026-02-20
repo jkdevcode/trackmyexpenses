@@ -100,11 +100,13 @@ export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
             accept="image/*"
             onChange={handleChange}
             disabled={scanInvoiceMutation.isPending}
+            aria-label="Upload invoice image"
           />
           <Button
             color={appColor}
             isLoading={scanInvoiceMutation.isPending}
             onPress={() => document.getElementById("invoice-upload")?.click()}
+            aria-label={t("upload.select_file")}
           >
             {scanInvoiceMutation.isPending
               ? t("upload.processing")

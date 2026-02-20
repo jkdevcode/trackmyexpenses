@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { addToast } from "@heroui/toast";
 import { getDashboardData } from "../services/dashboardService";
 import type { DateFilterType } from "../types";
 
 export const useDashboardData = () => {
+  const { t } = useTranslation(["dashboard", "common"]);
   const [filter, setFilter] = useState<DateFilterType>("month");
 
   const query = useQuery({
@@ -16,11 +18,11 @@ export const useDashboardData = () => {
     if (!query.error) return;
 
     addToast({
-      title: "Error",
-      description: "No se pudieron cargar los datos del dashboard",
+      title: t("common:error"),
+      description: t("dashboard:errors.load_failed"),
       color: "danger",
     });
-  }, [query.error]);
+  }, [query.error, t]);
 
   const data = useMemo(
     () =>

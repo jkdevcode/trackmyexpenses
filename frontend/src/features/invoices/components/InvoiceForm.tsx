@@ -208,7 +208,7 @@ export const InvoiceForm = ({
       </div>
 
       <div className="flex gap-4 justify-end pt-4">
-        <Button color="danger" variant="flat" onPress={onCancel}>
+        <Button color="danger" variant="flat" onPress={onCancel} type="button">
           {t("form.cancel")}
         </Button>
         <Button color={appColor} type="submit" isLoading={saving}>

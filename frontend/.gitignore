@@ -27,3 +27,5 @@ pnpm-lock.yaml
 yarn.lock
 bun.lockb
 .github/copilot-instructions.md
+playwright-report/
+test-results/

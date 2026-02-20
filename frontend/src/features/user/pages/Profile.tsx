@@ -40,6 +40,13 @@ const ProfilePage = () => {
     fileInputRef.current?.click();
   };
 
+  const handleAvatarKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleAvatarClick();
+    }
+  };
+
   const formik = useFormik({
     initialValues: {
       nombres: user?.nombres || "",
@@ -108,6 +115,10 @@ const ProfilePage = () => {
           <div
             className="relative group cursor-pointer"
             onClick={handleAvatarClick}
+            onKeyDown={handleAvatarKeyDown}
+            tabIndex={0}
+            role="button"
+            aria-label={t("profile:avatar.change")}
           >
             <Avatar
               className="w-32 h-32 text-large transition-transform group-hover:scale-105"
@@ -206,6 +217,7 @@ const ProfilePage = () => {
                 className="w-full font-semibold shadow-lg"
                 color="default"
                 variant="flat"
+                type="button"
                 onClick={handleReset}
               >
                 {t("profile:reset")}

@@ -6,6 +6,9 @@ import App from "./App.tsx";
 import "./i18n";
 import { Provider } from "./provider.tsx";
 import "./styles/globals.css";
+import { initSentry } from "./lib/sentry.ts";
+
+initSentry();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

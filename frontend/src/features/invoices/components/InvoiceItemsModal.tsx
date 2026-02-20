@@ -107,6 +107,7 @@ export const InvoiceItemsModal = ({
               onValueChange={setFilterValue}
               className="max-w-xs"
               size="sm"
+              aria-label={t("modal.search")}
               startContent={<SearchIcon className="text-default-400" />}
             />
           </div>
@@ -211,6 +212,7 @@ export const InvoiceItemsModal = ({
                         color="danger"
                         variant="light"
                         onPress={() => handleDelete(item)}
+                        aria-label={`Delete ${item.nombreDetected}`}
                       >
                         <DeleteIcon />
                       </Button>

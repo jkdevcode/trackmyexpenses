@@ -23,6 +23,9 @@
       "average": "Average"
     }
   },
+  "errors": {
+    "load_failed": "Failed to load dashboard data"
+  },
   "table": {
     "title": "Recent Activity",
     "headers": {

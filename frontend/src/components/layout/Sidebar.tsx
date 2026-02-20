@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Avatar } from "@heroui/avatar";
@@ -51,6 +52,13 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
     },
   ];
 
+  const handleProfileKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      navigate("/profile");
+    }
+  };
+
   return (
     <aside
       className={`hidden md:flex flex-col h-screen border-r border-divider bg-background transition-all duration-300 ease-in-out sticky top-0
@@ -62,6 +70,15 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
         <div
           className={`flex items-center gap-3 cursor-pointer ${isCollapsed ? "justify-center" : ""}`}
           onClick={onToggle}
+          role="button"
+          tabIndex={0}
+          aria-label="Toggle sidebar"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onToggle();
+            }
+          }}
         >
           <Logo size={isCollapsed ? 32 : 40} />
           {!isCollapsed && (
@@ -107,6 +124,10 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
           <div
             className="flex items-center gap-3 p-2 rounded-xl hover:bg-default-100 cursor-pointer transition-colors overflow-hidden group"
             onClick={() => navigate("/profile")}
+            role="button"
+            tabIndex={0}
+            aria-label={t("profile:title")}
+            onKeyDown={handleProfileKeyDown}
           >
             <Avatar
               isBordered

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Navbar,
@@ -56,6 +56,14 @@ export const MobileNavbar = () => {
     },
   ];
 
+  const handleProfileKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setIsMenuOpen(false);
+      navigate("/profile");
+    }
+  };
+
   return (
     <Navbar
       isMenuOpen={isMenuOpen}
@@ -81,6 +89,15 @@ export const MobileNavbar = () => {
           size="sm"
           className="cursor-pointer"
           onClick={() => navigate("/profile")}
+          role="button"
+          tabIndex={0}
+          aria-label={t("profile:title")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              navigate("/profile");
+            }
+          }}
         />
       </NavbarContent>
 
@@ -144,6 +161,10 @@ export const MobileNavbar = () => {
                 setIsMenuOpen(false);
                 navigate("/profile");
               }}
+              role="button"
+              tabIndex={0}
+              aria-label={t("profile:title")}
+              onKeyDown={handleProfileKeyDown}
             >
               <Avatar
                 isBordered
