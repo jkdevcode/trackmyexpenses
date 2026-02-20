@@ -98,7 +98,9 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
   });
 
   await page.goto("/invoices", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: /New Invoice|Nueva Factura/i })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /New Invoice|Nueva Factura/i }),
+  ).toBeVisible();
 
   await page.locator("#invoice-upload").setInputFiles({
     name: "invoice.png",
@@ -106,12 +108,22 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
     buffer: Buffer.from(ONE_PIXEL_PNG_BASE64, "base64"),
   });
 
-  await expect(page.getByRole("heading", { name: /Invoice Review|Revision de Factura|Revision|Revisión/i })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: /Invoice Review|Revision de Factura|Revision|Revisión/i,
+    }),
+  ).toBeVisible();
 
-  await page.getByRole("button", { name: /Save Invoice|Guardar Factura/i }).click();
-  await expect(page.getByRole("button", { name: /Confirm and Save|Confirmar y Guardar/i })).toBeVisible();
+  await page
+    .getByRole("button", { name: /Save Invoice|Guardar Factura/i })
+    .click();
+  await expect(
+    page.getByRole("button", { name: /Confirm and Save|Confirmar y Guardar/i }),
+  ).toBeVisible();
 
-  await page.getByRole("button", { name: /Confirm and Save|Confirmar y Guardar/i }).click();
+  await page
+    .getByRole("button", { name: /Confirm and Save|Confirmar y Guardar/i })
+    .click();
 
   await expect.poll(() => confirmPayload).not.toBeNull();
   expect(confirmPayload.factura.lugarCompra).toBe("Store XYZ");
