@@ -97,6 +97,7 @@ const LoginPage = () => {
                   className="focus:outline-none"
                   type="button"
                   onClick={toggleVisibility}
+                  aria-label={isVisible ? "Hide password" : "Show password"}
                 >
                   {isVisible ? (
                     <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />

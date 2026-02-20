@@ -18,6 +18,8 @@ export default [
       parser: tsParser,
       globals: {
         // Ajout des globals du navigateur
+        HTMLDivElement: "readonly",
+        HTMLInputElement: "readonly",
         File: "readonly",
         FormData: "readonly",
         document: "readonly",

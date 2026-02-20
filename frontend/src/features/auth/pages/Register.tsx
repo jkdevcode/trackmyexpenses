@@ -54,6 +54,13 @@ const RegisterPage = () => {
     fileInputRef.current?.click();
   };
 
+  const handleAvatarKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleAvatarClick();
+    }
+  };
+
   // Helper types for Select options
   const documentTypes = [
     { key: "cedula", label: t("auth:document_types.cc") },
@@ -118,6 +125,10 @@ const RegisterPage = () => {
           <div
             className="flex flex-col items-center mb-4 group cursor-pointer"
             onClick={handleAvatarClick}
+            onKeyDown={handleAvatarKeyDown}
+            tabIndex={0}
+            role="button"
+            aria-label={t("auth:register.avatar_fallback")}
           >
             <Avatar
               className="w-24 h-24 mb-2 transition-transform group-hover:scale-105"
@@ -249,6 +260,7 @@ const RegisterPage = () => {
                   className="focus:outline-none"
                   type="button"
                   onClick={toggleVisibility}
+                  aria-label={isVisible ? "Hide password" : "Show password"}
                 >
                   {isVisible ? (
                     <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />

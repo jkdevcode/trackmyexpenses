@@ -23,6 +23,9 @@
       "average": "Promedio"
     }
   },
+  "errors": {
+    "load_failed": "No se pudieron cargar los datos del dashboard"
+  },
   "table": {
     "title": "Actividad Reciente",
     "headers": {
