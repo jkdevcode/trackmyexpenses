@@ -6,9 +6,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Request } from 'express';
 
 function extractTokenFromCookies(req: Request): string | null {
-  const tokenFromParsedCookies = (
-    req as Request & { cookies?: Record<string, string> }
-  ).cookies?.token;
+  const maybeCookies: unknown = (req as Request & { cookies?: unknown })
+    .cookies;
+  const tokenFromParsedCookies =
+    typeof maybeCookies === 'object' && maybeCookies !== null
+      ? (maybeCookies as Record<string, unknown>).token
+      : undefined;
   if (
     typeof tokenFromParsedCookies === 'string' &&
     tokenFromParsedCookies.trim() !== ''

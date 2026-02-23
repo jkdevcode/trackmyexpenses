@@ -41,13 +41,15 @@ export class TextParserService {
 
     try {
       parsedData = await this.parseWithAI(rawText);
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.warn({
         msg: 'AI Parsing failed, switching to fallback regex',
         requestId: RequestContext.getRequestId(),
       });
       parsedData = {
-        productos: this.normalizeProducts(TextParserHelper.fallbackParse(rawText)),
+        productos: this.normalizeProducts(
+          TextParserHelper.fallbackParse(rawText),
+        ),
       };
       usedFallbackParser = true;
       this.logger.error({
@@ -111,10 +113,14 @@ export class TextParserService {
     `;
 
     const result = await this.geminiModel.generateContent(prompt);
-    return this.normalizeParsedData(JSON.parse(result.response.text()) as unknown);
+    return this.normalizeParsedData(
+      JSON.parse(result.response.text()) as unknown,
+    );
   }
 
-  private async enrichProducts(products: ParsedProduct[]): Promise<ParsedProduct[]> {
+  private async enrichProducts(
+    products: ParsedProduct[],
+  ): Promise<ParsedProduct[]> {
     const dbProducts = await this.prisma.producto.findMany({
       select: { id: true, nombre: true, codigo: true },
     });

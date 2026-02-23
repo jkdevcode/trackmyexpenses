@@ -6,6 +6,8 @@ import { AppModule } from './../src/app.module';
 describe('ProductoController (e2e)', () => {
   let app: INestApplication;
   let authCookie: string;
+  const httpServer = () =>
+    app.getHttpServer() as unknown as Parameters<typeof request>[0];
 
   const uniqueId = Date.now().toString().slice(-6);
   const testUser = {
@@ -27,15 +29,11 @@ describe('ProductoController (e2e)', () => {
     await app.init();
 
     // Register & Login
-    await request(app.getHttpServer())
-      .post('/api/auth/register')
-      .send(testUser);
-    const loginRes = await request(app.getHttpServer())
-      .post('/api/auth/login')
-      .send({
-        documento: testUser.documento,
-        contrasena: testUser.contrasena,
-      });
+    await request(httpServer()).post('/api/auth/register').send(testUser);
+    const loginRes = await request(httpServer()).post('/api/auth/login').send({
+      documento: testUser.documento,
+      contrasena: testUser.contrasena,
+    });
     authCookie = loginRes.headers['set-cookie'][0].split(';')[0];
   });
 
@@ -50,30 +48,32 @@ describe('ProductoController (e2e)', () => {
   };
 
   it('/api/productos (POST) - Create Producto', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .post('/api/productos')
       .set('Cookie', authCookie)
       .send(testProduct)
       .expect(201)
       .expect((res) => {
-        expect(res.body.producto).toBeDefined();
-        expect(res.body.producto.codigo).toBe(testProduct.codigo);
+        const body = res.body as { producto: { codigo: string } };
+        expect(body.producto).toBeDefined();
+        expect(body.producto.codigo).toBe(testProduct.codigo);
       });
   });
 
   it('/api/productos (GET) - List Productos', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .get('/api/productos')
       .set('Cookie', authCookie)
       .expect(200)
       .expect((res) => {
-        expect(res.body.productos).toBeInstanceOf(Array);
-        expect(res.body.productos.length).toBeGreaterThan(0);
+        const body = res.body as { productos: unknown[] };
+        expect(body.productos).toBeInstanceOf(Array);
+        expect(body.productos.length).toBeGreaterThan(0);
       });
   });
 
   it('/api/productos (POST) - Fail Duplicate Code', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .post('/api/productos')
       .set('Cookie', authCookie)
       .send(testProduct)

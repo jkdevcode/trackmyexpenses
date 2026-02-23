@@ -34,7 +34,7 @@ export class FacturaOcrOrchestrator {
         parsed: parsedResult.parsed,
         usedFallbackParser: parsedResult.usedFallbackParser,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error({
         msg: 'Error processing OCR',
         requestId: RequestContext.getRequestId(),

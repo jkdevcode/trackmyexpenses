@@ -8,6 +8,8 @@ describe('FacturaProducto Interaction (e2e)', () => {
   let authCookie: string;
   let productId: number;
   let facturaId: number;
+  const httpServer = () =>
+    app.getHttpServer() as unknown as Parameters<typeof request>[0];
 
   const uniqueId = Date.now().toString().slice(-6);
   const testUser = {
@@ -29,19 +31,15 @@ describe('FacturaProducto Interaction (e2e)', () => {
     await app.init();
 
     // Register & Login
-    await request(app.getHttpServer())
-      .post('/api/auth/register')
-      .send(testUser);
-    const loginRes = await request(app.getHttpServer())
-      .post('/api/auth/login')
-      .send({
-        documento: testUser.documento,
-        contrasena: testUser.contrasena,
-      });
+    await request(httpServer()).post('/api/auth/register').send(testUser);
+    const loginRes = await request(httpServer()).post('/api/auth/login').send({
+      documento: testUser.documento,
+      contrasena: testUser.contrasena,
+    });
     authCookie = loginRes.headers['set-cookie'][0].split(';')[0];
 
     // Create Product
-    const prodRes = await request(app.getHttpServer())
+    const prodRes = await request(httpServer())
       .post('/api/productos')
       .set('Cookie', authCookie)
       .send({
@@ -49,10 +47,11 @@ describe('FacturaProducto Interaction (e2e)', () => {
         nombre: 'Integration Product',
         precioUnitario: 50.0,
       });
-    productId = prodRes.body.producto.id;
+    const productBody = prodRes.body as { producto: { id: number } };
+    productId = productBody.producto.id;
 
     // Create Factura
-    const factRes = await request(app.getHttpServer())
+    const factRes = await request(httpServer())
       .post('/api/facturas')
       .set('Cookie', authCookie)
       .send({
@@ -60,7 +59,8 @@ describe('FacturaProducto Interaction (e2e)', () => {
         total: 100.0, // Initial manually set total
         metodoPago: 'EFECTIVO',
       });
-    facturaId = factRes.body.factura.id;
+    const facturaBody = factRes.body as { factura: { id: number } };
+    facturaId = facturaBody.factura.id;
   });
 
   afterAll(async () => {
@@ -68,7 +68,7 @@ describe('FacturaProducto Interaction (e2e)', () => {
   });
 
   it('POST /api/facturas/:id/productos - Add Product to Factura', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .post(`/api/facturas/${facturaId}/productos`)
       .set('Cookie', authCookie)
       .send({
@@ -78,12 +78,15 @@ describe('FacturaProducto Interaction (e2e)', () => {
       })
       .expect(201)
       .expect((res) => {
-        expect(res.body.data.fp).toBeDefined();
+        const body = res.body as {
+          data: { fp: unknown; updatedFactura: { totalPagar: string } };
+        };
+        expect(body.data.fp).toBeDefined();
         // Product price 50 * 2 = 100.
         // Initial total 100. New Total should be roughly 200.
         // Note: totalPagar in DB is Decimal. JS Prisma Client returns Decimal or string depending on config.
         // Nest default serializer might default to string.
-        const newTotal = parseFloat(res.body.data.updatedFactura.totalPagar);
+        const newTotal = parseFloat(body.data.updatedFactura.totalPagar);
         expect(newTotal).toBeCloseTo(200.0, 1);
       });
   });

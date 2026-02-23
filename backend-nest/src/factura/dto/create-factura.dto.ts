@@ -1,8 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-const fechaRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z)?$/;
-
 const createFacturaSchema = z.object({
   // Mapped from 'fecha' in requirement to 'fechaHoraCompra' or just 'fecha' and mapped in service
   fecha: z.string().refine((val) => !isNaN(Date.parse(val)), {

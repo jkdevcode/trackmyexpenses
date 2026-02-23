@@ -84,7 +84,9 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
       } catch (e) {
         this.logger.warn('AI Parsing failed, switching to fallback regex', e);
         parsedData = {
-          productos: this.normalizeProducts(TextParserHelper.fallbackParse(rawText)),
+          productos: this.normalizeProducts(
+            TextParserHelper.fallbackParse(rawText),
+          ),
         };
         usedFallbackParser = true;
       }
@@ -274,7 +276,9 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
     `;
 
     const result = await this.geminiModel.generateContent(prompt);
-    return this.normalizeParsedData(JSON.parse(result.response.text()) as unknown);
+    return this.normalizeParsedData(
+      JSON.parse(result.response.text()) as unknown,
+    );
   }
 
   private async enrichProducts(
@@ -293,7 +297,6 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
     });
 
     return products.map((item) => {
-
       // 1. Try UPC Match from Line Text or detected Name
       const upc = TextParserHelper.findUPC(item.nombreDetected);
       if (upc) {

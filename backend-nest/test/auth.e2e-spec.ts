@@ -5,6 +5,8 @@ import { AppModule } from './../src/app.module';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
+  const httpServer = () =>
+    app.getHttpServer() as unknown as Parameters<typeof request>[0];
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -38,17 +40,18 @@ describe('AuthController (e2e)', () => {
   };
 
   it('/api/auth/register (POST)', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .post('/api/auth/register')
       .send(testUser)
       .expect(201)
       .expect((res) => {
-        expect(res.body.status).toBe(200);
+        const body = res.body as { status: number };
+        expect(body.status).toBe(200);
       });
   });
 
   it('/api/auth/login (POST)', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .post('/api/auth/login')
       .send({
         documento: testUser.documento,
@@ -56,16 +59,20 @@ describe('AuthController (e2e)', () => {
       })
       .expect(201)
       .expect((res) => {
-        expect(res.body.token).toBeUndefined();
-        expect(res.body.user).toBeDefined();
-        expect(res.body.user.documento).toBe(testUser.documento);
+        const body = res.body as {
+          token?: string;
+          user: { documento: string };
+        };
+        expect(body.token).toBeUndefined();
+        expect(body.user).toBeDefined();
+        expect(body.user.documento).toBe(testUser.documento);
         expect(res.headers['set-cookie']).toBeDefined();
         expect(res.headers['set-cookie'][0]).toContain('token=');
       });
   });
 
   it('/api/auth/login (POST) - Fail Invalid Creds', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .post('/api/auth/login')
       .send({
         documento: testUser.documento,
