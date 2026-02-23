@@ -1,0 +1,135 @@
+name: CI - Phase 2
+
+on:
+  push:
+    branches:
+      - "**"
+    paths: # Only trigger on changes to these areas to avoid unnecessary runs
+      - "frontend/**"
+      - "backend-nest/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-phase2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes: # Detect which areas changed to avoid running unnecessary jobs
+    name: Detect Changed Areas
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect path changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend-nest/**'
+
+  frontend-ci: # Run lint, build, and E2E tests for frontend if there are changes
+    name: Frontend Lint + Build + Playwright E2E
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Lint frontend
+        run: npx eslint "src/**/*.{ts,tsx}"
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Install Playwright browser and OS deps
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+
+  backend-quality: # Run lint and unit tests for backend if there are changes, but skip Docker build if only frontend changed to save time and resources
+    name: Backend Lint + Unit Tests
+    needs: detect-changes 
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults: 
+      run:
+        working-directory: backend-nest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend-nest/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Lint backend
+        run: npx eslint "{src,apps,libs,test}/**/*.ts"
+
+      - name: Run backend unit tests
+        run: npm test -- --ci --runInBand
+
+  backend-docker-build: # Build backend Docker image if there are changes, but only after lint and tests pass to avoid wasting resources on builds that would fail quality checks
+    name: Backend Docker Build (No Push)
+    needs:
+      - detect-changes
+      - backend-quality
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend-nest
+          file: backend-nest/Dockerfile
+          push: false
+          tags: backend-nest:ci
