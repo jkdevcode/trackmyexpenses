@@ -1,12 +1,11 @@
 import type { KeyboardEvent } from "react";
+
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
 import { Tooltip } from "@heroui/tooltip";
 
-import { useSession } from "@/contexts/session-context";
-import { appColor } from "@/theme/theme.config";
 import { NavItem } from "./NavItem";
 import {
   HomeIcon,
@@ -15,6 +14,9 @@ import {
   LogoutIcon,
   Logo,
 } from "./LayoutIcons";
+
+import { useSession } from "@/contexts/session-context";
+import { appColor } from "@/theme/theme.config";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { LanguageSwitch } from "@/components/ui/language-switch";
 
@@ -68,11 +70,11 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
       {/* Header */}
       <div className="h-20 flex items-center justify-center p-4">
         <div
+          aria-label="Toggle sidebar"
           className={`flex items-center gap-3 cursor-pointer ${isCollapsed ? "justify-center" : ""}`}
-          onClick={onToggle}
           role="button"
           tabIndex={0}
-          aria-label="Toggle sidebar"
+          onClick={onToggle}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
@@ -93,8 +95,8 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
 
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-2">
-        {menuItems.map((item, index) => (
-          <NavItem key={index} {...item} isCollapsed={isCollapsed} />
+        {menuItems.map((item) => (
+          <NavItem key={item.href} {...item} isCollapsed={isCollapsed} />
         ))}
       </div>
 
@@ -122,20 +124,20 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
           </div>
 
           <div
+            aria-label={t("profile:title")}
             className="flex items-center gap-3 p-2 rounded-xl hover:bg-default-100 cursor-pointer transition-colors overflow-hidden group"
-            onClick={() => navigate("/profile")}
             role="button"
             tabIndex={0}
-            aria-label={t("profile:title")}
+            onClick={() => navigate("/profile")}
             onKeyDown={handleProfileKeyDown}
           >
             <Avatar
               isBordered
+              alt="Avatar usuario"
+              className="group-hover:scale-105 transition-transform"
               color={appColor}
               size={isCollapsed ? "sm" : "md"}
               src={avatarUrl}
-              alt="Avatar usuario"
-              className="group-hover:scale-105 transition-transform"
             />
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">
@@ -150,17 +152,17 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
           </div>
 
           <Tooltip
+            color="default"
             content={t("auth.logout")}
             isDisabled={!isCollapsed}
             placement="right"
-            color="default"
           >
             <Button
-              isIconOnly={isCollapsed}
               className={`w-full ${isCollapsed ? "" : "justify-start gap-2"}`}
               color="danger"
-              variant="flat"
+              isIconOnly={isCollapsed}
               size="sm"
+              variant="flat"
               onClick={logout}
             >
               <LogoutIcon />

@@ -1,14 +1,10 @@
-import {
-  LineChart,
-  Line,
-  XAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import type { ExpenseData } from "../types";
+import type { ComponentType } from "react";
+
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardBody, CardHeader } from "@heroui/card";
-import type { ExpenseData } from "../types";
+
 import { THEME_COLOR_MAP, appColor } from "@/theme/theme.config";
 
 interface AverageTicketChartProps {
@@ -21,13 +17,43 @@ export const AverageTicketChart = ({
   loading,
 }: AverageTicketChartProps) => {
   const { t } = useTranslation("dashboard");
+  const [recharts, setRecharts] = useState<{
+    LineChart: ComponentType<any>;
+    Line: ComponentType<any>;
+    XAxis: ComponentType<any>;
+    CartesianGrid: ComponentType<any>;
+    Tooltip: ComponentType<any>;
+    ResponsiveContainer: ComponentType<any>;
+  } | null>(null);
+
+  useEffect(() => {
+    void import("recharts").then(
+      ({
+        LineChart,
+        Line,
+        XAxis,
+        CartesianGrid,
+        Tooltip,
+        ResponsiveContainer,
+      }) => {
+        setRecharts({
+          LineChart,
+          Line,
+          XAxis,
+          CartesianGrid,
+          Tooltip,
+          ResponsiveContainer,
+        });
+      },
+    );
+  }, []);
 
   // Get colors
   const primaryRgb = THEME_COLOR_MAP[appColor].dark;
   const primaryColor = `rgb(${primaryRgb})`;
   const secondaryColor = "#9333ea"; // Purple-ish for contrast or secondary metric
 
-  if (loading) {
+  if (loading || !recharts) {
     return (
       <Card
         className="h-[300px] w-full animate-pulse bg-default-100"
@@ -37,6 +63,15 @@ export const AverageTicketChart = ({
       </Card>
     );
   }
+
+  const {
+    LineChart,
+    Line,
+    XAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+  } = recharts;
 
   return (
     <Card className="h-[300px] w-full" shadow="sm">
@@ -49,7 +84,7 @@ export const AverageTicketChart = ({
             <span
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: secondaryColor }}
-            ></span>
+            />
             <span className="text-sm text-default-500">
               {t("charts.legend.total")}
             </span>
@@ -58,7 +93,7 @@ export const AverageTicketChart = ({
             <span
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: primaryColor }}
-            ></span>
+            />
             <span className="text-sm text-default-500">
               {t("charts.legend.average")}
             </span>
@@ -66,54 +101,54 @@ export const AverageTicketChart = ({
         </div>
       </CardHeader>
       <CardBody className="pb-4 h-full min-h-[200px]">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer height="100%" width="100%">
           <LineChart
             data={data}
             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
           >
             <CartesianGrid
               strokeDasharray="3 3"
-              vertical={false}
               strokeOpacity={0.1}
+              vertical={false}
             />
             <XAxis
-              dataKey="name"
               axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#71717a", fontSize: 12 }}
+              dataKey="name"
               dy={10}
+              tick={{ fill: "#71717a", fontSize: 12 }}
+              tickLine={false}
             />
             <Tooltip
-              cursor={{
-                stroke: primaryColor,
-                strokeWidth: 1,
-                strokeDasharray: "3 3",
-              }}
               contentStyle={{
                 borderRadius: "8px",
                 border: "none",
                 boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
               }}
+              cursor={{
+                stroke: primaryColor,
+                strokeWidth: 1,
+                strokeDasharray: "3 3",
+              }}
             />
             {/* Total Line - Higher values typically */}
             <Line
-              type="monotone"
+              activeDot={{ r: 6 }}
               dataKey="value"
+              dot={false}
+              name={t("charts.legend.total")}
               stroke={secondaryColor}
               strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 6 }}
-              name={t("charts.legend.total")}
+              type="monotone"
             />
             {/* Average Line */}
             <Line
-              type="monotone"
+              activeDot={{ r: 6 }}
               dataKey="average"
+              dot={false}
+              name={t("charts.legend.average")}
               stroke={primaryColor}
               strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 6 }}
-              name={t("charts.legend.average")}
+              type="monotone"
             />
           </LineChart>
         </ResponsiveContainer>

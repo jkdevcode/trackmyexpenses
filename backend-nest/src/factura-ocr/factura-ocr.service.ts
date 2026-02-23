@@ -1,4 +1,10 @@
-import { Injectable, InternalServerErrorException, Logger, OnModuleInit, OnModuleDestroy, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import sharp from 'sharp';
@@ -10,10 +16,17 @@ import { ScanResponseDto } from './dto/scan-response.dto';
 import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
 import { Prisma } from '@prisma/client';
 
+type GeminiResponse = { response: { text: () => string } };
+type GeminiModel = {
+  generateContent: (prompt: string) => Promise<GeminiResponse>;
+};
+type ParsedData = ScanResponseDto['parsed'];
+type ParsedProduct = ParsedData['productos'][number];
+
 @Injectable()
 export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(FacturaOcrService.name);
-  private geminiModel: any;
+  private geminiModel: GeminiModel | null = null;
   private tesseractWorker: Worker | null = null;
 
   constructor(
@@ -23,9 +36,9 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (apiKey) {
       const genAI = new GoogleGenerativeAI(apiKey);
-      this.geminiModel = genAI.getGenerativeModel({ 
+      this.geminiModel = genAI.getGenerativeModel({
         model: 'gemini-2.5-flash',
-        generationConfig: { responseMimeType: "application/json" } // Force JSON
+        generationConfig: { responseMimeType: 'application/json' }, // Force JSON
       });
     }
   }
@@ -33,17 +46,17 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     this.logger.log('Initializing Tesseract Worker...');
     try {
-        this.tesseractWorker = await createWorker('spa+eng');
-        this.logger.log('Tesseract Worker ready.');
+      this.tesseractWorker = await createWorker('spa+eng');
+      this.logger.log('Tesseract Worker ready.');
     } catch (e) {
-        this.logger.error('Failed to init Tesseract', e);
+      this.logger.error('Failed to init Tesseract', e);
     }
   }
 
   async onModuleDestroy() {
-      if (this.tesseractWorker) {
-          await this.tesseractWorker.terminate();
-      }
+    if (this.tesseractWorker) {
+      await this.tesseractWorker.terminate();
+    }
   }
 
   async processImage(file: Express.Multer.File): Promise<ScanResponseDto> {
@@ -58,46 +71,56 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
 
       // 2. OCR (Tesseract.js)
       if (!this.tesseractWorker) await this.onModuleInit();
-      const { data: { text: rawText } } = await this.tesseractWorker!.recognize(processedBuffer);
+      const {
+        data: { text: rawText },
+      } = await this.tesseractWorker!.recognize(processedBuffer);
 
       // 3. AI Parsing (Gemini) with Fallback
-      let parsedData: any = {};
+      let parsedData: ParsedData = { productos: [] };
       let usedFallbackParser = false;
 
       try {
-          parsedData = await this.parseWithAI(rawText);
+        parsedData = await this.parseWithAI(rawText);
       } catch (e) {
-          this.logger.warn('AI Parsing failed, switching to fallback regex', e);
-          parsedData = { products: TextParserHelper.fallbackParse(rawText) };
-          usedFallbackParser = true;
+        this.logger.warn('AI Parsing failed, switching to fallback regex', e);
+        parsedData = {
+          productos: this.normalizeProducts(
+            TextParserHelper.fallbackParse(rawText),
+          ),
+        };
+        usedFallbackParser = true;
       }
 
       // Validate basic structure
-      if (!parsedData.productos || !Array.isArray(parsedData.productos) || parsedData.productos.length === 0) {
-           if (!usedFallbackParser) {
-               this.logger.warn('AI returned no products, trying fallback');
-               parsedData.productos = TextParserHelper.fallbackParse(rawText);
-               usedFallbackParser = true;
-           }
+      if (parsedData.productos.length === 0) {
+        if (!usedFallbackParser) {
+          this.logger.warn('AI returned no products, trying fallback');
+          parsedData.productos = this.normalizeProducts(
+            TextParserHelper.fallbackParse(rawText),
+          );
+          usedFallbackParser = true;
+        }
       }
 
       // 4. Match & Enrich (UPC + Fuzzy)
-      if (!parsedData.productos) parsedData.productos = [];
+      const enrichedProducts = await this.enrichProducts(
+        parsedData.productos,
+        rawText,
+      );
 
-      const enrichedProducts = await this.enrichProducts(parsedData.productos, rawText);
-      
       return {
         rawText,
         parsed: {
-            ...parsedData,
-            productos: enrichedProducts
+          ...parsedData,
+          productos: enrichedProducts,
         },
-        usedFallbackParser
+        usedFallbackParser,
       };
-
     } catch (error) {
       this.logger.error('Error processing OCR', error);
-      throw new InternalServerErrorException('Error procesando la imagen de la factura');
+      throw new InternalServerErrorException(
+        'Error procesando la imagen de la factura',
+      );
     }
   }
 
@@ -117,11 +140,12 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
             usuarioId: userId,
             codigoFactura: codigoFactura,
             fechaHoraCompra: new Date(factura.fechaHoraCompra),
-            metodoPago: factura.metodoPago as any,
+            metodoPago:
+              factura.metodoPago as Prisma.FacturaCreateInput['metodoPago'],
             lugarCompra: factura.lugarCompra,
             nitProveedor: factura.nitProveedor,
             totalPagar: 0, // Will be updated
-          }
+          },
         });
 
         let totalCalculado = 0;
@@ -133,7 +157,7 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
           const cantidad = Number(item.cantidadDetectada);
           const precioUnitario = Number(item.precioUnitario);
           const descuento = Number(item.descuentoDetectado || 0);
-          
+
           // Requirement: "Guardar cantidad numérica + unidad textual"
           // "unidadDetectada" e.g. "g", "ml", "u".
           // "pesoDetectado" e.g. "200" if "200g".
@@ -145,7 +169,7 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
           // Schema `FacturaProducto` has `unidad String`.
           // Let's store `unidad: item.unidadDetectada`.
           // And put the weight in the NAME of the product if creating new one.
-          
+
           if (cantidad <= 0) continue;
 
           // 3. Find or Create Product
@@ -156,29 +180,29 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
           // BUT prompt says "Cada factura tiene su propia evidencia histórica... Crear registros independientes...".
           // If we create a new `Producto` with same `codigo` it fails (@unique).
           // We assume we reuse `Producto` (catalog) if exists, create if not.
-          
+
           // Generate a pseudo-code if we create it.
           // Use name as base for code if new.
-          
+
           let producto = await tx.producto.findFirst({
-            where: { nombre: nombreClean } // Simple name match logic
+            where: { nombre: nombreClean }, // Simple name match logic
           });
 
           if (!producto) {
             // Create new Product
             // Generate Code: PROD-{UUID}
-            const uniqueCode = `PROD-${Date.now()}-${Math.floor(Math.random()*10000)}`;
+            const uniqueCode = `PROD-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
             producto = await tx.producto.create({
               data: {
                 nombre: nombreClean,
                 codigo: uniqueCode,
-                precioUnitario: precioUnitario // Initial price
-              }
+                precioUnitario: precioUnitario, // Initial price
+              },
             });
           }
 
           // 4. Create FacturaProducto (The Independent Record)
-          const precioTotalItem = (precioUnitario * cantidad) - descuento;
+          const precioTotalItem = precioUnitario * cantidad - descuento;
           totalCalculado += precioTotalItem;
 
           await tx.facturaProducto.create({
@@ -188,8 +212,8 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
               cantidad: cantidad,
               unidad: item.unidadDetectada || 'u',
               descuento: new Prisma.Decimal(descuento),
-              precioTotal: new Prisma.Decimal(precioTotalItem)
-            }
+              precioTotal: new Prisma.Decimal(precioTotalItem),
+            },
           });
         }
 
@@ -199,9 +223,9 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
           data: { totalPagar: totalCalculado },
           include: {
             productos: {
-              include: { producto: true }
-            }
-          }
+              include: { producto: true },
+            },
+          },
         });
 
         return facturaActualizada;
@@ -210,16 +234,15 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
       return {
         status: 201,
         message: 'Factura OCR confirmada exitosamente',
-        data: { factura: result }
+        data: { factura: result },
       };
-
     } catch (error) {
       this.logger.error('Error confirming factura', error);
       throw new InternalServerErrorException('Error al confirmar factura');
     }
   }
 
-  private async parseWithAI(text: string) {
+  private async parseWithAI(text: string): Promise<ParsedData> {
     if (!this.geminiModel) throw new Error('AI not configured');
 
     const prompt = `
@@ -253,50 +276,78 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
     `;
 
     const result = await this.geminiModel.generateContent(prompt);
-    return JSON.parse(result.response.text());
+    return this.normalizeParsedData(
+      JSON.parse(result.response.text()) as unknown,
+    );
   }
 
-  private async enrichProducts(products: any[], fullText: string) {
+  private async enrichProducts(
+    products: ParsedProduct[],
+    _fullText: string,
+  ): Promise<ParsedProduct[]> {
     // Load local DB cache (could be large, optimization: search individually if > 1000 products, but for now load all)
     const dbProducts = await this.prisma.producto.findMany({
-        select: { id: true, nombre: true, codigo: true }
+      select: { id: true, nombre: true, codigo: true },
     });
 
     const fuse = new Fuse(dbProducts, {
-        keys: ['nombre', 'codigo'],
-        includeScore: true,
-        threshold: 0.4
+      keys: ['nombre', 'codigo'],
+      includeScore: true,
+      threshold: 0.4,
     });
 
-    return products.map(p => {
-        const item = { ...p };
-        
-        // 1. Try UPC Match from Line Text or detected Name
-        const upc = TextParserHelper.findUPC(item.nombreDetected);
-        if (upc) {
-            const exact = dbProducts.find(dp => dp.codigo === upc);
-            if (exact) {
-                item.productId = exact.id;
-                item.matchedBy = 'barcode';
-                item.matchScore = 1.0;
-                return item;
-            }
+    return products.map((item) => {
+      // 1. Try UPC Match from Line Text or detected Name
+      const upc = TextParserHelper.findUPC(item.nombreDetected);
+      if (upc) {
+        const exact = dbProducts.find((dp) => dp.codigo === upc);
+        if (exact) {
+          item.productId = exact.id;
+          item.matchedBy = 'barcode';
+          item.matchScore = 1.0;
+          return item;
         }
+      }
 
-        // 2. Fuzzy Match
-        const search = fuse.search(item.nombreDetected);
-        if (search.length > 0) {
-            const best = search[0];
-            const score = 1 - (best.score || 1); // Invert score (0 is bad in my output logic, 1 is good)
-            
-            if (score >= 0.8) {
-                item.productId = best.item.id;
-                item.matchedBy = 'fuzzy';
-                item.matchScore = score;
-            }
+      // 2. Fuzzy Match
+      const search = fuse.search(item.nombreDetected);
+      if (search.length > 0) {
+        const best = search[0];
+        const score = 1 - (best.score || 1); // Invert score (0 is bad in my output logic, 1 is good)
+
+        if (score >= 0.8) {
+          item.productId = best.item.id;
+          item.matchedBy = 'fuzzy';
+          item.matchScore = score;
         }
+      }
 
-        return item;
+      return item;
     });
+  }
+
+  private normalizeParsedData(raw: unknown): ParsedData {
+    if (typeof raw !== 'object' || raw === null) {
+      return { productos: [] };
+    }
+
+    const parsedCandidate = raw as Record<string, unknown>;
+    const productos = this.normalizeProducts(parsedCandidate.productos);
+
+    return {
+      ...parsedCandidate,
+      productos,
+    } as ParsedData;
+  }
+
+  private normalizeProducts(products: unknown): ParsedProduct[] {
+    if (!Array.isArray(products)) {
+      return [];
+    }
+
+    return products.filter(
+      (product): product is ParsedProduct =>
+        typeof product === 'object' && product !== null,
+    );
   }
 }

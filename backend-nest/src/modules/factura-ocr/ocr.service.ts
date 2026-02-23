@@ -17,7 +17,7 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
       this.worker = await createWorker('spa+eng');
       this.logger.log('Tesseract Worker ready.');
     } catch (error: unknown) {
-      this.logger.error('Failed to init Tesseract', error as any);
+      this.logger.error('Failed to init Tesseract', error);
     }
   }
 

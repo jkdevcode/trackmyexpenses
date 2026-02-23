@@ -1,5 +1,6 @@
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import { useTranslation } from "react-i18next";
+
 import { DateFilter } from "../components/DateFilter";
 import { StatsCards } from "../components/StatsCards";
 import { RevenueChart } from "../components/RevenueChart";
@@ -25,40 +26,42 @@ const Dashboard = () => {
 
       {/* Stats Section */}
       <section>
-        <StatsCards stats={stats} loading={loading} />
+        <StatsCards loading={loading} stats={stats} />
       </section>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Chart Section - Takes 2 cols on large screens */}
-        <motion.section
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="lg:col-span-1"
-        >
-          <RevenueChart data={chartData} loading={loading} />
-        </motion.section>
+        <LazyMotion features={domAnimation}>
+          <m.section
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:col-span-1"
+            initial={{ opacity: 0, x: -20 }}
+            transition={{ delay: 0.2 }}
+          >
+            <RevenueChart data={chartData} loading={loading} />
+          </m.section>
 
-        {/* Recent Invoices Table - Takes 1 col on large screens */}
-        <motion.section
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className="lg:col-span-1 bg-content1 rounded-2xl shadow-sm border border-default-100 p-6"
-        >
-          <InvoicesTable invoices={recentInvoices} loading={loading} />
-        </motion.section>
+          {/* Recent Invoices Table - Takes 1 col on large screens */}
+          <m.section
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:col-span-1 bg-content1 rounded-2xl shadow-sm border border-default-100 p-6"
+            initial={{ opacity: 0, x: 20 }}
+            transition={{ delay: 0.3 }}
+          >
+            <InvoicesTable invoices={recentInvoices} loading={loading} />
+          </m.section>
 
-        {/* Average Ticket Chart - Full Width Bottom */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="lg:col-span-2"
-        >
-          <AverageTicketChart data={chartData} loading={loading} />
-        </motion.section>
+          {/* Average Ticket Chart - Full Width Bottom */}
+          <m.section
+            animate={{ opacity: 1, y: 0 }}
+            className="lg:col-span-2"
+            initial={{ opacity: 0, y: 20 }}
+            transition={{ delay: 0.4 }}
+          >
+            <AverageTicketChart data={chartData} loading={loading} />
+          </m.section>
+        </LazyMotion>
       </div>
     </div>
   );

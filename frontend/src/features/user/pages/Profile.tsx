@@ -7,13 +7,14 @@ import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Avatar } from "@heroui/avatar";
 import { addToast } from "@heroui/toast";
 
+import ChangePasswordCard from "../components/ChangePasswordCard";
+import { useUpdateProfileMutation } from "../hooks/useUserMutations";
+
 import { useSession } from "@/contexts/session-context";
 import { getErrorMessage } from "@/utils/errors";
 import { appColor } from "@/theme/theme.config";
 import { getProfileSchema } from "@/schemas/profile";
 import { CameraIcon } from "@/components/ui/CameraIcon";
-import ChangePasswordCard from "../components/ChangePasswordCard";
-import { useUpdateProfileMutation } from "../hooks/useUserMutations";
 
 const ProfilePage = () => {
   const { t } = useTranslation(["profile", "auth", "validation"]);
@@ -31,6 +32,7 @@ const ProfilePage = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+
       setFoto(file);
       setFotoPreview(URL.createObjectURL(file));
     }
@@ -78,6 +80,7 @@ const ProfilePage = () => {
             color: "success",
             timeout: 3000,
           });
+
           return;
         }
 
@@ -113,26 +116,26 @@ const ProfilePage = () => {
       <Card className="max-w-4xl w-full shadow-lg rounded-2xl p-6">
         <CardHeader className="flex flex-col items-center pb-0 pt-4">
           <div
+            aria-label={t("profile:avatar.change")}
             className="relative group cursor-pointer"
+            role="button"
+            tabIndex={0}
             onClick={handleAvatarClick}
             onKeyDown={handleAvatarKeyDown}
-            tabIndex={0}
-            role="button"
-            aria-label={t("profile:avatar.change")}
           >
             <Avatar
+              showFallback
               className="w-32 h-32 text-large transition-transform group-hover:scale-105"
               src={fotoPreview || "https://images.unsplash.com/broken"}
-              showFallback
             />
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
               <CameraIcon className="w-8 h-8 text-white" />
             </div>
             <input
-              type="file"
-              accept="image/*"
               ref={fileInputRef}
+              accept="image/*"
               className="hidden"
+              type="file"
               onChange={handleImageChange}
             />
           </div>
@@ -146,6 +149,7 @@ const ProfilePage = () => {
           <form className="space-y-8" onSubmit={formik.handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
+                color={appColor}
                 errorMessage={formik.errors.nombres}
                 isInvalid={formik.touched.nombres && !!formik.errors.nombres}
                 label={t("auth:fields.name.label")}
@@ -155,9 +159,9 @@ const ProfilePage = () => {
                 variant="bordered"
                 onBlur={formik.handleBlur}
                 onChange={formik.handleChange}
-                color={appColor}
               />
               <Input
+                color={appColor}
                 errorMessage={formik.errors.apellidos}
                 isInvalid={
                   formik.touched.apellidos && !!formik.errors.apellidos
@@ -169,24 +173,24 @@ const ProfilePage = () => {
                 variant="bordered"
                 onBlur={formik.handleBlur}
                 onChange={formik.handleChange}
-                color={appColor}
               />
 
               <Input
+                color={appColor}
                 errorMessage={formik.errors.correo}
                 isInvalid={formik.touched.correo && !!formik.errors.correo}
                 label={t("auth:fields.email.label")}
                 name="correo"
-                type="email"
                 placeholder={t("auth:fields.email.placeholder")}
+                type="email"
                 value={formik.values.correo}
                 variant="bordered"
                 onBlur={formik.handleBlur}
                 onChange={formik.handleChange}
-                color={appColor}
               />
 
               <Input
+                color={appColor}
                 errorMessage={formik.errors.documento}
                 isInvalid={
                   formik.touched.documento && !!formik.errors.documento
@@ -198,7 +202,6 @@ const ProfilePage = () => {
                 variant="bordered"
                 onBlur={formik.handleBlur}
                 onChange={formik.handleChange}
-                color={appColor}
               />
             </div>
 
@@ -206,18 +209,18 @@ const ProfilePage = () => {
               <Button
                 className="w-full font-semibold shadow-lg"
                 color={appColor}
+                disabled={!formik.dirty && !foto}
                 isLoading={updateProfileMutation.isPending}
                 type="submit"
                 variant="solid"
-                disabled={!formik.dirty && !foto}
               >
                 {t("profile:save")}
               </Button>
               <Button
                 className="w-full font-semibold shadow-lg"
                 color="default"
-                variant="flat"
                 type="button"
+                variant="flat"
                 onClick={handleReset}
               >
                 {t("profile:reset")}

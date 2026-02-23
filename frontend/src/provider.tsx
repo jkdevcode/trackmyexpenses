@@ -1,6 +1,6 @@
-import { Suspense, type ReactNode } from "react";
 import type { NavigateOptions } from "react-router-dom";
 
+import { Suspense, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { HeroUIProvider } from "@heroui/system";
 import { ToastProvider } from "@heroui/toast";
@@ -28,11 +28,7 @@ export function Provider({ children }: { children: ReactNode }) {
           <ThemeProvider>
             <ToastProvider />
             <AppErrorBoundary>
-              <Suspense
-                fallback={<LoadingSpinner />}
-              >
-                {children}
-              </Suspense>
+              <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
             </AppErrorBoundary>
           </ThemeProvider>
         </SessionProvider>

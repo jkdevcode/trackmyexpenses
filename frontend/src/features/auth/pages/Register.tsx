@@ -10,11 +10,12 @@ import { Select, SelectItem } from "@heroui/select";
 import { Avatar } from "@heroui/avatar";
 import { addToast } from "@heroui/toast";
 
+import { useRegisterMutation } from "../hooks/useAuthMutations";
+
 import { getErrorMessage } from "@/utils/errors";
 import { appColor } from "@/theme/theme.config";
 import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/ui/icons";
 import { getRegisterSchema } from "@/schemas/auth";
-import { useRegisterMutation } from "../hooks/useAuthMutations";
 import { CameraIcon } from "@/components/ui/CameraIcon";
 
 interface RegisterFormValues {
@@ -45,6 +46,7 @@ const RegisterPage = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+
       setFoto(file);
       setFotoUrl(URL.createObjectURL(file));
     }
@@ -123,27 +125,27 @@ const RegisterPage = () => {
         <div className="flex flex-col items-center">
           {/* Logo o Avatar Upload */}
           <div
+            aria-label={t("auth:register.avatar_fallback")}
             className="flex flex-col items-center mb-4 group cursor-pointer"
+            role="button"
+            tabIndex={0}
             onClick={handleAvatarClick}
             onKeyDown={handleAvatarKeyDown}
-            tabIndex={0}
-            role="button"
-            aria-label={t("auth:register.avatar_fallback")}
           >
             <Avatar
-              className="w-24 h-24 mb-2 transition-transform group-hover:scale-105"
-              src={fotoUrl}
               showFallback
+              className="w-24 h-24 mb-2 transition-transform group-hover:scale-105"
               fallback={<CameraIcon className="w-10 h-10 text-default-500" />}
+              src={fotoUrl}
             />
             <span className="text-xs text-primary font-medium">
               {t("auth:register.avatar_fallback")}
             </span>
             <input
-              type="file"
-              accept="image/*"
               ref={fileInputRef}
+              accept="image/*"
               className="hidden"
+              type="file"
               onChange={handleImageChange}
             />
           </div>
@@ -157,58 +159,58 @@ const RegisterPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Nombres */}
             <Input
+              color={appColor}
               errorMessage={errors.nombre?.message}
               isInvalid={!!touchedFields.nombre && !!errors.nombre}
               label={t("auth:fields.name.label")}
               placeholder={t("auth:fields.name.placeholder")}
               variant="bordered"
-              color={appColor}
               {...register("nombre")}
             />
             {/* Apellidos */}
             <Input
+              color={appColor}
               errorMessage={errors.apellido?.message}
               isInvalid={!!touchedFields.apellido && !!errors.apellido}
               label={t("auth:fields.lastname.label")}
               placeholder={t("auth:fields.lastname.placeholder")}
               variant="bordered"
-              color={appColor}
               {...register("apellido")}
             />
 
             {/* Email */}
             <Input
               className="md:col-span-2"
+              color={appColor}
               errorMessage={errors.email?.message}
               isInvalid={!!touchedFields.email && !!errors.email}
               label={t("auth:fields.email.label")}
-              type="email"
               placeholder={t("auth:fields.email.placeholder")}
+              type="email"
               variant="bordered"
-              color={appColor}
               {...register("email")}
             />
 
             {/* Telefono */}
             <Input
+              color={appColor}
               errorMessage={errors.telefono?.message}
               isInvalid={!!touchedFields.telefono && !!errors.telefono}
               label={t("auth:fields.phone.label")}
-              type="tel"
               placeholder={t("auth:fields.phone.placeholder")}
+              type="tel"
               variant="bordered"
-              color={appColor}
               {...register("telefono")}
             />
 
             {/* Direccion */}
             <Input
+              color={appColor}
               errorMessage={errors.direccion?.message}
               isInvalid={!!touchedFields.direccion && !!errors.direccion}
               label={t("auth:fields.address.label")}
               placeholder={t("auth:fields.address.placeholder")}
               variant="bordered"
-              color={appColor}
               {...register("direccion")}
             />
 
@@ -218,6 +220,7 @@ const RegisterPage = () => {
               name="tipo_documento"
               render={({ field }) => (
                 <Select
+                  color={appColor}
                   errorMessage={errors.tipo_documento?.message}
                   isInvalid={
                     !!touchedFields.tipo_documento && !!errors.tipo_documento
@@ -229,7 +232,6 @@ const RegisterPage = () => {
                   variant="bordered"
                   onBlur={field.onBlur}
                   onChange={(e) => field.onChange(e.target.value)}
-                  color={appColor}
                 >
                   {documentTypes.map((doc) => (
                     <SelectItem key={doc.key}>{doc.label}</SelectItem>
@@ -240,6 +242,7 @@ const RegisterPage = () => {
 
             {/* Documento ID */}
             <Input
+              color={appColor}
               errorMessage={errors.documento_identidad?.message}
               isInvalid={
                 !!touchedFields.documento_identidad &&
@@ -248,7 +251,6 @@ const RegisterPage = () => {
               label={t("auth:fields.document_id.label")}
               placeholder={t("auth:fields.document_id.placeholder")}
               variant="bordered"
-              color={appColor}
               {...register("documento_identidad")}
             />
 
@@ -257,10 +259,10 @@ const RegisterPage = () => {
               color={appColor}
               endContent={
                 <button
+                  aria-label={isVisible ? "Hide password" : "Show password"}
                   className="focus:outline-none"
                   type="button"
                   onClick={toggleVisibility}
-                  aria-label={isVisible ? "Hide password" : "Show password"}
                 >
                   {isVisible ? (
                     <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />

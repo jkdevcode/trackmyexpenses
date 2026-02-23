@@ -1,11 +1,11 @@
-import axiosClient from "@/lib/axiosClient";
-
 import type {
   DashboardStats,
   DateFilterType,
   ExpenseData,
   Invoice,
 } from "../types";
+
+import axiosClient from "@/lib/axiosClient";
 
 interface DashboardViewModel {
   stats: DashboardStats;
@@ -66,6 +66,7 @@ export const getDashboardData = async (
 
   for (let i = 5; i >= 0; i--) {
     const d = new Date();
+
     d.setMonth(d.getMonth() - i);
     chartMap.set(d.getMonth(), 0);
     countMap.set(d.getMonth(), 0);
@@ -75,6 +76,7 @@ export const getDashboardData = async (
     if (!inv.rawDate) return;
 
     const month = inv.rawDate.getMonth();
+
     if (!chartMap.has(month)) return;
 
     chartMap.set(month, (chartMap.get(month) || 0) + inv.total);

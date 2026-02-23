@@ -10,10 +10,9 @@ import {
   ModalHeader,
 } from "@heroui/modal";
 
-import { useCookieConsent } from "@/contexts/cookie-consent-context";
-
 import { buttonGradient } from "./primitives";
 
+import { useCookieConsent } from "@/contexts/cookie-consent-context";
 import { siteConfig } from "@/config/site";
 
 export const CookieConsent: React.FC = () => {

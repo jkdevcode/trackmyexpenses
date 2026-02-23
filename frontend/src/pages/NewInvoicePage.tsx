@@ -1,14 +1,12 @@
-import { useState } from "react";
-
-import { useTranslation } from "react-i18next";
-import { InvoiceUpload } from "@/features/invoices/components/InvoiceUpload";
-import { InvoiceForm } from "@/features/invoices/components/InvoiceForm";
 import type {
   ScanResponse,
   ProductSuggestion,
   ConfirmFacturaDto,
 } from "@/features/invoices/types";
-import { motion, AnimatePresence } from "framer-motion";
+
+import { useTranslation } from "react-i18next";
+import { useState } from "react";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { addToast } from "@heroui/toast";
 import { useNavigate } from "react-router-dom";
 import {
@@ -20,6 +18,9 @@ import {
   useDisclosure,
 } from "@heroui/modal";
 import { Button } from "@heroui/button";
+
+import { InvoiceForm } from "@/features/invoices/components/InvoiceForm";
+import { InvoiceUpload } from "@/features/invoices/components/InvoiceUpload";
 import { appColor } from "@/theme/theme.config";
 import { useConfirmInvoiceMutation } from "@/features/invoices/hooks/useInvoiceMutations";
 
@@ -58,7 +59,9 @@ export const NewInvoicePage = () => {
     try {
       const payload: ConfirmFacturaDto = {
         factura: {
-          fechaHoraCompra: new Date(pendingData.formData.fechaHoraCompra).toISOString(),
+          fechaHoraCompra: new Date(
+            pendingData.formData.fechaHoraCompra,
+          ).toISOString(),
           metodoPago: pendingData.formData.metodoPago,
           lugarCompra: pendingData.formData.lugarCompra.trim(),
           nitProveedor: pendingData.formData.nitProveedor?.trim() || undefined,
@@ -99,33 +102,35 @@ export const NewInvoicePage = () => {
         {t("page.title", "Nueva Factura")}
       </h1>
 
-      <AnimatePresence mode="wait">
-        {step === "upload" && (
-          <motion.div
-            key="upload"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <InvoiceUpload onScanComplete={handleScanComplete} />
-          </motion.div>
-        )}
+      <LazyMotion features={domAnimation}>
+        <AnimatePresence mode="wait">
+          {step === "upload" && (
+            <m.div
+              key="upload"
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: 20 }}
+            >
+              <InvoiceUpload onScanComplete={handleScanComplete} />
+            </m.div>
+          )}
 
-        {step === "edit" && scanData && (
-          <motion.div
-            key="edit"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <InvoiceForm
-              initialData={scanData.parsed}
-              onSave={handlePreSave}
-              onCancel={() => setStep("upload")}
-              saving={confirmInvoiceMutation.isPending}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {step === "edit" && scanData && (
+            <m.div
+              key="edit"
+              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, x: 20 }}
+            >
+              <InvoiceForm
+                initialData={scanData.parsed}
+                saving={confirmInvoiceMutation.isPending}
+                onCancel={() => setStep("upload")}
+                onSave={handlePreSave}
+              />
+            </m.div>
+          )}
+        </AnimatePresence>
+      </LazyMotion>
 
       {/* Confirmation Dialog */}
       <Modal isOpen={isConfirmOpen} onClose={onConfirmClose}>
@@ -157,8 +162,8 @@ export const NewInvoicePage = () => {
             </Button>
             <Button
               color="primary"
-              onPress={handleConfirmSave}
               isLoading={confirmInvoiceMutation.isPending}
+              onPress={handleConfirmSave}
             >
               {t("confirm.confirm")}
             </Button>

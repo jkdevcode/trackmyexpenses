@@ -6,6 +6,8 @@ import { AppModule } from './../src/app.module';
 describe('FacturaController (e2e)', () => {
   let app: INestApplication;
   let authCookie: string;
+  const httpServer = () =>
+    app.getHttpServer() as unknown as Parameters<typeof request>[0];
 
   const uniqueId = Date.now().toString().slice(-8);
   const testUser = {
@@ -27,8 +29,8 @@ describe('FacturaController (e2e)', () => {
     await app.init();
 
     // Register & Login
-    await request(app.getHttpServer()).post('/api/auth/register').send(testUser);
-    const loginRes = await request(app.getHttpServer()).post('/api/auth/login').send({
+    await request(httpServer()).post('/api/auth/register').send(testUser);
+    const loginRes = await request(httpServer()).post('/api/auth/login').send({
       documento: testUser.documento,
       contrasena: testUser.contrasena,
     });
@@ -40,42 +42,46 @@ describe('FacturaController (e2e)', () => {
   });
 
   it('/api/facturas (POST) - Create Factura', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .post('/api/facturas')
       .set('Cookie', authCookie)
       .send({
         fecha: new Date().toISOString(),
-        total: 150.00,
+        total: 150.0,
         metodoPago: 'EFECTIVO',
-        lugarCompra: 'Supermercado Test'
+        lugarCompra: 'Supermercado Test',
       })
       .expect(201)
       .expect((res) => {
-        expect(res.body.factura).toBeDefined();
-        expect(res.body.factura.totalPagar).toBe('150'); // Decimal returned as string usually
-        expect(res.body.factura.codigoFactura).toBeDefined();
+        const body = res.body as {
+          factura: { totalPagar: string; codigoFactura: string };
+        };
+        expect(body.factura).toBeDefined();
+        expect(body.factura.totalPagar).toBe('150'); // Decimal returned as string usually
+        expect(body.factura.codigoFactura).toBeDefined();
       });
   });
 
   it('/api/facturas (GET) - List Facturas', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .get('/api/facturas')
       .set('Cookie', authCookie)
       .expect(200)
       .expect((res) => {
-        expect(res.body.facturas).toBeInstanceOf(Array);
-        expect(res.body.facturas.length).toBeGreaterThan(0);
-        expect(res.body.facturas[0].usuarioId).toBeDefined();
+        const body = res.body as { facturas: Array<{ usuarioId: number }> };
+        expect(body.facturas).toBeInstanceOf(Array);
+        expect(body.facturas.length).toBeGreaterThan(0);
+        expect(body.facturas[0].usuarioId).toBeDefined();
       });
   });
 
   it('/api/facturas (POST) - Fail Validation', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .post('/api/facturas')
       .set('Cookie', authCookie)
       .send({
         fecha: 'invalid-date', // Invalid
-        total: -50 // Negative
+        total: -50, // Negative
       })
       .expect(400);
   });

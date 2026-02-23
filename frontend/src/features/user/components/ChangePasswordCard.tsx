@@ -5,10 +5,11 @@ import { Input } from "@heroui/input";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { addToast } from "@heroui/toast";
 
+import { useChangePasswordMutation } from "../hooks/useUserMutations";
+
 import { appColor } from "@/theme/theme.config";
 import { getChangePasswordSchema } from "@/schemas/profile";
 import { getErrorMessage } from "@/utils/errors";
-import { useChangePasswordMutation } from "../hooks/useUserMutations";
 
 const ChangePasswordCard = () => {
   const { t } = useTranslation(["profile", "auth", "validation"]);
@@ -57,6 +58,7 @@ const ChangePasswordCard = () => {
         <form className="space-y-6" onSubmit={formik.handleSubmit}>
           <div className="grid grid-cols-1 gap-6">
             <Input
+              color={appColor}
               errorMessage={formik.errors.currentPassword}
               isInvalid={
                 formik.touched.currentPassword &&
@@ -65,13 +67,13 @@ const ChangePasswordCard = () => {
               label={t("profile:security.current_password")}
               name="currentPassword"
               type="password"
-              variant="bordered"
               value={formik.values.currentPassword}
+              variant="bordered"
               onBlur={formik.handleBlur}
               onChange={formik.handleChange}
-              color={appColor}
             />
             <Input
+              color={appColor}
               errorMessage={formik.errors.newPassword}
               isInvalid={
                 formik.touched.newPassword && !!formik.errors.newPassword
@@ -79,13 +81,13 @@ const ChangePasswordCard = () => {
               label={t("profile:security.new_password")}
               name="newPassword"
               type="password"
-              variant="bordered"
               value={formik.values.newPassword}
+              variant="bordered"
               onBlur={formik.handleBlur}
               onChange={formik.handleChange}
-              color={appColor}
             />
             <Input
+              color={appColor}
               errorMessage={formik.errors.confirmPassword}
               isInvalid={
                 formik.touched.confirmPassword &&
@@ -94,21 +96,20 @@ const ChangePasswordCard = () => {
               label={t("profile:security.confirm_password")}
               name="confirmPassword"
               type="password"
-              variant="bordered"
               value={formik.values.confirmPassword}
+              variant="bordered"
               onBlur={formik.handleBlur}
               onChange={formik.handleChange}
-              color={appColor}
             />
           </div>
           <div className="flex justify-end pt-2">
             <Button
               className="font-semibold shadow-md w-full sm:w-auto"
               color={appColor}
+              isDisabled={!formik.isValid || !formik.dirty}
               isLoading={changePasswordMutation.isPending}
               type="submit"
               variant="solid"
-              isDisabled={!formik.isValid || !formik.dirty}
             >
               {t("profile:security.update_password")}
             </Button>

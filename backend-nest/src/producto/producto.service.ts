@@ -64,11 +64,11 @@ export class ProductoService {
         total: productos.length,
       };
     } catch (error: unknown) {
-       this.logger.error({
-         msg: 'Error al obtener productos',
-         requestId: RequestContext.getRequestId(),
-         error,
-       });
+      this.logger.error({
+        msg: 'Error al obtener productos',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
       throw new InternalServerErrorException('Error al obtener productos');
     }
   }

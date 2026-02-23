@@ -17,7 +17,9 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.enableCors({
-    origin: corsOrigin ? corsOrigin.split(',').map((origin) => origin.trim()) : true,
+    origin: corsOrigin
+      ? corsOrigin.split(',').map((origin) => origin.trim())
+      : true,
     credentials: true,
   });
   app.use(cookieParser());
@@ -41,4 +43,4 @@ async function bootstrap() {
   await app.listen(port);
   logger.log({ msg: 'Application started', url: await app.getUrl() });
 }
-bootstrap();
+void bootstrap();

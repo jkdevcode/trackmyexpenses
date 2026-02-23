@@ -16,6 +16,5 @@ const heroUIPackages = extractPerVendorDependencies(packageJson, "@heroui");
 //add @beta tag to  each package
 const heroUIPackagesBeta = heroUIPackages.map((_package) => `${_package}@beta`);
 
-// eslint-disable-next-line no-undef, no-console
 console.log(`Updating @heroui packages: ${heroUIPackagesBeta.join(", ")}`);
 execSync(`npm i --save ${heroUIPackagesBeta.join(" ")}`);

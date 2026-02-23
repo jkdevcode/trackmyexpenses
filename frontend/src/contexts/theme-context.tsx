@@ -29,15 +29,17 @@ export const ThemeContext = createContext<ThemeContextProps>({
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     const storedTheme = localStorage.getItem(ThemeProps.key) as Theme | null;
+
     return storedTheme || ThemeProps.light;
   });
 
-  const isDark = useMemo(() => theme === ThemeProps.dark, [theme]);
-  const isLight = useMemo(() => theme === ThemeProps.light, [theme]);
+  const isDark = theme === ThemeProps.dark;
+  const isLight = theme === ThemeProps.light;
 
   const _setTheme = (newTheme: Theme) => {
     localStorage.setItem(ThemeProps.key, newTheme);
     const root = window.document.documentElement;
+
     root.classList.remove(ThemeProps.light, ThemeProps.dark);
     root.classList.add(newTheme);
     setTheme(newTheme);
@@ -71,8 +73,10 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
+
   if (!context) {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
+
   return context;
 };

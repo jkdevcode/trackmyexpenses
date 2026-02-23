@@ -5,11 +5,19 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import Fuse from 'fuse.js';
 import { TextParserHelper } from '../../factura-ocr/helpers/parse-text.helper';
 import { RequestContext } from '../../common/context/request-context';
+import { ScanResponseDto } from '../../factura-ocr/dto/scan-response.dto';
+
+type GeminiResponse = { response: { text: () => string } };
+type GeminiModel = {
+  generateContent: (prompt: string) => Promise<GeminiResponse>;
+};
+type ParsedData = ScanResponseDto['parsed'];
+type ParsedProduct = ParsedData['productos'][number];
 
 @Injectable()
 export class TextParserService {
   private readonly logger = new Logger(TextParserService.name);
-  private geminiModel: any;
+  private geminiModel: GeminiModel | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -27,18 +35,22 @@ export class TextParserService {
 
   async parseAndEnrich(
     rawText: string,
-  ): Promise<{ parsed: any; usedFallbackParser: boolean }> {
-    let parsedData: any = {};
+  ): Promise<{ parsed: ParsedData; usedFallbackParser: boolean }> {
+    let parsedData: ParsedData = { productos: [] };
     let usedFallbackParser = false;
 
     try {
       parsedData = await this.parseWithAI(rawText);
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.warn({
         msg: 'AI Parsing failed, switching to fallback regex',
         requestId: RequestContext.getRequestId(),
       });
-      parsedData = { productos: TextParserHelper.fallbackParse(rawText) };
+      parsedData = {
+        productos: this.normalizeProducts(
+          TextParserHelper.fallbackParse(rawText),
+        ),
+      };
       usedFallbackParser = true;
       this.logger.error({
         msg: 'AI parsing error',
@@ -47,19 +59,15 @@ export class TextParserService {
       });
     }
 
-    if (
-      !parsedData.productos ||
-      !Array.isArray(parsedData.productos) ||
-      parsedData.productos.length === 0
-    ) {
+    if (parsedData.productos.length === 0) {
       if (!usedFallbackParser) {
         this.logger.warn('AI returned no products, trying fallback');
-        parsedData.productos = TextParserHelper.fallbackParse(rawText);
+        parsedData.productos = this.normalizeProducts(
+          TextParserHelper.fallbackParse(rawText),
+        );
         usedFallbackParser = true;
       }
     }
-
-    if (!parsedData.productos) parsedData.productos = [];
 
     const enrichedProducts = await this.enrichProducts(parsedData.productos);
     return {
@@ -105,10 +113,14 @@ export class TextParserService {
     `;
 
     const result = await this.geminiModel.generateContent(prompt);
-    return JSON.parse(result.response.text());
+    return this.normalizeParsedData(
+      JSON.parse(result.response.text()) as unknown,
+    );
   }
 
-  private async enrichProducts(products: any[]) {
+  private async enrichProducts(
+    products: ParsedProduct[],
+  ): Promise<ParsedProduct[]> {
     const dbProducts = await this.prisma.producto.findMany({
       select: { id: true, nombre: true, codigo: true },
     });
@@ -119,8 +131,7 @@ export class TextParserService {
       threshold: 0.4,
     });
 
-    return products.map((p) => {
-      const item = { ...p };
+    return products.map((item) => {
       const upc = TextParserHelper.findUPC(item.nombreDetected);
 
       if (upc) {
@@ -147,5 +158,30 @@ export class TextParserService {
 
       return item;
     });
+  }
+
+  private normalizeParsedData(raw: unknown): ParsedData {
+    if (typeof raw !== 'object' || raw === null) {
+      return { productos: [] };
+    }
+
+    const parsedCandidate = raw as Record<string, unknown>;
+    const productos = this.normalizeProducts(parsedCandidate.productos);
+
+    return {
+      ...parsedCandidate,
+      productos,
+    } as ParsedData;
+  }
+
+  private normalizeProducts(products: unknown): ParsedProduct[] {
+    if (!Array.isArray(products)) {
+      return [];
+    }
+
+    return products.filter(
+      (product): product is ParsedProduct =>
+        typeof product === 'object' && product !== null,
+    );
   }
 }

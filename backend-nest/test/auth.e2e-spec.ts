@@ -5,6 +5,8 @@ import { AppModule } from './../src/app.module';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
+  const httpServer = () =>
+    app.getHttpServer() as unknown as Parameters<typeof request>[0];
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -24,48 +26,53 @@ describe('AuthController (e2e)', () => {
   // Ideally, use a test DB. For now, assuming dev DB is safe or using rollback transaction logic which is complex in e2e.
   // We will test Login primarily to avoid polluting DB with registrations, or register a random user.
 
-  // Documento must be 6-10 chars. 
+  // Documento must be 6-10 chars.
   // Date.now() is 13 chars. substring(-8) is 8 chars.
   const uniqueId = Date.now().toString().slice(-8);
   const testUser = {
     tipoDocumento: 'CC',
-    documento: uniqueId, 
+    documento: uniqueId,
     nombres: 'Test',
     apellidos: 'User',
     correo: `test${uniqueId}@example.com`,
     contrasena: 'password123',
-    foto: 'https://example.com/photo.jpg'
+    foto: 'https://example.com/photo.jpg',
   };
 
   it('/api/auth/register (POST)', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .post('/api/auth/register')
       .send(testUser)
       .expect(201)
       .expect((res) => {
-        expect(res.body.status).toBe(200); 
-      }); 
+        const body = res.body as { status: number };
+        expect(body.status).toBe(200);
+      });
   });
 
   it('/api/auth/login (POST)', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .post('/api/auth/login')
       .send({
         documento: testUser.documento,
         contrasena: testUser.contrasena,
       })
-      .expect(201) 
+      .expect(201)
       .expect((res) => {
-        expect(res.body.token).toBeUndefined();
-        expect(res.body.user).toBeDefined();
-        expect(res.body.user.documento).toBe(testUser.documento);
+        const body = res.body as {
+          token?: string;
+          user: { documento: string };
+        };
+        expect(body.token).toBeUndefined();
+        expect(body.user).toBeDefined();
+        expect(body.user.documento).toBe(testUser.documento);
         expect(res.headers['set-cookie']).toBeDefined();
         expect(res.headers['set-cookie'][0]).toContain('token=');
       });
   });
 
   it('/api/auth/login (POST) - Fail Invalid Creds', () => {
-    return request(app.getHttpServer())
+    return request(httpServer())
       .post('/api/auth/login')
       .send({
         documento: testUser.documento,

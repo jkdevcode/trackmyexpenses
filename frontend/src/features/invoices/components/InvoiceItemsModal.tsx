@@ -1,3 +1,6 @@
+import type { ProductSuggestion } from "../types";
+
+import { useState, useMemo } from "react";
 import {
   Modal,
   ModalContent,
@@ -17,10 +20,9 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Pagination } from "@heroui/pagination";
 import { useTranslation } from "react-i18next";
+
 import { appColor } from "@/theme/theme.config";
-import { useState, useMemo } from "react";
 import { DeleteIcon, SearchIcon } from "@/components/ui/icons";
-import type { ProductSuggestion } from "../types";
 
 interface InvoiceItemsModalProps {
   isOpen: boolean;
@@ -42,11 +44,13 @@ export const InvoiceItemsModal = ({
 
   const filteredItems = useMemo(() => {
     let items = [...products];
+
     if (filterValue) {
       items = items.filter((p) =>
         p.nombreDetected.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
+
     return items;
   }, [products, filterValue]);
 
@@ -55,6 +59,7 @@ export const InvoiceItemsModal = ({
   const items = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
+
     return filteredItems.slice(start, end);
   }, [page, filteredItems, rowsPerPage]);
 
@@ -69,6 +74,7 @@ export const InvoiceItemsModal = ({
     if (originalIndex === -1) return;
 
     let newValue = value;
+
     if (field === "cantidad" || field === "precioUnitario") {
       newValue = Number(value);
     }
@@ -81,17 +87,19 @@ export const InvoiceItemsModal = ({
     }
 
     const newProdList = [...products];
+
     newProdList[originalIndex] = updatedItem;
     onProductsChange(newProdList);
   };
 
   const handleDelete = (item: ProductSuggestion) => {
     const newProducts = products.filter((p) => p !== item);
+
     onProductsChange(newProducts);
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="5xl" scrollBehavior="inside">
+    <Modal isOpen={isOpen} scrollBehavior="inside" size="5xl" onClose={onClose}>
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
           {t("modal.title")}
@@ -102,13 +110,13 @@ export const InvoiceItemsModal = ({
         <ModalBody>
           <div className="flex justify-between items-center mb-4">
             <Input
+              aria-label={t("modal.search")}
+              className="max-w-xs"
               placeholder={t("modal.search")}
+              size="sm"
+              startContent={<SearchIcon className="text-default-400" />}
               value={filterValue}
               onValueChange={setFilterValue}
-              className="max-w-xs"
-              size="sm"
-              aria-label={t("modal.search")}
-              startContent={<SearchIcon className="text-default-400" />}
             />
           </div>
 
@@ -141,12 +149,14 @@ export const InvoiceItemsModal = ({
             <TableBody items={items}>
               {(item: ProductSuggestion) => {
                 const localIndex = items.indexOf(item);
+
                 return (
                   <TableRow key={localIndex}>
                     <TableCell>
                       <Input
                         size="sm"
                         value={item.nombreDetected}
+                        variant="underlined"
                         onChange={(e) =>
                           handleUpdate(
                             localIndex,
@@ -154,37 +164,39 @@ export const InvoiceItemsModal = ({
                             e.target.value,
                           )
                         }
-                        variant="underlined"
                       />
                     </TableCell>
                     <TableCell>
                       <Input
-                        type="number"
+                        className="w-20"
                         size="sm"
+                        type="number"
                         value={item.cantidad.toString()}
+                        variant="underlined"
                         onChange={(e) =>
                           handleUpdate(localIndex, "cantidad", e.target.value)
                         }
-                        variant="underlined"
-                        className="w-20"
                       />
                     </TableCell>
                     <TableCell>
                       <Input
+                        className="w-16"
                         size="sm"
                         value={item.unidad}
+                        variant="underlined"
                         onChange={(e) =>
                           handleUpdate(localIndex, "unidad", e.target.value)
                         }
-                        variant="underlined"
-                        className="w-16"
                       />
                     </TableCell>
                     <TableCell>
                       <Input
-                        type="number"
+                        className="w-28"
                         size="sm"
+                        startContent="$"
+                        type="number"
                         value={item.precioUnitario.toString()}
+                        variant="underlined"
                         onChange={(e) =>
                           handleUpdate(
                             localIndex,
@@ -192,9 +204,6 @@ export const InvoiceItemsModal = ({
                             e.target.value,
                           )
                         }
-                        variant="underlined"
-                        startContent="$"
-                        className="w-28"
                       />
                     </TableCell>
                     <TableCell>
@@ -208,11 +217,11 @@ export const InvoiceItemsModal = ({
                     <TableCell>
                       <Button
                         isIconOnly
-                        size="sm"
+                        aria-label={`Delete ${item.nombreDetected}`}
                         color="danger"
+                        size="sm"
                         variant="light"
                         onPress={() => handleDelete(item)}
-                        aria-label={`Delete ${item.nombreDetected}`}
                       >
                         <DeleteIcon />
                       </Button>

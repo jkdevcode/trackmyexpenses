@@ -13,8 +13,6 @@ import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 
-import { useSession } from "@/contexts/session-context";
-import { appColor } from "@/theme/theme.config";
 import {
   HomeIcon,
   InvoiceIcon,
@@ -22,6 +20,9 @@ import {
   LogoutIcon,
   Logo,
 } from "./LayoutIcons";
+
+import { useSession } from "@/contexts/session-context";
+import { appColor } from "@/theme/theme.config";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { LanguageSwitch } from "@/components/ui/language-switch";
 
@@ -66,10 +67,10 @@ export const MobileNavbar = () => {
 
   return (
     <Navbar
-      isMenuOpen={isMenuOpen}
-      onMenuOpenChange={setIsMenuOpen}
       className="md:hidden border-b border-divider"
+      isMenuOpen={isMenuOpen}
       maxWidth="full"
+      onMenuOpenChange={setIsMenuOpen}
     >
       <NavbarContent>
         <NavbarMenuToggle
@@ -84,14 +85,14 @@ export const MobileNavbar = () => {
       <NavbarContent justify="end">
         <Avatar
           isBordered
-          color={appColor}
-          src={avatarUrl}
-          size="sm"
-          className="cursor-pointer"
-          onClick={() => navigate("/profile")}
-          role="button"
-          tabIndex={0}
           aria-label={t("profile:title")}
+          className="cursor-pointer"
+          color={appColor}
+          role="button"
+          size="sm"
+          src={avatarUrl}
+          tabIndex={0}
+          onClick={() => navigate("/profile")}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
@@ -105,19 +106,20 @@ export const MobileNavbar = () => {
         <div className="flex flex-col gap-6 h-full">
           {/* Navigation Links */}
           <div className="flex flex-col gap-2 px-2">
-            {menuItems.map((item, index) => {
+            {menuItems.map((item) => {
               const isActive = location.pathname === item.href;
+
               return (
-                <NavbarMenuItem key={`${item.href}-${index}`}>
+                <NavbarMenuItem key={item.href}>
                   <Link
+                    as={RouterLink}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
                       isActive
                         ? `bg-${appColor}/10 text-${appColor} font-medium`
                         : "text-foreground hover:bg-default-100"
                     }`}
-                    as={RouterLink}
-                    to={item.href}
                     size="lg"
+                    to={item.href}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <span className="text-xl">{item.icon}</span>
@@ -156,22 +158,22 @@ export const MobileNavbar = () => {
           {/* User Info Section */}
           <NavbarMenuItem>
             <div
+              aria-label={t("profile:title")}
               className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-default-100 cursor-pointer transition-colors group"
+              role="button"
+              tabIndex={0}
               onClick={() => {
                 setIsMenuOpen(false);
                 navigate("/profile");
               }}
-              role="button"
-              tabIndex={0}
-              aria-label={t("profile:title")}
               onKeyDown={handleProfileKeyDown}
             >
               <Avatar
                 isBordered
-                color={appColor}
-                className="w-12 h-12 group-hover:scale-105 transition-transform"
-                src={avatarUrl}
                 alt="Avatar usuario"
+                className="w-12 h-12 group-hover:scale-105 transition-transform"
+                color={appColor}
+                src={avatarUrl}
               />
               <div className="flex flex-col">
                 <span className={`font-bold text-${appColor} text-lg`}>
@@ -188,13 +190,13 @@ export const MobileNavbar = () => {
           <NavbarMenuItem className="mt-auto pb-8 px-4">
             <Button
               className="w-full justify-start gap-3"
-              variant="light"
               color="danger"
+              startContent={<LogoutIcon />}
+              variant="light"
               onPress={() => {
                 setIsMenuOpen(false);
                 logout();
               }}
-              startContent={<LogoutIcon />}
             >
               {t("auth.logout")}
             </Button>

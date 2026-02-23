@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useReducer } from "react";
+
 import axiosClient, { setUnauthorizedHandler } from "@/lib/axiosClient";
 
 interface User {
@@ -33,15 +34,33 @@ export const SessionProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  type SessionState = {
+    user: User | null;
+    loading: boolean;
+  };
+  type SessionAction =
+    | { type: "SET_SESSION"; payload: User | null }
+    | { type: "FINISH_LOADING" };
+  const [state, dispatch] = useReducer(
+    (currentState: SessionState, action: SessionAction): SessionState => {
+      switch (action.type) {
+        case "SET_SESSION":
+          return { ...currentState, user: action.payload };
+        case "FINISH_LOADING":
+          return { ...currentState, loading: false };
+        default:
+          return currentState;
+      }
+    },
+    { user: null, loading: true },
+  );
 
   useEffect(() => {
     let isMounted = true;
 
     setUnauthorizedHandler(() => {
       if (isMounted) {
-        setUser(null);
+        dispatch({ type: "SET_SESSION", payload: null });
       }
     });
 
@@ -50,15 +69,18 @@ export const SessionProvider = ({
         const response = await axiosClient.get("/users/me");
 
         if (isMounted) {
-          setUser(response.data.user ?? null);
+          dispatch({
+            type: "SET_SESSION",
+            payload: response.data.user ?? null,
+          });
         }
       } catch {
         if (isMounted) {
-          setUser(null);
+          dispatch({ type: "SET_SESSION", payload: null });
         }
       } finally {
         if (isMounted) {
-          setLoading(false);
+          dispatch({ type: "FINISH_LOADING" });
         }
       }
     };
@@ -72,21 +94,21 @@ export const SessionProvider = ({
   }, []);
 
   const login = (newUser: User) => {
-    setUser(newUser);
+    dispatch({ type: "SET_SESSION", payload: newUser });
   };
 
   const logout = () => {
-    setUser(null);
+    dispatch({ type: "SET_SESSION", payload: null });
   };
 
   return (
     <SessionContext.Provider
       value={{
-        user,
-        isAuthenticated: !!user,
+        user: state.user,
+        isAuthenticated: !!state.user,
         login,
         logout,
-        loading,
+        loading: state.loading,
       }}
     >
       {children}

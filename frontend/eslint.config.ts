@@ -18,6 +18,10 @@ export default [
       parser: tsParser,
       globals: {
         // Ajout des globals du navigateur
+        React: "readonly",
+        process: "readonly",
+        Buffer: "readonly",
+        console: "readonly",
         HTMLDivElement: "readonly",
         HTMLInputElement: "readonly",
         File: "readonly",
@@ -92,15 +96,7 @@ export default [
         },
       ],
       "react/self-closing-comp": "warn",
-      "react/jsx-sort-props": [
-        "warn",
-        {
-          callbacksLast: true,
-          shorthandFirst: true,
-          noSortAlphabetically: false,
-          reservedFirst: true,
-        },
-      ],
+      "react/jsx-sort-props": "off",
       "padding-line-between-statements": [
         "warn",
         { blankLine: "always", prev: "*", next: "return" },

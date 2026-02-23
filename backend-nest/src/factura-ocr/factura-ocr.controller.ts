@@ -1,4 +1,14 @@
-import { Controller, Post, UseGuards, UseInterceptors, UploadedFile, BadRequestException, Body, UsePipes, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  Body,
+  UsePipes,
+  Request,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FacturaOcrService } from './factura-ocr.service';
@@ -14,12 +24,14 @@ export class FacturaOcrController {
   @UseInterceptors(FileInterceptor('image'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-        throw new BadRequestException('Se requiere una imagen (field: image)');
+      throw new BadRequestException('Se requiere una imagen (field: image)');
     }
-    
+
     // Validate mimetype basic
     if (!file.mimetype.match(/^image\/(jpeg|png|webp)$/)) {
-        throw new BadRequestException('Solo se permiten imágenes (JPEG, PNG, WEBP)');
+      throw new BadRequestException(
+        'Solo se permiten imágenes (JPEG, PNG, WEBP)',
+      );
     }
 
     return this.ocrService.processImage(file);
@@ -27,7 +39,10 @@ export class FacturaOcrController {
 
   @Post('confirmar')
   @UsePipes(ZodValidationPipe)
-  async confirmar(@Request() req: any, @Body() dto: ConfirmFacturaDto) {
+  async confirmar(
+    @Request() req: { user: { id: number } },
+    @Body() dto: ConfirmFacturaDto,
+  ) {
     return this.ocrService.confirmarFactura(req.user.id, dto);
   }
 }
