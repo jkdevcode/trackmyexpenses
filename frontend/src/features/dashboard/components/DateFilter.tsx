@@ -1,7 +1,9 @@
+import type { DateFilterType } from "../types";
+
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
+
 import { appColor } from "@/theme/theme.config";
-import type { DateFilterType } from "../types";
 
 interface DateFilterProps {
   filter: DateFilterType;
@@ -18,10 +20,10 @@ export const DateFilter = ({ filter, onChange }: DateFilterProps) => {
       {filters.map((f) => (
         <Button
           key={f}
+          className={`capitalize font-medium ${filter === f ? "shadow-md" : "text-default-500 hover:text-default-900"}`}
+          color={filter === f ? appColor : "default"}
           size="sm"
           variant={filter === f ? "solid" : "light"}
-          color={filter === f ? appColor : "default"}
-          className={`capitalize font-medium ${filter === f ? "shadow-md" : "text-default-500 hover:text-default-900"}`}
           onPress={() => onChange(f)}
         >
           {t(`filters.${f}`)}

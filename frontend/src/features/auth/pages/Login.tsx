@@ -8,12 +8,13 @@ import { Input } from "@heroui/input";
 import { Link } from "@heroui/link";
 import { addToast } from "@heroui/toast";
 
+import { useLoginMutation } from "../hooks/useAuthMutations";
+
 import { getErrorMessage } from "@/utils/errors";
 import { appColor } from "@/theme/theme.config";
 import { EyeFilledIcon, EyeSlashFilledIcon, Logo } from "@/components/ui/icons";
 import { getLoginSchema } from "@/schemas/auth";
 import { useSession } from "@/contexts/session-context";
-import { useLoginMutation } from "../hooks/useAuthMutations";
 
 interface LoginFormValues {
   documento: string;
@@ -46,6 +47,7 @@ const LoginPage = () => {
     try {
       const data = await loginMutation.mutateAsync(values);
       const userInfo = Array.isArray(data.user) ? data.user[0] : data.user;
+
       login(userInfo);
 
       addToast({
@@ -81,23 +83,23 @@ const LoginPage = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="rounded-md space-y-4">
             <Input
+              color={appColor}
               errorMessage={errors.documento?.message}
               isInvalid={!!touchedFields.documento && !!errors.documento}
               label={t("auth:fields.documento.label")}
               placeholder={t("auth:fields.documento.placeholder")}
               type="text"
               variant="bordered"
-              color={appColor}
               {...register("documento")}
             />
             <Input
               color={appColor}
               endContent={
                 <button
+                  aria-label={isVisible ? "Hide password" : "Show password"}
                   className="focus:outline-none"
                   type="button"
                   onClick={toggleVisibility}
-                  aria-label={isVisible ? "Hide password" : "Show password"}
                 >
                   {isVisible ? (
                     <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />

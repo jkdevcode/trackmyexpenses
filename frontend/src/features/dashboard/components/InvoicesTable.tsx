@@ -1,3 +1,5 @@
+import type { Invoice } from "../types";
+
 import { useState, useMemo } from "react";
 import {
   Table,
@@ -11,7 +13,7 @@ import {
 import { Pagination } from "@heroui/pagination";
 import { Chip } from "@heroui/chip";
 import { useTranslation } from "react-i18next";
-import type { Invoice } from "../types";
+
 import { appColor } from "@/theme/theme.config";
 
 interface InvoicesTableProps {
@@ -65,6 +67,7 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+
     return new Intl.DateTimeFormat(i18n.language, {
       day: "2-digit",
       month: "short",
@@ -78,13 +81,8 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
         <h3 className="text-lg font-semibold">{t("table.title")}</h3>
       </div>
       <Table
-        aria-label={t("table.title")}
         removeWrapper
-        classNames={{
-          th: `bg-default-100/50 text-${appColor} font-bold`,
-          td: "py-3 border-b border-default-100 last:border-0",
-        }}
-        isStriped={false}
+        aria-label={t("table.title")}
         bottomContent={
           pages > 1 ? (
             <div className="flex w-full justify-center">
@@ -100,6 +98,11 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
             </div>
           ) : null
         }
+        classNames={{
+          th: `bg-default-100/50 text-${appColor} font-bold`,
+          td: "py-3 border-b border-default-100 last:border-0",
+        }}
+        isStriped={false}
       >
         <TableHeader columns={columns}>
           {(column) => (
@@ -115,7 +118,7 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody items={items} emptyContent={t("table.empty")}>
+        <TableBody emptyContent={t("table.empty")} items={items}>
           {(item: Invoice) => (
             <TableRow
               key={item.id}

@@ -1,7 +1,8 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { useSession } from "@/contexts/session-context";
 import { Spinner } from "@heroui/spinner";
+
+import { useSession } from "@/contexts/session-context";
 
 export const PublicOnlyRoute = ({
   children,
@@ -19,7 +20,7 @@ export const PublicOnlyRoute = ({
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate replace to="/dashboard" />;
   }
 
   return children;

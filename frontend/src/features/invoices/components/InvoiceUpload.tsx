@@ -1,12 +1,15 @@
+import type { ScanResponse } from "../types";
+
 import { useState } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
-import { appColor } from "@/theme/theme.config";
 import { addToast } from "@heroui/toast";
-import { GalleryIcon } from "@/components/ui/icons";
-import type { ScanResponse } from "../types";
+
 import { useScanInvoiceMutation } from "../hooks/useInvoiceMutations";
+
+import { appColor } from "@/theme/theme.config";
+import { GalleryIcon } from "@/components/ui/icons";
 
 interface InvoiceUploadProps {
   onScanComplete: (data: ScanResponse) => void;
@@ -24,11 +27,13 @@ export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
         description: t("upload.invalid_type"),
         color: "danger",
       });
+
       return;
     }
 
     try {
       const data = await scanInvoiceMutation.mutateAsync(file);
+
       onScanComplete(data as ScanResponse);
       addToast({
         title: t("toast.success"),
@@ -94,19 +99,19 @@ export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
 
         <div className="flex gap-2 mt-2">
           <input
+            accept="image/*"
+            aria-label="Upload invoice image"
+            className="hidden"
+            disabled={scanInvoiceMutation.isPending}
             id="invoice-upload"
             type="file"
-            className="hidden"
-            accept="image/*"
             onChange={handleChange}
-            disabled={scanInvoiceMutation.isPending}
-            aria-label="Upload invoice image"
           />
           <Button
+            aria-label={t("upload.select_file")}
             color={appColor}
             isLoading={scanInvoiceMutation.isPending}
             onPress={() => document.getElementById("invoice-upload")?.click()}
-            aria-label={t("upload.select_file")}
           >
             {scanInvoiceMutation.isPending
               ? t("upload.processing")

@@ -34,7 +34,10 @@ export class AuthController {
 
   @Post('login')
   @UsePipes(ZodValidationPipe)
-  async login(@Body() dto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
+  async login(
+    @Body() dto: LoginUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { token, response } = await this.authService.login(dto);
     const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN', '7d');
 

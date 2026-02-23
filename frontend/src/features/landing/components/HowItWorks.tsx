@@ -35,7 +35,7 @@ export const HowItWorks = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {steps.map((step, index) => (
             <div
-              key={index}
+              key={step.title}
               className="flex flex-col items-center text-center p-8 bg-background rounded-2xl border border-default-100 shadow-sm transition-transform hover:-translate-y-1"
             >
               <span className="text-5xl mb-6">{step.icon}</span>

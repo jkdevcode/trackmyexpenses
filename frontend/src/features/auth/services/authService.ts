@@ -17,11 +17,13 @@ export interface RegisterPayload {
 
 export const loginRequest = async (payload: LoginPayload) => {
   const response = await axiosClient.post("auth/login", payload);
+
   return response.data;
 };
 
 export const registerRequest = async (payload: RegisterPayload) => {
   const formData = new FormData();
+
   formData.append("tipoDocumento", payload.tipo_documento);
   formData.append("documento", payload.documento_identidad);
   formData.append("nombres", payload.nombre);

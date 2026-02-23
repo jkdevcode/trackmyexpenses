@@ -1,7 +1,9 @@
+import type { DashboardStats } from "../types";
+
 import { Card, CardBody } from "@heroui/card";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
-import type { DashboardStats } from "../types";
+import { LazyMotion, domAnimation, m } from "framer-motion";
+
 import { appColor } from "@/theme/theme.config";
 
 interface StatsCardsProps {
@@ -68,11 +70,18 @@ export const StatsCards = ({ stats, loading }: StatsCardsProps) => {
   ];
 
   if (loading) {
+    const skeletonCards = [
+      { id: "stats-skeleton-1" },
+      { id: "stats-skeleton-2" },
+      { id: "stats-skeleton-3" },
+      { id: "stats-skeleton-4" },
+    ];
+
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
+        {skeletonCards.map((card) => (
           <Card
-            key={i}
+            key={card.id}
             className="h-24 w-full animate-pulse bg-default-100"
             shadow="sm"
           >
@@ -84,45 +93,47 @@ export const StatsCards = ({ stats, loading }: StatsCardsProps) => {
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-    >
-      {cards.map((card) => (
-        <motion.div key={card.key} variants={itemVariants}>
-          <Card
-            shadow="sm"
-            className="h-full border border-transparent hover:border-default-200 transition-colors"
-          >
-            <CardBody className="gap-2 p-4">
-              <div className="flex justify-between items-start">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-default-500 font-medium">
-                    {card.label}
-                  </span>
-                  <span
-                    className={`text-2xl font-bold ${card.highlight ? `text-${appColor}-500` : "text-foreground"}`}
-                  >
-                    {card.value}
-                  </span>
-                  {card.trend && (
-                    <span className="text-xs text-success-500 font-medium bg-success-50 px-2 py-0.5 rounded-full w-fit">
-                      {card.subLabel}
+    <LazyMotion features={domAnimation}>
+      <m.div
+        animate="visible"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        initial="hidden"
+        variants={containerVariants}
+      >
+        {cards.map((card) => (
+          <m.div key={card.key} variants={itemVariants}>
+            <Card
+              className="h-full border border-transparent hover:border-default-200 transition-colors"
+              shadow="sm"
+            >
+              <CardBody className="gap-2 p-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm text-default-500 font-medium">
+                      {card.label}
                     </span>
-                  )}
+                    <span
+                      className={`text-2xl font-bold ${card.highlight ? `text-${appColor}-500` : "text-foreground"}`}
+                    >
+                      {card.value}
+                    </span>
+                    {card.trend && (
+                      <span className="text-xs text-success-500 font-medium bg-success-50 px-2 py-0.5 rounded-full w-fit">
+                        {card.subLabel}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className={`p-2 rounded-lg ${card.highlight ? `bg-${appColor}-50 text-${appColor}` : "bg-default-100 text-default-600"}`}
+                  >
+                    <span className="text-xl">{card.icon}</span>
+                  </div>
                 </div>
-                <div
-                  className={`p-2 rounded-lg ${card.highlight ? `bg-${appColor}-50 text-${appColor}` : "bg-default-100 text-default-600"}`}
-                >
-                  <span className="text-xl">{card.icon}</span>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </motion.div>
-      ))}
-    </motion.div>
+              </CardBody>
+            </Card>
+          </m.div>
+        ))}
+      </m.div>
+    </LazyMotion>
   );
 };

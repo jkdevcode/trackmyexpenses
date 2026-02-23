@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { Tooltip } from "@heroui/tooltip";
+
 /* import { Link } from "@heroui/link"; */
 import { appColor } from "@/theme/theme.config";
 
@@ -13,13 +14,12 @@ interface NavItemProps {
 export const NavItem = ({ href, icon, label, isCollapsed }: NavItemProps) => {
   return (
     <Tooltip
+      color="default"
       content={label}
       isDisabled={!isCollapsed}
       placement="right"
-      color="default"
     >
       <NavLink
-        to={href}
         className={({ isActive }) => `
                 flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 group
                 ${
@@ -29,6 +29,7 @@ export const NavItem = ({ href, icon, label, isCollapsed }: NavItemProps) => {
                 }
                 ${isCollapsed ? "justify-center" : ""}
             `}
+        to={href}
       >
         {({ isActive }) => (
           <>

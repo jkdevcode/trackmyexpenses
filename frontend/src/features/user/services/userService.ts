@@ -37,11 +37,16 @@ export const updateProfileRequest = async (payload: UpdateProfilePayload) => {
   }
 
   const hasChanges = !formData.entries().next().done;
+
   if (!hasChanges) return null;
 
-  const response = await axiosClient.patch(`/users/${payload.userId}`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await axiosClient.patch(
+    `/users/${payload.userId}`,
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    },
+  );
 
   return response.data;
 };
@@ -52,5 +57,6 @@ export const changePasswordRequest = async (values: {
   confirmPassword: string;
 }) => {
   const response = await axiosClient.patch("/users/change-password", values);
+
   return response.data;
 };

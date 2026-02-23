@@ -1,12 +1,13 @@
-import { FC, useState, useEffect } from "react";
+import { FC } from "react";
 import { VisuallyHidden } from "@react-aria/visually-hidden";
 import { SwitchProps, useSwitch } from "@heroui/switch";
 import { Tooltip } from "@heroui/tooltip";
 import { clsx } from "@heroui/shared-utils";
 import { useTranslation } from "react-i18next";
 
-import { useTheme } from "@/hooks/use-theme";
 import { MoonFilledIcon, SunFilledIcon } from "./icons";
+
+import { useTheme } from "@/hooks/use-theme";
 
 export interface ThemeSwitchProps {
   className?: string;
@@ -18,8 +19,6 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
   classNames,
 }) => {
   const { t } = useTranslation();
-
-  const [isMounted, setIsMounted] = useState(false);
 
   const { theme, toggleTheme } = useTheme();
 
@@ -36,13 +35,6 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
     isSelected: theme === "light",
     onChange,
   });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, [isMounted]);
-
-  // Prevent Hydration Mismatch
-  if (!isMounted) return <div className="w-6 h-6" />;
 
   return (
     <Tooltip content={t("theme")} delay={750}>

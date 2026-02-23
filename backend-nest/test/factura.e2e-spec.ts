@@ -27,11 +27,15 @@ describe('FacturaController (e2e)', () => {
     await app.init();
 
     // Register & Login
-    await request(app.getHttpServer()).post('/api/auth/register').send(testUser);
-    const loginRes = await request(app.getHttpServer()).post('/api/auth/login').send({
-      documento: testUser.documento,
-      contrasena: testUser.contrasena,
-    });
+    await request(app.getHttpServer())
+      .post('/api/auth/register')
+      .send(testUser);
+    const loginRes = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        documento: testUser.documento,
+        contrasena: testUser.contrasena,
+      });
     authCookie = loginRes.headers['set-cookie'][0].split(';')[0];
   });
 
@@ -45,9 +49,9 @@ describe('FacturaController (e2e)', () => {
       .set('Cookie', authCookie)
       .send({
         fecha: new Date().toISOString(),
-        total: 150.00,
+        total: 150.0,
         metodoPago: 'EFECTIVO',
-        lugarCompra: 'Supermercado Test'
+        lugarCompra: 'Supermercado Test',
       })
       .expect(201)
       .expect((res) => {
@@ -75,7 +79,7 @@ describe('FacturaController (e2e)', () => {
       .set('Cookie', authCookie)
       .send({
         fecha: 'invalid-date', // Invalid
-        total: -50 // Negative
+        total: -50, // Negative
       })
       .expect(400);
   });

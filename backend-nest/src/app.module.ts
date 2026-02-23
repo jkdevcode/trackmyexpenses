@@ -53,7 +53,7 @@ import { RequestLoggingInterceptor } from './common/interceptors/request-logging
     CacheModule.registerAsync({
       isGlobal: true,
       inject: [ConfigService],
-      useFactory: (configService: ConfigService): any => {
+      useFactory: (configService: ConfigService) => {
         const redisUrl = configService.get<string>('REDIS_URL');
         const ttl = Number(configService.get<string>('CACHE_TTL_MS', '600000'));
 
@@ -73,7 +73,9 @@ import { RequestLoggingInterceptor } from './common/interceptors/request-logging
         const ttlSeconds = Number(
           configService.get<string>('THROTTLE_TTL', '60'),
         );
-        const limit = Number(configService.get<string>('THROTTLE_LIMIT', '120'));
+        const limit = Number(
+          configService.get<string>('THROTTLE_LIMIT', '120'),
+        );
 
         return [
           {

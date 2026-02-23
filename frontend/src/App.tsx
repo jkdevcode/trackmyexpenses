@@ -79,7 +79,6 @@ function App() {
         >
           <Route
             index
-            path="/dashboard"
             element={
               <AppErrorBoundary>
                 <Suspense
@@ -89,9 +88,9 @@ function App() {
                 </Suspense>
               </AppErrorBoundary>
             }
+            path="/dashboard"
           />
           <Route
-            path="/profile"
             element={
               <AppErrorBoundary>
                 <Suspense
@@ -101,9 +100,9 @@ function App() {
                 </Suspense>
               </AppErrorBoundary>
             }
+            path="/profile"
           />
           <Route
-            path="/invoices"
             element={
               <AppErrorBoundary>
                 <Suspense
@@ -113,10 +112,11 @@ function App() {
                 </Suspense>
               </AppErrorBoundary>
             }
+            path="/invoices"
           />
           <Route
-            path="/settings"
             element={<div className="p-4">Ajustes (WIP)</div>}
+            path="/settings"
           />
         </Route>
         <Route

@@ -58,7 +58,8 @@ export class FacturaOcrOrchestrator {
             usuarioId: userId,
             codigoFactura,
             fechaHoraCompra: new Date(factura.fechaHoraCompra),
-            metodoPago: factura.metodoPago as any,
+            metodoPago:
+              factura.metodoPago as Prisma.FacturaCreateInput['metodoPago'],
             lugarCompra: factura.lugarCompra,
             nitProveedor: factura.nitProveedor,
             totalPagar: 0,

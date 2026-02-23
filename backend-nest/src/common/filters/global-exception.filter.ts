@@ -84,7 +84,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   }
 
   private mapStatusToCode(status: number): string {
-    if (status === HttpStatus.TOO_MANY_REQUESTS) {
+    if (status === Number(HttpStatus.TOO_MANY_REQUESTS)) {
       return 'RATE_LIMIT_EXCEEDED';
     }
 

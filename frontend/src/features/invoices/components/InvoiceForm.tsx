@@ -1,3 +1,5 @@
+import type { ParsedInvoice, ProductSuggestion } from "../types";
+
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -9,10 +11,11 @@ import { Select, SelectItem } from "@heroui/select";
 import { DatePicker } from "@heroui/date-picker";
 import { parseDate, getLocalTimeZone, today } from "@internationalized/date";
 import { useTranslation } from "react-i18next";
-import { appColor } from "@/theme/theme.config";
-import type { ParsedInvoice, ProductSuggestion } from "../types";
+
 import { InvoiceSummary } from "./InvoiceSummary";
 import { InvoiceItemsModal } from "./InvoiceItemsModal";
+
+import { appColor } from "@/theme/theme.config";
 import { getInvoiceSchema } from "@/schemas/invoice";
 
 interface InvoiceFormProps {
@@ -83,11 +86,11 @@ export const InvoiceForm = ({
         <CardBody className="gap-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
+              isRequired
               errorMessage={errors.lugarCompra?.message}
               isInvalid={!!touchedFields.lugarCompra && !!errors.lugarCompra}
               label={t("form.provider")}
               variant="bordered"
-              isRequired
               {...register("lugarCompra")}
             />
             <Input
@@ -102,22 +105,22 @@ export const InvoiceForm = ({
               name="fechaHoraCompra"
               render={({ field }) => (
                 <DatePicker
+                  isRequired
+                  errorMessage={errors.fechaHoraCompra?.message}
+                  isInvalid={
+                    !!touchedFields.fechaHoraCompra && !!errors.fechaHoraCompra
+                  }
                   label={t("form.date")}
+                  maxValue={today(getLocalTimeZone())}
                   value={
                     field.value
                       ? parseDate(field.value.split("T")[0])
                       : today(getLocalTimeZone())
                   }
+                  variant="bordered"
                   onChange={(date: any) =>
                     field.onChange(date ? date.toString() : "")
                   }
-                  variant="bordered"
-                  isRequired
-                  maxValue={today(getLocalTimeZone())}
-                  isInvalid={
-                    !!touchedFields.fechaHoraCompra && !!errors.fechaHoraCompra
-                  }
-                  errorMessage={errors.fechaHoraCompra?.message}
                 />
               )}
             />
@@ -126,13 +129,13 @@ export const InvoiceForm = ({
               name="metodoPago"
               render={({ field }) => (
                 <Select
+                  isRequired
+                  errorMessage={errors.metodoPago?.message}
+                  isInvalid={!!touchedFields.metodoPago && !!errors.metodoPago}
                   label={t("form.payment_method")}
                   selectedKeys={[field.value]}
-                  onChange={(e) => field.onChange(e.target.value)}
                   variant="bordered"
-                  isRequired
-                  isInvalid={!!touchedFields.metodoPago && !!errors.metodoPago}
-                  errorMessage={errors.metodoPago?.message}
+                  onChange={(e) => field.onChange(e.target.value)}
                 >
                   <SelectItem key="EFECTIVO">
                     {t("common.cash", "Efectivo")}
@@ -156,12 +159,12 @@ export const InvoiceForm = ({
 
           <div className="border-t border-default-200 pt-4 mt-2">
             <Input
-              label={t("form.total")}
-              value={`$ ${new Intl.NumberFormat("es-CO").format(totalPagar)}`}
               readOnly
-              description={t("form.total_desc")}
               className="font-bold text-lg"
               color={appColor}
+              description={t("form.total_desc")}
+              label={t("form.total")}
+              value={`$ ${new Intl.NumberFormat("es-CO").format(totalPagar)}`}
             />
           </div>
         </CardBody>
@@ -174,8 +177,8 @@ export const InvoiceForm = ({
 
         {products.length > 10 ? (
           <InvoiceSummary
-            totalItems={products.length}
             totalAmount={totalPagar}
+            totalItems={products.length}
             onViewProducts={onOpen}
           />
         ) : (
@@ -189,9 +192,9 @@ export const InvoiceForm = ({
               </Button>
             </div>
             <ul className="space-y-2">
-              {products.map((p, idx) => (
+              {products.map((p) => (
                 <li
-                  key={idx}
+                  key={`${p.nombreDetected}-${p.cantidad}-${p.precioTotal}`}
                   className="flex justify-between text-sm border-b border-default-100 pb-1"
                 >
                   <span>
@@ -208,18 +211,18 @@ export const InvoiceForm = ({
       </div>
 
       <div className="flex gap-4 justify-end pt-4">
-        <Button color="danger" variant="flat" onPress={onCancel} type="button">
+        <Button color="danger" type="button" variant="flat" onPress={onCancel}>
           {t("form.cancel")}
         </Button>
-        <Button color={appColor} type="submit" isLoading={saving}>
+        <Button color={appColor} isLoading={saving} type="submit">
           {t("form.save")}
         </Button>
       </div>
 
       <InvoiceItemsModal
         isOpen={isOpen}
-        onClose={onClose}
         products={products}
+        onClose={onClose}
         onProductsChange={setProducts}
       />
     </form>

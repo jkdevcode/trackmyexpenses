@@ -21,6 +21,7 @@ export const CookieConsentProvider: FC<{ children: ReactNode }> = ({
   const [cookieConsent, setCookieConsent] = useState<CookieConsentStatus>(
     () => {
       const savedConsent = localStorage.getItem(COOKIE_CONSENT_KEY);
+
       return savedConsent === "accepted" || savedConsent === "rejected"
         ? (savedConsent as CookieConsentStatus)
         : "pending";

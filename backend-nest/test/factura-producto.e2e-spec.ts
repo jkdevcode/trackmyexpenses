@@ -29,11 +29,15 @@ describe('FacturaProducto Interaction (e2e)', () => {
     await app.init();
 
     // Register & Login
-    await request(app.getHttpServer()).post('/api/auth/register').send(testUser);
-    const loginRes = await request(app.getHttpServer()).post('/api/auth/login').send({
-      documento: testUser.documento,
-      contrasena: testUser.contrasena,
-    });
+    await request(app.getHttpServer())
+      .post('/api/auth/register')
+      .send(testUser);
+    const loginRes = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        documento: testUser.documento,
+        contrasena: testUser.contrasena,
+      });
     authCookie = loginRes.headers['set-cookie'][0].split(';')[0];
 
     // Create Product
@@ -43,7 +47,7 @@ describe('FacturaProducto Interaction (e2e)', () => {
       .send({
         codigo: `P-${uniqueId}`,
         nombre: 'Integration Product',
-        precioUnitario: 50.00
+        precioUnitario: 50.0,
       });
     productId = prodRes.body.producto.id;
 
@@ -53,7 +57,7 @@ describe('FacturaProducto Interaction (e2e)', () => {
       .set('Cookie', authCookie)
       .send({
         fecha: new Date().toISOString(),
-        total: 100.00, // Initial manually set total
+        total: 100.0, // Initial manually set total
         metodoPago: 'EFECTIVO',
       });
     facturaId = factRes.body.factura.id;
@@ -70,7 +74,7 @@ describe('FacturaProducto Interaction (e2e)', () => {
       .send({
         productoId: productId,
         cantidad: 2,
-        descuento: 0
+        descuento: 0,
       })
       .expect(201)
       .expect((res) => {
@@ -80,7 +84,7 @@ describe('FacturaProducto Interaction (e2e)', () => {
         // Note: totalPagar in DB is Decimal. JS Prisma Client returns Decimal or string depending on config.
         // Nest default serializer might default to string.
         const newTotal = parseFloat(res.body.data.updatedFactura.totalPagar);
-        expect(newTotal).toBeCloseTo(200.00, 1);
+        expect(newTotal).toBeCloseTo(200.0, 1);
       });
   });
 });

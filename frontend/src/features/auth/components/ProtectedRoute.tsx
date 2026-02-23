@@ -1,7 +1,8 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useSession } from "@/contexts/session-context";
 import { Spinner } from "@heroui/spinner";
+
+import { useSession } from "@/contexts/session-context";
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, loading } = useSession();
@@ -17,7 +18,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!isAuthenticated) {
     // Redirect to login but save the attempted location
-    return <Navigate state={{ from: location }} to="/login" replace />;
+    return <Navigate replace state={{ from: location }} to="/login" />;
   }
 
   return children;

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { title } from "@/components/ui/primitives";
 import DefaultLayout from "@/layouts/default";
 

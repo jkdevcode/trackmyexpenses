@@ -27,11 +27,15 @@ describe('ProductoController (e2e)', () => {
     await app.init();
 
     // Register & Login
-    await request(app.getHttpServer()).post('/api/auth/register').send(testUser);
-    const loginRes = await request(app.getHttpServer()).post('/api/auth/login').send({
-      documento: testUser.documento,
-      contrasena: testUser.contrasena,
-    });
+    await request(app.getHttpServer())
+      .post('/api/auth/register')
+      .send(testUser);
+    const loginRes = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        documento: testUser.documento,
+        contrasena: testUser.contrasena,
+      });
     authCookie = loginRes.headers['set-cookie'][0].split(';')[0];
   });
 
@@ -42,7 +46,7 @@ describe('ProductoController (e2e)', () => {
   const testProduct = {
     codigo: `PROD-${uniqueId}`,
     nombre: 'Producto Test',
-    precioUnitario: 100.50
+    precioUnitario: 100.5,
   };
 
   it('/api/productos (POST) - Create Producto', () => {
