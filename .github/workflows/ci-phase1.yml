@@ -6,7 +6,7 @@ on:
       - "**"
     paths: # Only trigger on changes to these areas to avoid unnecessary runs
       - "frontend/**"
-      - "backend-nest/**"
+      - "backend/**"
       - ".github/workflows/**"
   workflow_dispatch:
 
@@ -37,7 +37,7 @@ jobs:
             frontend:
               - 'frontend/**'
             backend:
-              - 'backend-nest/**'
+              - 'backend/**'
 
   frontend-ci: # Run lint, build, and E2E tests for frontend if there are changes
     name: Frontend Lint + Build + Playwright E2E
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults: 
       run:
-        working-directory: backend-nest
+        working-directory: backend
 
     steps:
       - name: Checkout repository
@@ -100,7 +100,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: backend-nest/package-lock.json
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install backend dependencies
         run: npm ci
@@ -129,7 +129,7 @@ jobs:
       - name: Build backend Docker image
         uses: docker/build-push-action@v6
         with:
-          context: backend-nest
-          file: backend-nest/Dockerfile
+          context: backend
+          file: backend/Dockerfile
           push: false
-          tags: backend-nest:ci
+          tags: backend:ci
