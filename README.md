@@ -38,7 +38,7 @@ El sistema sigue una arquitectura cliente-servidor desacoplada (RESTful API).
 *   **Procesamiento Inteligente:** Carga de imágenes de facturas y extracción automática de productos y totales.
 
 ## Estructura del Repositorio
-*   `/backend-nest`: Código fuente del servidor (API).
+*   `/backend`: Código fuente del servidor (API).
 *   `/frontend`: Código fuente de la aplicación cliente (Web).
 
 ## Cómo Levantar el Proyecto
