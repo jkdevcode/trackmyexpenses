@@ -1,0 +1,106 @@
+name: CD - Phase 4 (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to deploy (branch/tag/SHA)"
+        required: false
+        default: "main"
+        type: string
+      image_tag:
+        description: "Container image tag"
+        required: false
+        default: "manual"
+        type: string
+      deploy_staging:
+        description: "Run staging deploy after pushing image"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: cd-manual-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-push-backend:
+    name: Build and Push Backend Image (GHCR)
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build metadata
+        id: meta
+        run: |
+          IMAGE="ghcr.io/${{ github.repository_owner }}/trackmyexpenses-backend:${{ inputs.image_tag }}"
+          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+          echo "Publishing ${IMAGE}"
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}
+            ghcr.io/${{ github.repository_owner }}/trackmyexpenses-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-staging:
+    name: Deploy to Staging (Manual)
+    needs: build-and-push-backend
+    if: ${{ inputs.deploy_staging }}
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+
+    steps:
+      - name: Validate required staging secrets
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+        run: |
+          test -n "${STAGING_HOST}" || (echo "Missing STAGING_HOST secret" && exit 1)
+          test -n "${STAGING_USER}" || (echo "Missing STAGING_USER secret" && exit 1)
+          test -n "${STAGING_SSH_KEY}" || (echo "Missing STAGING_SSH_KEY secret" && exit 1)
+
+      - name: Configure SSH key
+        env:
+          STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf "%s" "${STAGING_SSH_KEY}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Deploy image in staging host
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          IMAGE: ${{ needs.build-and-push-backend.outputs.image }}
+        run: |
+          ssh -o StrictHostKeyChecking=no "${STAGING_USER}@${STAGING_HOST}" \
+            "docker pull ${IMAGE} && docker stop trackmyexpenses-backend || true && docker rm trackmyexpenses-backend || true && docker run -d --name trackmyexpenses-backend -p 3000:3000 ${IMAGE}"

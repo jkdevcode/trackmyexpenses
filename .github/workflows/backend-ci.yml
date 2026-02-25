@@ -1,0 +1,141 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - "**"
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    branches:
+      - "**"
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-quality:
+    name: Lint + Unit Tests + Coverage
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Lint backend
+        run: npx eslint "{src,apps,libs,test}/**/*.ts"
+
+      - name: Run backend unit tests
+        run: npm test -- --ci --runInBand
+
+      - name: Run backend coverage
+        run: npm run test:cov -- --ci --runInBand
+
+      - name: Upload backend coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
+          if-no-files-found: ignore
+
+      - name: Add backend coverage summary to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'backend/coverage/coverage-summary.json';
+            if (!fs.existsSync(path)) {
+              core.info('coverage-summary.json not found, skipping PR comment');
+              return;
+            }
+            const data = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const total = data.total || {};
+            const pct = (k) => total[k] ? `${total[k].pct}%` : 'n/a';
+            const body = [
+              '### Backend Coverage Summary',
+              '',
+              '| Metric | Coverage |',
+              '|---|---:|',
+              `| Lines | ${pct('lines')} |`,
+              `| Statements | ${pct('statements')} |`,
+              `| Functions | ${pct('functions')} |`,
+              `| Branches | ${pct('branches')} |`
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+  backend-docker-build:
+    name: Docker Build (No Push)
+    needs:
+      - backend-quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: false
+          tags: backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  backend-quality-gate:
+    name: Backend Quality Gate
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - backend-quality
+      - backend-docker-build
+    steps:
+      - name: Validate backend result
+        run: |
+          QUALITY_RESULT="${{ needs.backend-quality.result }}"
+          DOCKER_RESULT="${{ needs.backend-docker-build.result }}"
+          echo "backend-quality: ${QUALITY_RESULT}"
+          echo "backend-docker-build: ${DOCKER_RESULT}"
+
+          if [[ "${QUALITY_RESULT}" == "failure" || "${QUALITY_RESULT}" == "cancelled" ]]; then
+            echo "Backend quality checks failed."
+            exit 1
+          fi
+          if [[ "${DOCKER_RESULT}" == "failure" || "${DOCKER_RESULT}" == "cancelled" ]]; then
+            echo "Backend Docker build failed."
+            exit 1
+          fi
+          echo "Backend quality gate passed."
