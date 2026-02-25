@@ -1,0 +1,18 @@
+{
+  "required": "Este campo es obligatorio",
+  "email_invalid": "Debe ser un correo válido",
+  "password_min": "La contraseña debe tener al menos 8 caracteres",
+  "password_max": "La contraseña no puede tener más de 16 caracteres",
+  "password_match": "Las contraseñas deben coincidir",
+  "only_letters": "Solo puede contener letras y espacios",
+  "phone_invalid": "El teléfono debe tener 10 dígitos",
+  "numeric_only": "Debe ser numérico",
+  "document_min": "Mínimo 6 dígitos",
+  "document_max": "Máximo 10 dígitos",
+  "generic": "Ocurrió un error. Inténtalo más tarde.",
+  "email_exists": "El correo ya está registrado",
+  "document_exists": "El documento ya está registrado",
+  "unauthorized": "Acceso no autorizado",
+  "server_error": "Error interno del servidor",
+  "not_found": "Recurso no encontrado"
+}

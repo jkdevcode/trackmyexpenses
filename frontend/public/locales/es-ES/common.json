@@ -1,0 +1,35 @@
+{
+  "error": "Error",
+  "switch-to-dark-mode": "Cambiar a modo oscuro",
+  "switch-to-light-mode": "Cambiar a modo claro",
+  "home": "Inicio",
+  "docs": "Documentación",
+  "pricing": "Precios",
+  "blog": "Blog",
+  "about": "Acerca de",
+  "profile": "Perfil",
+  "dashboard": "Panel de control",
+  "projects": "Proyectos",
+  "team": "Equipo",
+  "calendar": "Calendario",
+  "settings": "Configuración",
+  "help-and-feedback": "Ayuda y comentarios",
+  "logout": "Cerrar sesión",
+  "powered-by": "Desarrollado por",
+  "language": "Idioma",
+  "theme": "Tema",
+  "login": "Iniciar sesión",
+  "register": "Regístrate",
+  "features": "Características",
+  "how-it-works": "Cómo funciona",
+  "create-account": "Crear cuenta",
+  "app-name": "TrackMyExpenses",
+  "navigation": {
+    "dashboard": "Panel Principal",
+    "invoices": "Facturas",
+    "settings": "Ajustes"
+  },
+  "auth": {
+    "logout": "Cerrar sesión"
+  }
+}

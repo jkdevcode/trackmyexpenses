@@ -1,0 +1,24 @@
+{
+  "title": "Profile Settings",
+  "save": "Save changes",
+  "cancel": "Cancel",
+  "reset": "Reset",
+  "success": "Profile updated successfully",
+  "error": "Error updating profile",
+  "avatar": {
+    "change": "Change photo",
+    "fallback": "Upload photo"
+  },
+  "sections": {
+    "personal": "Personal Data"
+  },
+  "security": {
+    "title": "Security",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "confirm_password": "Confirm Password",
+    "update_password": "Update Password",
+    "success": "Password updated successfully",
+    "error": "Error updating password"
+  }
+}
