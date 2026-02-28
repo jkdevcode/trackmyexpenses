@@ -68,6 +68,14 @@ export class FacturaController {
     return this.facturaService.getStats(req.user.id, query.period);
   }
 
+  @Get(':id')
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: RequestWithUser,
+  ) {
+    return this.facturaService.findOne(req.user.id, id);
+  }
+
   @Post(':id/productos')
   @UsePipes(ZodValidationPipe)
   async addProducto(
