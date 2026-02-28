@@ -405,7 +405,9 @@ export class FacturaService {
       );
     }
 
-    const productById = new Map(products.map((product) => [product.id, product]));
+    const productById = new Map(
+      products.map((product) => [product.id, product]),
+    );
 
     const detalles = input.items.map((item) => {
       const product = productById.get(item.productoId)!;
