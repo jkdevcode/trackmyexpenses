@@ -24,6 +24,7 @@ export default [
         console: "readonly",
         HTMLDivElement: "readonly",
         HTMLInputElement: "readonly",
+        HTMLFormElement: "readonly",
         File: "readonly",
         FormData: "readonly",
         document: "readonly",

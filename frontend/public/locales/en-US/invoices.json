@@ -2,6 +2,105 @@
   "page": {
     "title": "New Invoice"
   },
+  "tabs": {
+    "ocr": "Scan with OCR",
+    "manual": "Manual Entry",
+    "list": "Invoices"
+  },
+  "list": {
+    "title": "Invoice List",
+    "error": "Could not load invoices.",
+    "empty": "No invoices for this period",
+    "period": {
+      "label": "Period",
+      "day": "Day",
+      "week": "Week",
+      "month": "Month",
+      "year": "Year"
+    },
+    "actions": {
+      "view_detail": "View detail"
+    },
+    "mobile": {
+      "codigo": "Code"
+    },
+    "table": {
+      "aria": "Invoices table",
+      "columns": {
+        "codigo": "Code",
+        "fecha": "Date",
+        "lugar": "Store",
+        "metodo": "Method",
+        "total": "Total",
+        "accion": "Action"
+      }
+    },
+    "payment": {
+      "EFECTIVO": "Cash",
+      "TARJETA_CREDITO": "Credit card",
+      "TARJETA_DEBITO": "Debit card",
+      "TRANSFERENCIA": "Transfer",
+      "OTRO": "Other"
+    }
+  },
+  "detail": {
+    "title": "Invoice detail",
+    "error": "Could not load invoice detail.",
+    "close": "Close",
+    "total": "Total",
+    "codigo": "Code",
+    "fecha": "Date",
+    "metodo": "Method",
+    "lugar": "Store",
+    "nit": "Tax ID",
+    "usuario": "User",
+    "items_aria": "Invoice items",
+    "table": {
+      "producto": "Product",
+      "cantidad": "Quantity",
+      "precioUnitario": "Unit price",
+      "descuento": "Discount",
+      "precioTotal": "Total price"
+    }
+  },
+  "manual": {
+    "fecha": "Date",
+    "metodoPago": "Payment Method",
+    "lugarCompra": "Store",
+    "nitProveedor": "Supplier Tax ID",
+    "total": "Total",
+    "submit": "Create Invoice",
+    "success": "Invoice created successfully.",
+    "error": "Could not create manual invoice.",
+    "items": {
+      "add_title": "Add Product",
+      "producto": "Product",
+      "cantidad": "Quantity",
+      "descuento": "Discount (%)",
+      "add": "Add",
+      "list_title": "Added items",
+      "empty": "No products added.",
+      "remove": "Remove",
+      "columns": {
+        "nombre": "Name",
+        "cantidad": "Quantity",
+        "precioUnitario": "Unit price",
+        "descuento": "Discount",
+        "subtotal": "Subtotal",
+        "acciones": "Actions"
+      }
+    },
+    "validation": {
+      "fecha_required": "Date is required.",
+      "lugar_required": "Store is required.",
+      "items_required": "You must add at least one item.",
+      "product_required": "You must select a product.",
+      "product_not_found": "Selected product was not found.",
+      "item_duplicate": "This product has already been added.",
+      "cantidad_invalid": "Quantity must be greater than 0.",
+      "descuento_invalid": "Discount must be between 0 and 100."
+    }
+  },
   "upload": {
     "title": "Upload your invoice",
     "subtitle": "Drag an image or click to select",
