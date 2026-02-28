@@ -11,10 +11,10 @@ const productSuggestionSchema = z.object({
   nombreDetected: z.string(),
   cantidad: z.number().default(1),
   unidad: z.enum(['u', 'kg', 'g']).default('u'),
-  precioUnitario: z.number().int(), // Integer COP
-  precioTotal: z.number().int(), // Integer COP
+  precioUnitario: z.number().int(),
+  precioTotal: z.number().int(),
   productId: z.number().optional(),
-  matchedBy: z.string().nullable().optional(), // 'barcode', 'fuzzy', 'fallback-regex', null
+  matchedBy: z.string().nullable().optional(),
   matchScore: z.number().nullable().optional(),
   confidence: confidenceSchema,
 });
@@ -26,7 +26,7 @@ const parsedSchema = z.object({
       nit: z.string().optional(),
     })
     .optional(),
-  fecha: z.string().nullable().optional(), // YYYY-MM-DD
+  fecha: z.string().nullable().optional(),
   productos: z.array(productSuggestionSchema),
   totalDetectado: z.number().nullable().optional(),
   notes: z.array(z.string()).optional(),

@@ -9,6 +9,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { AddProductoFacturaDto } from './dto/add-producto.dto';
+import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
 import { CreateFacturaDto } from './dto/create-factura.dto';
 import { Prisma } from '@prisma/client';
 import { Logger } from 'nestjs-pino';
@@ -43,7 +44,7 @@ export class FacturaService {
 
   async create(userId: number, dto: CreateFacturaDto) {
     try {
-      const codigoFactura = `FAC-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const codigoFactura = this.generateFacturaCode('FAC');
 
       const factura = await this.prisma.factura.create({
         data: {
@@ -70,6 +71,83 @@ export class FacturaService {
         error,
       });
       throw new InternalServerErrorException('Error al crear factura');
+    }
+  }
+
+  async createFromOcr(userId: number, dto: ConfirmFacturaDto) {
+    const { factura, productos } = dto;
+
+    try {
+      const result = await this.prisma.$transaction(async (tx) => {
+        const nuevaFactura = await tx.factura.create({
+          data: {
+            usuarioId: userId,
+            codigoFactura: this.generateFacturaCode('OCR'),
+            fechaHoraCompra: new Date(factura.fechaHoraCompra),
+            metodoPago:
+              factura.metodoPago as Prisma.FacturaCreateInput['metodoPago'],
+            lugarCompra: factura.lugarCompra,
+            nitProveedor: factura.nitProveedor,
+            totalPagar: 0,
+          },
+        });
+
+        let totalCalculado = 0;
+
+        for (const item of productos) {
+          const nombreClean = item.nombreDetectado.trim().toUpperCase();
+          const cantidad = Number(item.cantidadDetectada);
+          const precioUnitario = Number(item.precioUnitario);
+          const descuento = Number(item.descuentoDetectado || 0);
+
+          if (cantidad <= 0) {
+            continue;
+          }
+
+          const producto = await this.resolveOrCreateProducto(
+            tx,
+            nombreClean,
+            precioUnitario,
+          );
+
+          const precioTotalItem = precioUnitario * cantidad - descuento;
+          totalCalculado += precioTotalItem;
+
+          await tx.facturaProducto.create({
+            data: {
+              facturaId: nuevaFactura.id,
+              productoId: producto.id,
+              cantidad,
+              unidad: item.unidadDetectada || 'u',
+              descuento: new Prisma.Decimal(descuento),
+              precioTotal: new Prisma.Decimal(precioTotalItem),
+            },
+          });
+        }
+
+        return tx.factura.update({
+          where: { id: nuevaFactura.id },
+          data: { totalPagar: totalCalculado },
+          include: {
+            productos: {
+              include: { producto: true },
+            },
+          },
+        });
+      });
+
+      return {
+        status: 201,
+        message: 'Factura OCR confirmada exitosamente',
+        data: { factura: result },
+      };
+    } catch (error: unknown) {
+      this.logger.error({
+        msg: 'Error al crear factura desde OCR',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
+      throw new InternalServerErrorException('Error al confirmar factura');
     }
   }
 
@@ -394,5 +472,35 @@ export class FacturaService {
       spendingTrend: Number(spendingTrend.toFixed(1)),
       totalInvoices,
     };
+  }
+
+  private generateFacturaCode(prefix: 'FAC' | 'OCR'): string {
+    return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  }
+
+  private generateProductoCode(): string {
+    return `PROD-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  }
+
+  private async resolveOrCreateProducto(
+    tx: Prisma.TransactionClient,
+    nombre: string,
+    precioUnitario: number,
+  ) {
+    const existing = await tx.producto.findFirst({
+      where: { nombre },
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    return tx.producto.create({
+      data: {
+        nombre,
+        codigo: this.generateProductoCode(),
+        precioUnitario,
+      },
+    });
   }
 }
