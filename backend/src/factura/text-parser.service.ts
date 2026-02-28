@@ -1,11 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../prisma/prisma.service';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Fuse from 'fuse.js';
-import { TextParserHelper } from '../../factura-ocr/helpers/parse-text.helper';
-import { RequestContext } from '../../common/context/request-context';
-import { ScanResponseDto } from '../../factura-ocr/dto/scan-response.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { RequestContext } from '../common/context/request-context';
+import { ScanResponseDto } from './dto/scan-response.dto';
 
 type GeminiResponse = { response: { text: () => string } };
 type GeminiModel = {
@@ -43,7 +42,7 @@ export class TextParserService {
       parsedData = await this.parseWithAI(rawText);
     } catch (error: unknown) {
       this.logger.warn({
-        msg: 'AI Parsing failed, switching to fallback regex',
+        msg: 'AI parsing failed. Switching to fallback parser',
         requestId: RequestContext.getRequestId(),
       });
       parsedData = {
@@ -59,14 +58,12 @@ export class TextParserService {
       });
     }
 
-    if (parsedData.productos.length === 0) {
-      if (!usedFallbackParser) {
-        this.logger.warn('AI returned no products, trying fallback');
-        parsedData.productos = this.normalizeProducts(
-          TextParserHelper.fallbackParse(rawText),
-        );
-        usedFallbackParser = true;
-      }
+    if (parsedData.productos.length === 0 && !usedFallbackParser) {
+      this.logger.warn('AI returned no products. Trying fallback parser.');
+      parsedData.productos = this.normalizeProducts(
+        TextParserHelper.fallbackParse(rawText),
+      );
+      usedFallbackParser = true;
     }
 
     const enrichedProducts = await this.enrichProducts(parsedData.productos);
@@ -79,8 +76,10 @@ export class TextParserService {
     };
   }
 
-  private async parseWithAI(text: string) {
-    if (!this.geminiModel) throw new Error('AI not configured');
+  private async parseWithAI(text: string): Promise<ParsedData> {
+    if (!this.geminiModel) {
+      throw new Error('AI not configured');
+    }
 
     const prompt = `
       Analiza el texto OCR de una factura comercial.
@@ -102,8 +101,8 @@ export class TextParserService {
       }
 
       Reglas:
-      1. Normaliza montos a enteros (elimina puntos miles).
-      2. Detecta unidades (kg/g) en descripción.
+      1. Normaliza montos a enteros (elimina puntos de miles).
+      2. Detecta unidades (kg/g) en descripcion.
       3. "confidence" estimado (1.0 si es claro, 0.5 si dudoso).
 
       Texto OCR:
@@ -183,5 +182,106 @@ export class TextParserService {
       (product): product is ParsedProduct =>
         typeof product === 'object' && product !== null,
     );
+  }
+}
+
+class TextParserHelper {
+  static normalizeNumber(text: string): number {
+    if (!text) return 0;
+
+    let clean = text.replace(/[$COP\s]/g, '');
+
+    if (clean.match(/\d{1,3}(\.\d{3})+,\d+/)) {
+      clean = clean.replace(/\./g, '').replace(',', '.');
+    } else if (clean.match(/\d{1,3}(\.\d{3})+/)) {
+      clean = clean.replace(/\./g, '');
+    } else if (clean.match(/^\d+,\d+$/)) {
+      clean = clean.replace(',', '.');
+    } else if (clean.match(/^\d+\.\d{3}$/)) {
+      clean = clean.replace('.', '');
+    }
+
+    const value = parseFloat(clean);
+    return isNaN(value) ? 0 : value;
+  }
+
+  static normalizeCurrency(text: string): number {
+    return Math.round(this.normalizeNumber(text));
+  }
+
+  static findUPC(text: string): string | null {
+    const match = text.match(/\b(\d{8}|\d{12,14})\b/);
+    return match ? match[0] : null;
+  }
+
+  static detectWeightOrUnit(line: string): {
+    cantidad: number;
+    unidad: 'u' | 'kg' | 'g';
+  } {
+    const weightRegex =
+      /(\d+[.,]?\d*)\s*(kg|kgs|kilos|kilogramos|g|gr|gramos|lb|libras)/i;
+    const match = line.match(weightRegex);
+
+    if (match) {
+      const qty = this.normalizeNumber(match[1]);
+      const unitRaw = match[2].toLowerCase();
+
+      let unidad: 'u' | 'kg' | 'g' = 'u';
+      if (unitRaw.startsWith('k')) unidad = 'kg';
+      else if (unitRaw.startsWith('g')) unidad = 'g';
+
+      return { cantidad: qty, unidad };
+    }
+
+    const qtyRegex = /^(\d+)\s*[xX]\s*/;
+    const qtyMatch = line.match(qtyRegex);
+    if (qtyMatch) {
+      return { cantidad: parseInt(qtyMatch[1], 10), unidad: 'u' };
+    }
+
+    return { cantidad: 1, unidad: 'u' };
+  }
+
+  static fallbackParse(text: string): unknown[] {
+    const lines = text.split('\n');
+    const products = [];
+    const lineRegex = /^(.+?)\s+([$]?\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)$/;
+
+    for (const line of lines) {
+      const cleanLine = line.trim();
+      if (cleanLine.length < 5) continue;
+
+      if (
+        cleanLine.match(
+          /(fecha|total|subtotal|iva|cambio|efectivo|nit|factura)/i,
+        )
+      ) {
+        continue;
+      }
+
+      const match = cleanLine.match(lineRegex);
+      if (!match) continue;
+
+      const nameRaw = match[1].trim();
+      const priceRaw = match[2];
+      const upc = this.findUPC(nameRaw);
+      const name = upc ? nameRaw.replace(upc, '').trim() : nameRaw;
+      const unitInfo = this.detectWeightOrUnit(name);
+      const total = this.normalizeCurrency(priceRaw);
+      const unitPrice =
+        unitInfo.cantidad > 0 ? Math.round(total / unitInfo.cantidad) : total;
+
+      products.push({
+        nombreDetected: name,
+        cantidad: unitInfo.cantidad,
+        unidad: unitInfo.unidad,
+        precioUnitario: unitPrice,
+        precioTotal: total,
+        matchedBy: 'fallback-regex',
+        confidence: { nombre: 0.5, cantidad: 0.5, precio: 0.5 },
+      });
+    }
+
+    return products;
   }
 }

@@ -15,7 +15,6 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { FacturaModule } from './factura/factura.module';
 import { ProductoModule } from './producto/producto.module';
-import { FacturaOcrModule } from './modules/factura-ocr/factura-ocr.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { RequestLoggingInterceptor } from './common/interceptors/request-logging.interceptor';
 
@@ -96,7 +95,6 @@ import { RequestLoggingInterceptor } from './common/interceptors/request-logging
     UserModule,
     FacturaModule,
     ProductoModule,
-    FacturaOcrModule,
   ],
   controllers: [AppController],
   providers: [
