@@ -2,6 +2,105 @@
   "page": {
     "title": "Nueva Factura"
   },
+  "tabs": {
+    "ocr": "Escanear con OCR",
+    "manual": "Registro Manual",
+    "list": "Facturas"
+  },
+  "list": {
+    "title": "Lista de Facturas",
+    "error": "No se pudieron cargar las facturas.",
+    "empty": "No hay facturas en este periodo",
+    "period": {
+      "label": "Periodo",
+      "day": "Dia",
+      "week": "Semana",
+      "month": "Mes",
+      "year": "Año"
+    },
+    "actions": {
+      "view_detail": "Ver detalle"
+    },
+    "mobile": {
+      "codigo": "Codigo"
+    },
+    "table": {
+      "aria": "Tabla de facturas",
+      "columns": {
+        "codigo": "Codigo",
+        "fecha": "Fecha",
+        "lugar": "Lugar",
+        "metodo": "Metodo",
+        "total": "Total",
+        "accion": "Accion"
+      }
+    },
+    "payment": {
+      "EFECTIVO": "Efectivo",
+      "TARJETA_CREDITO": "Tarjeta credito",
+      "TARJETA_DEBITO": "Tarjeta debito",
+      "TRANSFERENCIA": "Transferencia",
+      "OTRO": "Otro"
+    }
+  },
+  "detail": {
+    "title": "Detalle de factura",
+    "error": "No se pudo cargar el detalle.",
+    "close": "Cerrar",
+    "total": "Total",
+    "codigo": "Codigo",
+    "fecha": "Fecha",
+    "metodo": "Metodo",
+    "lugar": "Lugar",
+    "nit": "NIT",
+    "usuario": "Usuario",
+    "items_aria": "Items de la factura",
+    "table": {
+      "producto": "Producto",
+      "cantidad": "Cantidad",
+      "precioUnitario": "Precio unitario",
+      "descuento": "Descuento",
+      "precioTotal": "Precio total"
+    }
+  },
+  "manual": {
+    "fecha": "Fecha",
+    "metodoPago": "Metodo de pago",
+    "lugarCompra": "Lugar de compra",
+    "nitProveedor": "NIT proveedor",
+    "total": "Total",
+    "submit": "Crear factura",
+    "success": "Factura creada exitosamente.",
+    "error": "No se pudo crear la factura manual.",
+    "items": {
+      "add_title": "Agregar Producto",
+      "producto": "Producto",
+      "cantidad": "Cantidad",
+      "descuento": "Descuento (%)",
+      "add": "Agregar",
+      "list_title": "Items agregados",
+      "empty": "No hay productos agregados.",
+      "remove": "Eliminar",
+      "columns": {
+        "nombre": "Nombre",
+        "cantidad": "Cantidad",
+        "precioUnitario": "Precio unitario",
+        "descuento": "Descuento",
+        "subtotal": "Subtotal",
+        "acciones": "Acciones"
+      }
+    },
+    "validation": {
+      "fecha_required": "La fecha es obligatoria.",
+      "lugar_required": "El lugar de compra es obligatorio.",
+      "items_required": "Debes agregar al menos un item.",
+      "product_required": "Debes seleccionar un producto.",
+      "product_not_found": "El producto seleccionado no existe.",
+      "item_duplicate": "Ese producto ya fue agregado.",
+      "cantidad_invalid": "La cantidad debe ser mayor a 0.",
+      "descuento_invalid": "El descuento debe estar entre 0 y 100."
+    }
+  },
   "upload": {
     "title": "Sube tu factura",
     "subtitle": "Arrastra una imagen o haz clic para seleccionar",

@@ -14,6 +14,7 @@
     "update:heroui": "node --no-warnings --import 'data:text/javascript,import { register } from \"node:module\"; import { pathToFileURL } from \"node:url\"; register(\"ts-node/esm\", pathToFileURL(\"./\"));' ./update-heroui.ts"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@heroui/avatar": "^2.2.24",
     "@heroui/button": "^2.2.23-beta.2",
     "@heroui/card": "^2.2.27",
@@ -33,6 +34,7 @@
     "@heroui/switch": "^2.2.21-beta.2",
     "@heroui/system": "^2.4.19-beta.2",
     "@heroui/table": "^2.2.29",
+    "@heroui/tabs": "^2.2.28",
     "@heroui/theme": "^2.4.18-beta.7",
     "@heroui/toast": "^2.0.19",
     "@heroui/tooltip": "^2.2.20-beta.2",
