@@ -21,6 +21,7 @@ const userSelect = {
   nombres: true,
   apellidos: true,
   correo: true,
+  rol: true,
   foto: true,
   fechaIngreso: true,
   fechaUltimaEdicion: true,
