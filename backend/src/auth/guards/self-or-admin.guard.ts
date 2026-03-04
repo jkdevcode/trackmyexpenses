@@ -1,8 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import type { Request } from 'express';
 import { AppRole } from '../roles.enum';
 import { UnauthorizedActionError } from '../../user/errors/unauthorized-action.error';
@@ -34,7 +30,9 @@ export class SelfOrAdminGuard implements CanActivate {
     const isAdmin = currentUserRole === AppRole.ADMIN;
 
     if (!isSelf && !isAdmin) {
-      throw new UnauthorizedActionError('No autorizado para editar este usuario');
+      throw new UnauthorizedActionError(
+        'No autorizado para editar este usuario',
+      );
     }
 
     return true;
