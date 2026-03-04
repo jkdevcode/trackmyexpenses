@@ -1,9 +1,10 @@
-import { InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { mkdir, writeFile } from 'fs/promises';
 import { dirname, join } from 'path';
 import { IStorageAdapter } from '../storage.interface';
 
+@Injectable()
 export class LocalStorageAdapter implements IStorageAdapter {
   private readonly uploadsRoot = join(
     process.cwd(),
