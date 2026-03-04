@@ -1,13 +1,10 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { Logger } from 'nestjs-pino';
 import { RequestContext } from '../common/context/request-context';
+import { DomainConflictError } from '../common/errors/domain-conflict.error';
+import { ProductoNotFoundError } from './errors/producto-not-found.error';
 
 @Injectable()
 export class ProductoService {
@@ -18,13 +15,12 @@ export class ProductoService {
 
   async create(dto: CreateProductoDto) {
     try {
-      // Check if code exists
       const exists = await this.prisma.producto.findUnique({
         where: { codigo: dto.codigo },
       });
 
       if (exists) {
-        throw new ConflictException('El código del producto ya existe');
+        throw new DomainConflictError('El codigo del producto ya existe');
       }
 
       const producto = await this.prisma.producto.create({
@@ -41,7 +37,7 @@ export class ProductoService {
         producto,
       };
     } catch (error: unknown) {
-      if (error instanceof ConflictException) throw error;
+      if (error instanceof DomainConflictError) throw error;
       this.logger.error({
         msg: 'Error al crear producto',
         requestId: RequestContext.getRequestId(),
@@ -75,7 +71,7 @@ export class ProductoService {
 
   async findOne(id: number) {
     const producto = await this.prisma.producto.findUnique({ where: { id } });
-    if (!producto) throw new NotFoundException('Producto no encontrado');
+    if (!producto) throw new ProductoNotFoundError('Producto no encontrado');
     return producto;
   }
 }

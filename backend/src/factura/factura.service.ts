@@ -3,8 +3,6 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
-  NotFoundException,
-  ConflictException,
 } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
@@ -16,6 +14,17 @@ import { Prisma } from '@prisma/client';
 import { Logger } from 'nestjs-pino';
 import { PeriodFilter } from './factura.types';
 import { RequestContext } from '../common/context/request-context';
+import {
+  assertValidFacturaItems,
+  calculateDiscountedTotal,
+  calculateFacturaTotal,
+  calculateSpendingTrend,
+  FacturaDomainValidationError,
+  getPeriodWindow,
+  normalizeAndValidateOcrItem,
+} from './factura.domain';
+import { FacturaNotFoundError } from './errors/factura-not-found.error';
+import { DomainConflictError } from '../common/errors/domain-conflict.error';
 
 const FACTURA_LIST_SELECT = {
   id: true,
@@ -85,7 +94,7 @@ export class FacturaService {
     } catch (error: unknown) {
       if (
         error instanceof BadRequestException ||
-        error instanceof NotFoundException
+        error instanceof FacturaNotFoundError
       ) {
         throw error;
       }
@@ -114,7 +123,7 @@ export class FacturaService {
     } catch (error: unknown) {
       if (
         error instanceof BadRequestException ||
-        error instanceof NotFoundException
+        error instanceof FacturaNotFoundError
       ) {
         throw error;
       }
@@ -136,7 +145,7 @@ export class FacturaService {
   ) {
     try {
       const { startDate, endDate, prevStartDate, prevEndDate } =
-        this.getPeriodWindow(period);
+        getPeriodWindow(period);
 
       const where = {
         usuarioId: userId,
@@ -220,7 +229,7 @@ export class FacturaService {
       });
 
       if (!factura) {
-        throw new NotFoundException('Factura no encontrada');
+        throw new FacturaNotFoundError();
       }
 
       return {
@@ -229,7 +238,7 @@ export class FacturaService {
         factura,
       };
     } catch (error: unknown) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof FacturaNotFoundError) {
         throw error;
       }
 
@@ -254,7 +263,7 @@ export class FacturaService {
     }
 
     const { startDate, endDate, prevStartDate, prevEndDate } =
-      this.getPeriodWindow(period);
+      getPeriodWindow(period);
 
     const stats = await this.calculateStats(
       userId,
@@ -287,7 +296,7 @@ export class FacturaService {
     });
 
     if (!factura) {
-      throw new NotFoundException('Factura no encontrada');
+      throw new FacturaNotFoundError();
     }
 
     const producto = await this.prisma.producto.findUnique({
@@ -296,13 +305,17 @@ export class FacturaService {
     });
 
     if (!producto) {
-      throw new NotFoundException('Producto no encontrado');
+      throw new FacturaNotFoundError('Producto no encontrado');
     }
 
     const precioUnitario = Number(producto.precioUnitario);
     const descuento = dto.descuento || 0;
-    const precioConDescuento = precioUnitario * (1 - descuento / 100);
-    const precioTotal = precioConDescuento * dto.cantidad;
+    const precioTotal = calculateDiscountedTotal(
+      precioUnitario,
+      dto.cantidad,
+      descuento,
+      false,
+    );
 
     try {
       const result = await this.prisma.$transaction(async (tx) => {
@@ -366,7 +379,7 @@ export class FacturaService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('El producto ya esta en la factura');
+        throw new DomainConflictError('El producto ya esta en la factura');
       }
 
       this.logger.error({
@@ -387,7 +400,14 @@ export class FacturaService {
     input: CreateFacturaInput,
     codePrefix: 'FAC' | 'OCR',
   ) {
-    this.validateItems(input.items);
+    try {
+      assertValidFacturaItems(input.items);
+    } catch (error: unknown) {
+      if (error instanceof FacturaDomainValidationError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
 
     const productIds = [...new Set(input.items.map((item) => item.productoId))];
 
@@ -400,7 +420,7 @@ export class FacturaService {
       const foundIds = new Set(products.map((product) => product.id));
       const missingIds = productIds.filter((id) => !foundIds.has(id));
 
-      throw new NotFoundException(
+      throw new FacturaNotFoundError(
         `Productos no encontrados: ${missingIds.join(', ')}`,
       );
     }
@@ -413,9 +433,11 @@ export class FacturaService {
       const product = productById.get(item.productoId)!;
       const precioUnitario = Number(product.precioUnitario);
       const descuento = item.descuento ?? 0;
-      const subtotal = precioUnitario * item.cantidad;
-      const descuentoAplicado = subtotal * (descuento / 100);
-      const precioTotal = this.roundCurrency(subtotal - descuentoAplicado);
+      const precioTotal = calculateDiscountedTotal(
+        precioUnitario,
+        item.cantidad,
+        descuento,
+      );
 
       return {
         ...item,
@@ -424,8 +446,8 @@ export class FacturaService {
       };
     });
 
-    const totalPagar = this.roundCurrency(
-      detalles.reduce((acc, item) => acc + item.precioTotal, 0),
+    const totalPagar = calculateFacturaTotal(
+      detalles.map((item) => item.precioTotal),
     );
 
     const factura = await tx.factura.create({
@@ -487,34 +509,26 @@ export class FacturaService {
     const items: CreateFacturaItemInput[] = [];
 
     for (const item of dto.productos) {
-      const nombreDetectado = item.nombreDetectado?.trim().toUpperCase();
-      const cantidad = Number(item.cantidadDetectada);
-      const descuento = Number(item.descuentoDetectado || 0);
-      const precioUnitario = Number(item.precioUnitario);
-
-      if (!nombreDetectado) {
-        throw new BadRequestException(
-          'Cada item OCR debe tener nombreDetectado',
-        );
-      }
-
-      if (!Number.isFinite(cantidad) || cantidad <= 0) {
-        throw new BadRequestException('La cantidad de cada item debe ser > 0');
-      }
-
-      if (!Number.isFinite(descuento) || descuento < 0 || descuento > 100) {
-        throw new BadRequestException(
-          'El descuento de cada item debe estar entre 0 y 100',
-        );
+      let normalized: ReturnType<typeof normalizeAndValidateOcrItem>;
+      try {
+        normalized = normalizeAndValidateOcrItem(item);
+      } catch (error: unknown) {
+        if (error instanceof FacturaDomainValidationError) {
+          throw new BadRequestException(error.message);
+        }
+        throw error;
       }
 
       let producto = await tx.producto.findFirst({
-        where: { nombre: nombreDetectado },
+        where: { nombre: normalized.nombreDetectado },
         select: { id: true },
       });
 
       if (!producto) {
-        if (!Number.isFinite(precioUnitario) || precioUnitario <= 0) {
+        if (
+          !Number.isFinite(normalized.precioUnitario) ||
+          normalized.precioUnitario <= 0
+        ) {
           throw new BadRequestException(
             'Items OCR sin producto existente requieren precioUnitario valido',
           );
@@ -522,9 +536,9 @@ export class FacturaService {
 
         producto = await tx.producto.create({
           data: {
-            nombre: nombreDetectado,
+            nombre: normalized.nombreDetectado,
             codigo: this.generateProductoCode(),
-            precioUnitario: new Prisma.Decimal(precioUnitario),
+            precioUnitario: new Prisma.Decimal(normalized.precioUnitario),
           },
           select: { id: true },
         });
@@ -532,9 +546,9 @@ export class FacturaService {
 
       items.push({
         productoId: producto.id,
-        cantidad,
-        descuento,
-        unidad: item.unidadDetectada || 'u',
+        cantidad: normalized.cantidad,
+        descuento: normalized.descuento,
+        unidad: normalized.unidad,
       });
     }
 
@@ -545,96 +559,6 @@ export class FacturaService {
       fechaHoraCompra: new Date(dto.factura.fechaHoraCompra),
       items,
     };
-  }
-
-  private validateItems(items: CreateFacturaItemInput[]) {
-    if (!items || items.length === 0) {
-      throw new BadRequestException('No se permite crear factura sin items');
-    }
-
-    const productIds = new Set<number>();
-
-    for (const item of items) {
-      if (!Number.isInteger(item.productoId) || item.productoId <= 0) {
-        throw new BadRequestException('productoId invalido en items');
-      }
-
-      if (!Number.isInteger(item.cantidad) || item.cantidad <= 0) {
-        throw new BadRequestException('cantidad invalida en items');
-      }
-
-      if (
-        item.descuento !== undefined &&
-        (item.descuento < 0 || item.descuento > 100)
-      ) {
-        throw new BadRequestException(
-          'descuento invalido en items (debe estar entre 0 y 100)',
-        );
-      }
-
-      if (productIds.has(item.productoId)) {
-        throw new BadRequestException(
-          `No se permiten items repetidos del producto ${item.productoId}`,
-        );
-      }
-
-      productIds.add(item.productoId);
-    }
-  }
-
-  private roundCurrency(value: number): number {
-    return Math.round((value + Number.EPSILON) * 100) / 100;
-  }
-
-  private getPeriodWindow(period: PeriodFilter) {
-    const now = new Date();
-    const startDate = new Date();
-    const endDate = new Date();
-    const prevStartDate = new Date();
-    const prevEndDate = new Date();
-
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
-
-    switch (period) {
-      case 'day':
-        prevStartDate.setDate(now.getDate() - 1);
-        prevStartDate.setHours(0, 0, 0, 0);
-        prevEndDate.setDate(now.getDate() - 1);
-        prevEndDate.setHours(23, 59, 59, 999);
-        break;
-      case 'week': {
-        const day = now.getDay();
-        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-        startDate.setDate(diff);
-
-        prevStartDate.setTime(startDate.getTime());
-        prevStartDate.setDate(startDate.getDate() - 7);
-        prevEndDate.setTime(prevStartDate.getTime());
-        prevEndDate.setDate(prevStartDate.getDate() + 6);
-        prevEndDate.setHours(23, 59, 59, 999);
-        break;
-      }
-      case 'year':
-        startDate.setMonth(0, 1);
-
-        prevStartDate.setFullYear(now.getFullYear() - 1, 0, 1);
-        prevStartDate.setHours(0, 0, 0, 0);
-        prevEndDate.setFullYear(now.getFullYear() - 1, 11, 31);
-        prevEndDate.setHours(23, 59, 59, 999);
-        break;
-      case 'month':
-      default:
-        startDate.setDate(1);
-
-        prevStartDate.setMonth(now.getMonth() - 1, 1);
-        prevStartDate.setHours(0, 0, 0, 0);
-        prevEndDate.setDate(0);
-        prevEndDate.setHours(23, 59, 59, 999);
-        break;
-    }
-
-    return { startDate, endDate, prevStartDate, prevEndDate };
   }
 
   private async calculateStats(
@@ -692,18 +616,10 @@ export class FacturaService {
     const prevTotalSpending =
       Number(prevFacturasAggregate._sum.totalPagar) || 0;
 
-    let spendingTrend = 0;
-    if (prevTotalSpending > 0) {
-      spendingTrend =
-        ((totalSpending - prevTotalSpending) / prevTotalSpending) * 100;
-    } else if (totalSpending > 0) {
-      spendingTrend = 100;
-    }
-
     return {
       currentPeriodInvoices: currentPeriodCount,
       totalSpending,
-      spendingTrend: Number(spendingTrend.toFixed(1)),
+      spendingTrend: calculateSpendingTrend(totalSpending, prevTotalSpending),
       totalInvoices,
     };
   }

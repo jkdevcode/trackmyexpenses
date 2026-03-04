@@ -1,16 +1,13 @@
-import {
-  Injectable,
-  ConflictException,
-  UnauthorizedException,
-  ForbiddenException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterUserDto } from './dto/register.dto';
 import { LoginUserDto } from './dto/login.dto';
 import { StorageService } from '../infra/storage/storage.service';
+import { DomainConflictError } from '../common/errors/domain-conflict.error';
+import { DomainForbiddenError } from '../common/errors/domain-forbidden.error';
+import { InvalidCredentialsError } from './errors/invalid-credentials.error';
 
 type LoginResult = {
   token: string;
@@ -59,10 +56,10 @@ export class AuthService {
       });
 
       if (exists) {
-        throw new ConflictException('Correo o documento ya registrados');
+        throw new DomainConflictError('Correo o documento ya registrados');
       }
 
-      const hashedPassword = await bcrypt.hash(contrasena, 10); // BCRYPT_SALT_ROUNDS=10
+      const hashedPassword = await bcrypt.hash(contrasena, 10);
 
       let fotoPath = null;
       if (fotoBuffer) {
@@ -87,17 +84,17 @@ export class AuthService {
       });
 
       if (!newUser.id) {
-        throw new ForbiddenException('No se registró el usuario');
+        throw new DomainForbiddenError('No se registro el usuario');
       }
 
       return {
         status: 200,
-        message: `Se registró con éxito el usuario ${nombres} ${apellidos}`,
+        message: `Se registro con exito el usuario ${nombres} ${apellidos}`,
       };
     } catch (error: unknown) {
       if (
-        error instanceof ConflictException ||
-        error instanceof ForbiddenException
+        error instanceof DomainConflictError ||
+        error instanceof DomainForbiddenError
       ) {
         throw error;
       }
@@ -126,12 +123,12 @@ export class AuthService {
       });
 
       if (!user) {
-        throw new UnauthorizedException('Credenciales inválidas');
+        throw new InvalidCredentialsError('Credenciales invalidas');
       }
 
       const isMatch = await bcrypt.compare(contrasena, user.contrasena);
       if (!isMatch) {
-        throw new UnauthorizedException('Credenciales inválidas');
+        throw new InvalidCredentialsError('Credenciales invalidas');
       }
 
       const token = this.jwtService.sign({ id: user.id });
@@ -153,7 +150,7 @@ export class AuthService {
         },
       };
     } catch (error: unknown) {
-      if (error instanceof UnauthorizedException) {
+      if (error instanceof InvalidCredentialsError) {
         throw error;
       }
       throw new InternalServerErrorException(
