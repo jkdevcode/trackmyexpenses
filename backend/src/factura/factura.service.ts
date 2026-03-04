@@ -6,11 +6,9 @@ import {
 } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
-import { PrismaService } from '../prisma/prisma.service';
 import { AddProductoFacturaDto } from './dto/add-producto.dto';
 import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
 import { CreateFacturaDto } from './dto/create-factura.dto';
-import { Prisma } from '@prisma/client';
 import { Logger } from 'nestjs-pino';
 import { PeriodFilter } from './factura.types';
 import { RequestContext } from '../common/context/request-context';
@@ -25,17 +23,12 @@ import {
 } from './factura.domain';
 import { FacturaNotFoundError } from './errors/factura-not-found.error';
 import { DomainConflictError } from '../common/errors/domain-conflict.error';
-
-const FACTURA_LIST_SELECT = {
-  id: true,
-  codigoFactura: true,
-  metodoPago: true,
-  lugarCompra: true,
-  nitProveedor: true,
-  fechaHoraCompra: true,
-  totalPagar: true,
-  usuarioId: true,
-} as const;
+import {
+  FACTURA_REPOSITORY,
+  FacturaRepositoryTx,
+} from './factura.repository.port';
+import type { FacturaRepository } from './factura.repository.port';
+import type { MetodoPagoValue } from './factura.repository.port';
 
 type FacturaStats = {
   currentPeriodInvoices: number;
@@ -52,7 +45,7 @@ type CreateFacturaItemInput = {
 };
 
 type CreateFacturaInput = {
-  metodoPago: CreateFacturaDto['metodoPago'];
+  metodoPago: MetodoPagoValue;
   lugarCompra: string;
   nitProveedor?: string;
   fechaHoraCompra?: Date;
@@ -62,14 +55,14 @@ type CreateFacturaInput = {
 @Injectable()
 export class FacturaService {
   constructor(
-    private prisma: PrismaService,
+    @Inject(FACTURA_REPOSITORY) private readonly repo: FacturaRepository,
     private logger: Logger,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   async create(userId: number, dto: CreateFacturaDto) {
     try {
-      const factura = await this.prisma.$transaction((tx) =>
+      const factura = await this.repo.transaction((tx) =>
         this.createFacturaWithItemsTx(
           tx,
           userId,
@@ -110,7 +103,7 @@ export class FacturaService {
 
   async createFromOcr(userId: number, dto: ConfirmFacturaDto) {
     try {
-      const factura = await this.prisma.$transaction(async (tx) => {
+      const factura = await this.repo.transaction(async (tx) => {
         const input = await this.buildCreateInputFromOcrTx(tx, dto);
         return this.createFacturaWithItemsTx(tx, userId, input, 'OCR');
       });
@@ -147,27 +140,14 @@ export class FacturaService {
       const { startDate, endDate, prevStartDate, prevEndDate } =
         getPeriodWindow(period);
 
-      const where = {
-        usuarioId: userId,
-        fechaHoraCompra: {
-          gte: startDate,
-          lte: endDate,
-        },
-      };
-
-      const skip = (page - 1) * limit;
-
       const [facturas, total, stats] = await Promise.all([
-        this.prisma.factura.findMany({
-          where,
-          orderBy: {
-            fechaHoraCompra: 'desc',
-          },
-          skip,
-          take: limit,
-          select: FACTURA_LIST_SELECT,
-        }),
-        this.prisma.factura.count({ where }),
+        this.repo.findFacturasByUserAndRange(
+          userId,
+          { startDate, endDate },
+          page,
+          limit,
+        ),
+        this.repo.countFacturasByUserAndRange(userId, { startDate, endDate }),
         this.calculateStats(
           userId,
           startDate,
@@ -201,32 +181,10 @@ export class FacturaService {
 
   async findOne(userId: number, facturaId: number) {
     try {
-      const factura = await this.prisma.factura.findFirst({
-        where: {
-          id: facturaId,
-          usuarioId: userId,
-        },
-        include: {
-          usuario: {
-            select: {
-              id: true,
-              nombres: true,
-              apellidos: true,
-            },
-          },
-          productos: {
-            include: {
-              producto: {
-                select: {
-                  id: true,
-                  nombre: true,
-                  precioUnitario: true,
-                },
-              },
-            },
-          },
-        },
-      });
+      const factura = await this.repo.findFacturaDetailByUser(
+        userId,
+        facturaId,
+      );
 
       if (!factura) {
         throw new FacturaNotFoundError();
@@ -287,22 +245,13 @@ export class FacturaService {
     facturaId: number,
     dto: AddProductoFacturaDto,
   ) {
-    const factura = await this.prisma.factura.findFirst({
-      where: {
-        id: facturaId,
-        usuarioId: userId,
-      },
-      select: { id: true },
-    });
+    const factura = await this.repo.findFacturaIdByUser(userId, facturaId);
 
     if (!factura) {
       throw new FacturaNotFoundError();
     }
 
-    const producto = await this.prisma.producto.findUnique({
-      where: { id: dto.productoId },
-      select: { id: true, precioUnitario: true },
-    });
+    const producto = await this.repo.findProductoById(dto.productoId);
 
     if (!producto) {
       throw new FacturaNotFoundError('Producto no encontrado');
@@ -318,53 +267,19 @@ export class FacturaService {
     );
 
     try {
-      const result = await this.prisma.$transaction(async (tx) => {
-        const fp = await tx.facturaProducto.create({
-          data: {
-            facturaId,
-            productoId: dto.productoId,
-            cantidad: dto.cantidad,
-            descuento: new Prisma.Decimal(descuento),
-            precioTotal: new Prisma.Decimal(precioTotal),
-          },
-          select: {
-            id: true,
-            facturaId: true,
-            productoId: true,
-            cantidad: true,
-            descuento: true,
-            precioTotal: true,
-          },
+      const result = await this.repo.transaction(async (tx) => {
+        const fp = await tx.createFacturaProducto({
+          facturaId,
+          productoId: dto.productoId,
+          cantidad: dto.cantidad,
+          descuento,
+          precioTotal,
         });
 
-        const updatedFactura = await tx.factura.update({
-          where: { id: facturaId },
-          data: {
-            totalPagar: { increment: precioTotal },
-          },
-          select: {
-            id: true,
-            codigoFactura: true,
-            totalPagar: true,
-            productos: {
-              select: {
-                id: true,
-                productoId: true,
-                cantidad: true,
-                descuento: true,
-                precioTotal: true,
-                producto: {
-                  select: {
-                    id: true,
-                    codigo: true,
-                    nombre: true,
-                    precioUnitario: true,
-                  },
-                },
-              },
-            },
-          },
-        });
+        const updatedFactura = await tx.updateFacturaTotalAndGetDetails(
+          facturaId,
+          precioTotal,
+        );
 
         return { fp, updatedFactura };
       });
@@ -375,13 +290,9 @@ export class FacturaService {
         data: result,
       };
     } catch (error: unknown) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new DomainConflictError('El producto ya esta en la factura');
+      if (error instanceof DomainConflictError) {
+        throw error;
       }
-
       this.logger.error({
         msg: 'Error agregando producto',
         requestId: RequestContext.getRequestId(),
@@ -395,7 +306,7 @@ export class FacturaService {
   }
 
   private async createFacturaWithItemsTx(
-    tx: Prisma.TransactionClient,
+    tx: FacturaRepositoryTx,
     userId: number,
     input: CreateFacturaInput,
     codePrefix: 'FAC' | 'OCR',
@@ -411,10 +322,7 @@ export class FacturaService {
 
     const productIds = [...new Set(input.items.map((item) => item.productoId))];
 
-    const products = await tx.producto.findMany({
-      where: { id: { in: productIds } },
-      select: { id: true, precioUnitario: true },
-    });
+    const products = await tx.findProductosByIds(productIds);
 
     if (products.length !== productIds.length) {
       const foundIds = new Set(products.map((product) => product.id));
@@ -450,60 +358,34 @@ export class FacturaService {
       detalles.map((item) => item.precioTotal),
     );
 
-    const factura = await tx.factura.create({
-      data: {
-        usuarioId: userId,
-        codigoFactura: this.generateFacturaCode(codePrefix),
-        metodoPago: input.metodoPago,
-        lugarCompra: input.lugarCompra,
-        nitProveedor: input.nitProveedor,
-        fechaHoraCompra: input.fechaHoraCompra ?? new Date(),
-        totalPagar: new Prisma.Decimal(totalPagar),
-      },
+    const factura = await tx.createFactura({
+      usuarioId: userId,
+      codigoFactura: this.generateFacturaCode(codePrefix),
+      metodoPago: input.metodoPago,
+      lugarCompra: input.lugarCompra,
+      nitProveedor: input.nitProveedor,
+      fechaHoraCompra: input.fechaHoraCompra ?? new Date(),
+      totalPagar,
     });
 
     await Promise.all(
       detalles.map((item) =>
-        tx.facturaProducto.create({
-          data: {
-            facturaId: factura.id,
-            productoId: item.productoId,
-            cantidad: item.cantidad,
-            unidad: item.unidad,
-            descuento: new Prisma.Decimal(item.descuento),
-            precioTotal: new Prisma.Decimal(item.precioTotal),
-          },
+        tx.createFacturaProducto({
+          facturaId: factura.id,
+          productoId: item.productoId,
+          cantidad: item.cantidad,
+          unidad: item.unidad,
+          descuento: item.descuento,
+          precioTotal: item.precioTotal,
         }),
       ),
     );
 
-    return tx.factura.findUniqueOrThrow({
-      where: { id: factura.id },
-      include: {
-        usuario: {
-          select: {
-            id: true,
-            nombres: true,
-            apellidos: true,
-          },
-        },
-        productos: {
-          include: {
-            producto: {
-              select: {
-                id: true,
-                nombre: true,
-                precioUnitario: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    return tx.findFacturaByIdWithRelations(factura.id);
   }
 
   private async buildCreateInputFromOcrTx(
-    tx: Prisma.TransactionClient,
+    tx: FacturaRepositoryTx,
     dto: ConfirmFacturaDto,
   ): Promise<CreateFacturaInput> {
     const items: CreateFacturaItemInput[] = [];
@@ -519,10 +401,7 @@ export class FacturaService {
         throw error;
       }
 
-      let producto = await tx.producto.findFirst({
-        where: { nombre: normalized.nombreDetectado },
-        select: { id: true },
-      });
+      let producto = await tx.findProductoByNombre(normalized.nombreDetectado);
 
       if (!producto) {
         if (
@@ -534,13 +413,10 @@ export class FacturaService {
           );
         }
 
-        producto = await tx.producto.create({
-          data: {
-            nombre: normalized.nombreDetectado,
-            codigo: this.generateProductoCode(),
-            precioUnitario: new Prisma.Decimal(normalized.precioUnitario),
-          },
-          select: { id: true },
+        producto = await tx.createProducto({
+          nombre: normalized.nombreDetectado,
+          codigo: this.generateProductoCode(),
+          precioUnitario: normalized.precioUnitario,
         });
       }
 
@@ -570,51 +446,18 @@ export class FacturaService {
   ): Promise<FacturaStats> {
     const [
       currentPeriodCount,
-      currentPeriodAggregate,
+      totalSpending,
       totalInvoices,
-      prevFacturasAggregate,
+      prevTotalSpending,
     ] = await Promise.all([
-      this.prisma.factura.count({
-        where: {
-          usuarioId: userId,
-          fechaHoraCompra: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-      }),
-      this.prisma.factura.aggregate({
-        where: {
-          usuarioId: userId,
-          fechaHoraCompra: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-        _sum: {
-          totalPagar: true,
-        },
-      }),
-      this.prisma.factura.count({
-        where: { usuarioId: userId },
-      }),
-      this.prisma.factura.aggregate({
-        where: {
-          usuarioId: userId,
-          fechaHoraCompra: {
-            gte: prevStartDate,
-            lte: prevEndDate,
-          },
-        },
-        _sum: {
-          totalPagar: true,
-        },
+      this.repo.countFacturasByUserAndRange(userId, { startDate, endDate }),
+      this.repo.sumTotalPagarByUserAndRange(userId, { startDate, endDate }),
+      this.repo.countFacturasByUser(userId),
+      this.repo.sumTotalPagarByUserAndRange(userId, {
+        startDate: prevStartDate,
+        endDate: prevEndDate,
       }),
     ]);
-
-    const totalSpending = Number(currentPeriodAggregate._sum.totalPagar) || 0;
-    const prevTotalSpending =
-      Number(prevFacturasAggregate._sum.totalPagar) || 0;
 
     return {
       currentPeriodInvoices: currentPeriodCount,
