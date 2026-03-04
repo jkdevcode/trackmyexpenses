@@ -1,11 +1,11 @@
 import {
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   Injectable,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { AppRole } from '../roles.enum';
+import { UnauthorizedActionError } from '../../user/errors/unauthorized-action.error';
 
 type AuthenticatedRequest = Request & {
   user?: {
@@ -27,14 +27,14 @@ export class SelfOrAdminGuard implements CanActivate {
     const paramId = Number(request.params.id);
 
     if (!currentUserId || Number.isNaN(paramId)) {
-      throw new ForbiddenException('No autorizado para esta accion');
+      throw new UnauthorizedActionError('No autorizado para esta accion');
     }
 
     const isSelf = currentUserId === paramId;
     const isAdmin = currentUserRole === AppRole.ADMIN;
 
     if (!isSelf && !isAdmin) {
-      throw new ForbiddenException('No autorizado para editar este usuario');
+      throw new UnauthorizedActionError('No autorizado para editar este usuario');
     }
 
     return true;

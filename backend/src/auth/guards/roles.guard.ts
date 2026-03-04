@@ -1,13 +1,13 @@
 import {
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { AppRole } from '../roles.enum';
+import { UnauthorizedActionError } from '../../user/errors/unauthorized-action.error';
 
 type AuthenticatedRequest = Request & {
   user?: {
@@ -34,7 +34,7 @@ export class RolesGuard implements CanActivate {
     const userRole = request.user?.rol;
 
     if (!userRole || !requiredRoles.includes(userRole)) {
-      throw new ForbiddenException('No tienes permisos para este recurso');
+      throw new UnauthorizedActionError('No tienes permisos para este recurso');
     }
 
     return true;
