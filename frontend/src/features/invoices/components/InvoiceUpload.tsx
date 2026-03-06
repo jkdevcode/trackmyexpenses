@@ -41,7 +41,7 @@ export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
         color: "success",
       });
     } catch (error) {
-      console.error(error);
+      void error;
       addToast({
         title: t("toast.error"),
         description: t("upload.error"),
