@@ -102,7 +102,7 @@ export const OcrInvoiceFlow = () => {
       });
       navigate("/dashboard");
     } catch (error) {
-      console.error("Error saving invoice:", error);
+      void error;
       addToast({
         title: t("toast.save_error_title"),
         description: t("toast.save_error_desc"),

@@ -203,7 +203,7 @@ export const ManualInvoiceForm = () => {
       });
       navigate("/dashboard");
     } catch (error) {
-      console.error("Error creating manual invoice:", error);
+      void error;
       const message = t("manual.error");
 
       setFormError(message);
