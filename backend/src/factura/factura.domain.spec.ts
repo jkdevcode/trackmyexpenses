@@ -63,7 +63,9 @@ describe('factura.domain', () => {
 
     it('should throw on invalid descuento', () => {
       expect(() =>
-        assertValidFacturaItems([{ productoId: 1, cantidad: 1, descuento: -1 }]),
+        assertValidFacturaItems([
+          { productoId: 1, cantidad: 1, descuento: -1 },
+        ]),
       ).toThrow(FacturaDomainValidationError);
     });
 

@@ -69,9 +69,9 @@ describe('FacturaController', () => {
   });
 
   it('POST /facturas/ocr should validate required file', async () => {
-    await expect(controller.uploadFile(undefined as any)).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(
+      controller.uploadFile(undefined as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('POST /facturas/ocr should reject invalid mimetype', async () => {

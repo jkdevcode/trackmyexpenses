@@ -1,4 +1,8 @@
-import { INestApplication, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+  INestApplication,
+  CanActivate,
+  ExecutionContext,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
@@ -19,7 +23,10 @@ import { FacturaOcrService } from '../src/factura/factura-ocr.service';
 describe('FacturaController (e2e)', () => {
   let app: INestApplication;
   let facturaService: { findAll: jest.Mock };
-  let facturaOcrService: { processImage: jest.Mock; confirmarFactura: jest.Mock };
+  let facturaOcrService: {
+    processImage: jest.Mock;
+    confirmarFactura: jest.Mock;
+  };
 
   beforeAll(async () => {
     facturaService = {

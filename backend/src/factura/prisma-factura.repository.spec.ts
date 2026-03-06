@@ -71,7 +71,9 @@ describe('PrismaFacturaRepository', () => {
   it('should execute transaction callback with tx repository', async () => {
     const txMock = {
       producto: {
-        findMany: jest.fn().mockResolvedValue([{ id: 1, precioUnitario: 1000 }]),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([{ id: 1, precioUnitario: 1000 }]),
         findFirst: jest.fn(),
         create: jest.fn(),
       },

@@ -1,5 +1,8 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from 'nestjs-pino';
 import { DomainConflictError } from '../common/errors/domain-conflict.error';
@@ -240,10 +243,14 @@ describe('FacturaService', () => {
   });
 
   it('should filter getFacturas by user (findAll)', async () => {
-    repo.findFacturasByUserAndRange.mockResolvedValue([{ id: 1, usuarioId: 12 }]);
+    repo.findFacturasByUserAndRange.mockResolvedValue([
+      { id: 1, usuarioId: 12 },
+    ]);
     repo.countFacturasByUserAndRange.mockResolvedValue(1);
     repo.countFacturasByUser.mockResolvedValue(5);
-    repo.sumTotalPagarByUserAndRange.mockResolvedValueOnce(12000).mockResolvedValueOnce(10000);
+    repo.sumTotalPagarByUserAndRange
+      .mockResolvedValueOnce(12000)
+      .mockResolvedValueOnce(10000);
 
     const result = await service.findAll(12, 'month', 2, 5);
 
@@ -269,9 +276,7 @@ describe('FacturaService', () => {
         .fn()
         .mockResolvedValue({ id: 50, totalPagar: 18000 }),
     };
-    repo.transaction.mockImplementation(async (callback: any) =>
-      callback(tx),
-    );
+    repo.transaction.mockImplementation(async (callback: any) => callback(tx));
 
     const result = await service.addProducto(1, 50, {
       productoId: 1,
