@@ -25,8 +25,10 @@ concurrency:
 
 jobs:
   backend-quality:
-    name: Lint + Unit Tests + Coverage
+    name: Lint + Unit Tests + Coverage + E2E
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
     defaults:
       run:
         working-directory: backend
@@ -49,10 +51,13 @@ jobs:
         run: npx eslint "{src,apps,libs,test}/**/*.ts"
 
       - name: Run backend unit tests
-        run: npm test -- --ci --runInBand
+        run: npm run test
 
       - name: Run backend coverage
-        run: npm run test:cov -- --ci --runInBand
+        run: npm run test:cov
+
+      - name: Run backend e2e tests
+        run: npm run test:e2e
 
       - name: Upload backend coverage artifact
         if: always()
