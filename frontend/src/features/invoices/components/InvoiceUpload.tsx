@@ -9,6 +9,7 @@ import { addToast } from "@heroui/toast";
 import { useScanInvoiceMutation } from "../hooks/useInvoiceMutations";
 
 import { appColor } from "@/theme/theme.config";
+import { appColorVariants } from "@/theme/app-color-variants";
 import { GalleryIcon } from "@/components/ui/icons";
 
 interface InvoiceUploadProps {
@@ -77,7 +78,11 @@ export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
 
   return (
     <Card
-      className={`w-full max-w-xl mx-auto border-2 border-dashed transition-colors ${dragActive ? `border-${appColor}-500 bg-${appColor}-50` : "border-default-300"}`}
+      className={`w-full max-w-xl mx-auto border-2 border-dashed transition-colors ${
+        dragActive
+          ? `${appColorVariants.softBorder} ${appColorVariants.softBg}`
+          : "border-default-300"
+      }`}
     >
       <CardBody
         className="py-12 flex flex-col items-center justify-center gap-4 text-center"
@@ -86,9 +91,7 @@ export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
-        <div
-          className={`p-4 rounded-full bg-default-100 text-${appColor}-500 mb-2`}
-        >
+        <div className={`p-4 rounded-full mb-2 ${appColorVariants.softBgText}`}>
           <GalleryIcon size={48} />
         </div>
 

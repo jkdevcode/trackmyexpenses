@@ -1,4 +1,11 @@
-import { createContext, useState, useEffect, useMemo, useContext } from "react";
+import {
+  createContext,
+  useState,
+  useEffect,
+  useMemo,
+  useContext,
+  useCallback,
+} from "react";
 
 export const ThemeProps = {
   key: "theme",
@@ -36,22 +43,31 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const isDark = theme === ThemeProps.dark;
   const isLight = theme === ThemeProps.light;
 
-  const _setTheme = (newTheme: Theme) => {
+  const _setTheme = useCallback((newTheme: Theme) => {
     localStorage.setItem(ThemeProps.key, newTheme);
     const root = window.document.documentElement;
 
     root.classList.remove(ThemeProps.light, ThemeProps.dark);
     root.classList.add(newTheme);
     setTheme(newTheme);
-  };
+  }, []);
 
-  const setLightTheme = () => _setTheme(ThemeProps.light);
-  const setDarkTheme = () => _setTheme(ThemeProps.dark);
-  const toggleTheme = () =>
-    theme === ThemeProps.dark ? setLightTheme() : setDarkTheme();
+  const setLightTheme = useCallback(
+    () => _setTheme(ThemeProps.light),
+    [_setTheme],
+  );
+  const setDarkTheme = useCallback(
+    () => _setTheme(ThemeProps.dark),
+    [_setTheme],
+  );
+  const toggleTheme = useCallback(
+    () => (theme === ThemeProps.dark ? setLightTheme() : setDarkTheme()),
+    [theme, setLightTheme, setDarkTheme],
+  );
 
   useEffect(() => {
     _setTheme(theme);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value = useMemo(
@@ -63,7 +79,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       setDarkTheme,
       toggleTheme,
     }),
-    [theme, isDark, isLight],
+    [theme, isDark, isLight, setLightTheme, setDarkTheme, toggleTheme],
   );
 
   return (

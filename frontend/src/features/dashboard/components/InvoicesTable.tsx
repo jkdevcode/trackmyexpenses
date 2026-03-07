@@ -1,6 +1,6 @@
 import type { Invoice } from "../types";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -15,6 +15,7 @@ import { Chip } from "@heroui/chip";
 import { useTranslation } from "react-i18next";
 
 import { appColor } from "@/theme/theme.config";
+import { appColorVariants } from "@/theme/app-color-variants";
 
 interface InvoicesTableProps {
   invoices: Invoice[];
@@ -28,6 +29,12 @@ const statusColorMap: Record<
   processed: "success",
   pending: "warning",
   error: "danger",
+};
+
+const statusTextClassMap: Record<string, string> = {
+  processed: "text-success",
+  pending: "text-warning",
+  error: "text-danger",
 };
 
 export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
@@ -93,13 +100,13 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
                 color={appColor}
                 page={page}
                 total={pages}
-                onChange={(page: number) => setPage(page)}
+                onChange={(nextPage: number) => setPage(nextPage)}
               />
             </div>
           ) : null
         }
         classNames={{
-          th: `bg-default-100/50 text-${appColor} font-bold`,
+          th: `bg-default-100/50 ${appColorVariants.text} font-bold`,
           td: "py-3 border-b border-default-100 last:border-0",
         }}
         isStriped={false}
@@ -138,12 +145,14 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
                           >
                             {item.provider}
                           </span>
-                          {/* Show status and date on mobile in subtitle line if removed from columns */}
                           <div className="flex sm:hidden gap-2 text-xs text-default-400">
                             <span>{formatDate(item.date)}</span>
                             <span>•</span>
                             <span
-                              className={`text-${statusColorMap[item.status]}`}
+                              className={
+                                statusTextClassMap[item.status] ??
+                                "text-default-500"
+                              }
                             >
                               {item.status}
                             </span>
@@ -163,7 +172,7 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
                     return (
                       <TableCell>
                         <span
-                          className={`font-semibold text-${appColor} whitespace-nowrap`}
+                          className={`font-semibold whitespace-nowrap ${appColorVariants.text}`}
                         >
                           {formatCurrency(item.total)}
                         </span>

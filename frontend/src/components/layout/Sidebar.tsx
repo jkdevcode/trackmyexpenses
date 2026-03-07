@@ -17,6 +17,7 @@ import {
 
 import { useSession } from "@/contexts/session-context";
 import { appColor } from "@/theme/theme.config";
+import { appColorVariants } from "@/theme/app-color-variants";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { LanguageSwitch } from "@/components/ui/language-switch";
 
@@ -85,7 +86,7 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
           <Logo size={isCollapsed ? 32 : 40} />
           {!isCollapsed && (
             <span
-              className={`font-bold text-xl text-${appColor} whitespace-nowrap overflow-hidden`}
+              className={`font-bold text-xl whitespace-nowrap overflow-hidden ${appColorVariants.text}`}
             >
               {t("app-name")}
             </span>
@@ -141,7 +142,9 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
             />
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">
-                <span className={`font-bold text-${appColor} text-sm truncate`}>
+                <span
+                  className={`font-bold text-sm truncate ${appColorVariants.text}`}
+                >
                   {user?.nombres} {user?.apellidos}
                 </span>
                 <span className="text-default-500 font-medium text-xs truncate">

@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import { Tooltip } from "@heroui/tooltip";
 
 /* import { Link } from "@heroui/link"; */
-import { appColor } from "@/theme/theme.config";
+import { appColorVariants } from "@/theme/app-color-variants";
 
 interface NavItemProps {
   href: string;
@@ -24,7 +24,7 @@ export const NavItem = ({ href, icon, label, isCollapsed }: NavItemProps) => {
                 flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 group
                 ${
                   isActive
-                    ? `bg-${appColor}/10 text-${appColor}`
+                    ? appColorVariants.navActive
                     : "text-default-500 hover:bg-default-100 hover:text-default-900"
                 }
                 ${isCollapsed ? "justify-center" : ""}
@@ -34,7 +34,7 @@ export const NavItem = ({ href, icon, label, isCollapsed }: NavItemProps) => {
         {({ isActive }) => (
           <>
             <div
-              className={`text-xl ${isActive ? `text-${appColor}` : "text-current"}`}
+              className={`text-xl ${isActive ? appColorVariants.text : "text-current"}`}
             >
               {icon}
             </div>
