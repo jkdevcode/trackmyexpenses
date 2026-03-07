@@ -51,15 +51,25 @@ describe('UserController (e2e)', () => {
     return request(httpServer())
       .get('/api/users')
       .set('Cookie', authCookie)
+      .expect(403)
+      .expect((res) => {
+        const body = res.body as { error?: { code?: string } };
+        expect(body.error?.code).toBe('FORBIDDEN');
+      });
+  });
+
+  it('/api/users/me (GET)', () => {
+    return request(httpServer())
+      .get('/api/users/me')
+      .set('Cookie', authCookie)
       .expect(200)
       .expect((res) => {
         const body = res.body as {
-          users: Array<{ contrasena?: string }>;
+          user: { id: number; correo: string; contrasena?: string };
         };
-        expect(body.users).toBeInstanceOf(Array);
-        expect(body.users.length).toBeGreaterThan(0);
-        // Ensure sensitive data is not returned
-        expect(body.users[0].contrasena).toBeUndefined();
+        expect(body.user.id).toBe(userId);
+        expect(body.user.correo).toBe(testUser.correo);
+        expect(body.user.contrasena).toBeUndefined();
       });
   });
 

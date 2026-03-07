@@ -6,7 +6,8 @@ import { AppModule } from './../src/app.module';
 describe('FacturaProducto Interaction (e2e)', () => {
   let app: INestApplication;
   let authCookie: string;
-  let productId: number;
+  let baseProductId: number;
+  let productToAddId: number;
   let facturaId: number;
   const httpServer = () =>
     app.getHttpServer() as unknown as Parameters<typeof request>[0];
@@ -38,26 +39,45 @@ describe('FacturaProducto Interaction (e2e)', () => {
     });
     authCookie = loginRes.headers['set-cookie'][0].split(';')[0];
 
-    // Create Product
-    const prodRes = await request(httpServer())
+    // Create base product (used in initial factura items)
+    const baseProdRes = await request(httpServer())
       .post('/api/productos')
       .set('Cookie', authCookie)
       .send({
-        codigo: `P-${uniqueId}`,
-        nombre: 'Integration Product',
+        codigo: `P-BASE-${uniqueId}`,
+        nombre: 'Integration Base Product',
         precioUnitario: 50.0,
       });
-    const productBody = prodRes.body as { producto: { id: number } };
-    productId = productBody.producto.id;
+    const baseProductBody = baseProdRes.body as { producto: { id: number } };
+    baseProductId = baseProductBody.producto.id;
+
+    // Create second product (used for add-product endpoint)
+    const addProdRes = await request(httpServer())
+      .post('/api/productos')
+      .set('Cookie', authCookie)
+      .send({
+        codigo: `P-ADD-${uniqueId}`,
+        nombre: 'Integration Product To Add',
+        precioUnitario: 50.0,
+      });
+    const addProductBody = addProdRes.body as { producto: { id: number } };
+    productToAddId = addProductBody.producto.id;
 
     // Create Factura
     const factRes = await request(httpServer())
       .post('/api/facturas')
       .set('Cookie', authCookie)
       .send({
-        fecha: new Date().toISOString(),
-        total: 100.0, // Initial manually set total
         metodoPago: 'EFECTIVO',
+        lugarCompra: 'SUPERMERCADO E2E',
+        fechaHoraCompra: new Date().toISOString(),
+        items: [
+          {
+            productoId: baseProductId,
+            cantidad: 1,
+            descuento: 0,
+          },
+        ],
       });
     const facturaBody = factRes.body as { factura: { id: number } };
     facturaId = facturaBody.factura.id;
@@ -72,7 +92,7 @@ describe('FacturaProducto Interaction (e2e)', () => {
       .post(`/api/facturas/${facturaId}/productos`)
       .set('Cookie', authCookie)
       .send({
-        productoId: productId,
+        productoId: productToAddId,
         cantidad: 2,
         descuento: 0,
       })
@@ -82,12 +102,13 @@ describe('FacturaProducto Interaction (e2e)', () => {
           data: { fp: unknown; updatedFactura: { totalPagar: string } };
         };
         expect(body.data.fp).toBeDefined();
-        // Product price 50 * 2 = 100.
-        // Initial total 100. New Total should be roughly 200.
+        // Base item: 50 * 1 = 50
+        // Added item: 50 * 2 = 100
+        // New total should be roughly 150.
         // Note: totalPagar in DB is Decimal. JS Prisma Client returns Decimal or string depending on config.
         // Nest default serializer might default to string.
         const newTotal = parseFloat(body.data.updatedFactura.totalPagar);
-        expect(newTotal).toBeCloseTo(200.0, 1);
+        expect(newTotal).toBeCloseTo(150.0, 1);
       });
   });
 });
