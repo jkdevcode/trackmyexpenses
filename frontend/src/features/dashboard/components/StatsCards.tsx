@@ -4,7 +4,7 @@ import { Card, CardBody } from "@heroui/card";
 import { useTranslation } from "react-i18next";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 
-import { appColor } from "@/theme/theme.config";
+import { appColorVariants } from "@/theme/app-color-variants";
 
 interface StatsCardsProps {
   stats: DashboardStats | null;
@@ -113,7 +113,7 @@ export const StatsCards = ({ stats, loading }: StatsCardsProps) => {
                       {card.label}
                     </span>
                     <span
-                      className={`text-2xl font-bold ${card.highlight ? `text-${appColor}-500` : "text-foreground"}`}
+                      className={`text-2xl font-bold ${card.highlight ? appColorVariants.textStrong : "text-foreground"}`}
                     >
                       {card.value}
                     </span>
@@ -124,7 +124,7 @@ export const StatsCards = ({ stats, loading }: StatsCardsProps) => {
                     )}
                   </div>
                   <div
-                    className={`p-2 rounded-lg ${card.highlight ? `bg-${appColor}-50 text-${appColor}` : "bg-default-100 text-default-600"}`}
+                    className={`p-2 rounded-lg ${card.highlight ? appColorVariants.softBgText : "bg-default-100 text-default-600"}`}
                   >
                     <span className="text-xl">{card.icon}</span>
                   </div>

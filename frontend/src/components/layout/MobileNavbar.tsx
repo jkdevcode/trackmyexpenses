@@ -23,6 +23,7 @@ import {
 
 import { useSession } from "@/contexts/session-context";
 import { appColor } from "@/theme/theme.config";
+import { appColorVariants } from "@/theme/app-color-variants";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { LanguageSwitch } from "@/components/ui/language-switch";
 
@@ -115,7 +116,7 @@ export const MobileNavbar = () => {
                     as={RouterLink}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
                       isActive
-                        ? `bg-${appColor}/10 text-${appColor} font-medium`
+                        ? `${appColorVariants.navActive} font-medium`
                         : "text-foreground hover:bg-default-100"
                     }`}
                     size="lg"
@@ -176,7 +177,7 @@ export const MobileNavbar = () => {
                 src={avatarUrl}
               />
               <div className="flex flex-col">
-                <span className={`font-bold text-${appColor} text-lg`}>
+                <span className={`font-bold text-lg ${appColorVariants.text}`}>
                   {user?.nombres} {user?.apellidos}
                 </span>
                 <span className="text-default-500 font-medium text-sm">

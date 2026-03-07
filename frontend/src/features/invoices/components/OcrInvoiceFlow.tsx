@@ -23,6 +23,7 @@ import { InvoiceForm } from "./InvoiceForm";
 import { InvoiceUpload } from "./InvoiceUpload";
 
 import { appColor } from "@/theme/theme.config";
+import { appColorVariants } from "@/theme/app-color-variants";
 import { useConfirmInvoiceMutation } from "@/features/invoices/hooks/useInvoiceMutations";
 
 export const OcrInvoiceFlow = () => {
@@ -157,7 +158,7 @@ export const OcrInvoiceFlow = () => {
               </div>
               <div className="flex justify-between text-lg">
                 <span className="font-bold">{t("confirm.total")}:</span>
-                <span className={`font-bold text-${appColor}-600`}>
+                <span className={`font-bold ${appColorVariants.textStrong}`}>
                   $
                   {new Intl.NumberFormat("es-CO").format(
                     pendingData?.formData.totalPagar || 0,

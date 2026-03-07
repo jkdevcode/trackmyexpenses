@@ -29,6 +29,7 @@ import {
 } from "../hooks/useInvoicesQuery";
 
 import { appColor } from "@/theme/theme.config";
+import { appColorVariants } from "@/theme/app-color-variants";
 
 const PERIOD_OPTIONS: { key: InvoicePeriod; labelKey: string }[] = [
   { key: "day", labelKey: "list.period.day" },
@@ -187,7 +188,9 @@ export const InvoiceListView = () => {
                       </p>
                       <p className="font-semibold">{invoice.codigoFactura}</p>
                     </div>
-                    <p className={`text-lg font-bold text-${appColor}-600`}>
+                    <p
+                      className={`text-lg font-bold ${appColorVariants.textStrong}`}
+                    >
                       {formatCurrency(invoice.totalPagar)}
                     </p>
                   </div>
@@ -302,7 +305,7 @@ export const InvoiceListView = () => {
               {t("detail.close")}
             </Button>
             {detailQuery.data ? (
-              <p className={`text-xl font-bold text-${appColor}-600`}>
+              <p className={`text-xl font-bold ${appColorVariants.textStrong}`}>
                 {t("detail.total")}:{" "}
                 {formatCurrency(detailQuery.data.totalPagar)}
               </p>
