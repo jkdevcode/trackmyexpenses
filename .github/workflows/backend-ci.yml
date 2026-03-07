@@ -27,8 +27,29 @@ jobs:
   backend-quality:
     name: Lint + Unit Tests + Coverage + E2E
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testdb
+          MYSQL_USER: test
+          MYSQL_PASSWORD: test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     env:
       NODE_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: testdb
+      DB_USERNAME: test
+      DB_PASSWORD: test
+      DATABASE_URL: mysql://test:test@127.0.0.1:3306/testdb
     defaults:
       run:
         working-directory: backend
@@ -46,6 +67,22 @@ jobs:
 
       - name: Install backend dependencies
         run: npm ci
+
+      - name: Wait for MySQL
+        run: |
+          echo "Waiting for MySQL service on 127.0.0.1:3306..."
+          for i in {1..60}; do
+            if (echo > /dev/tcp/127.0.0.1/3306) >/dev/null 2>&1; then
+              echo "MySQL is reachable."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MySQL did not become reachable in time."
+          exit 1
+
+      - name: Sync Prisma schema
+        run: npx prisma db push --skip-generate
 
       - name: Lint backend
         run: npx eslint "{src,apps,libs,test}/**/*.ts"
