@@ -9,6 +9,6 @@ Validation schemas using Yup, reusable across forms.
 
 ## Usage
 
-- Import these schemas in `useFormik` or React Hook Form resolvers.
+- Import these schemas in React Hook Form resolvers.
 - Centralizes validation logic to ensure consistency across the app.
 - Messages support internationalization keys.
