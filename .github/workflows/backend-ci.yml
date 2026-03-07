@@ -27,6 +27,7 @@ jobs:
   backend-quality:
     name: Lint + Unit Tests + Coverage + E2E
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     services:
       mysql:
         image: mysql:8
@@ -94,7 +95,7 @@ jobs:
         run: npm run test:cov
 
       - name: Run backend e2e tests
-        run: npm run test:e2e
+        run: npm run test:e2e:ci
 
       - name: Upload backend coverage artifact
         if: always()
