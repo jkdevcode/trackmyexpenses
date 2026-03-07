@@ -29,7 +29,7 @@ export class PrismaFacturaRepository implements FacturaRepository {
   async transaction<T>(
     callback: (tx: FacturaRepositoryTx) => Promise<T>,
   ): Promise<T> {
-    return this.prisma.$transaction((tx) =>
+    return await this.prisma.$transaction((tx) =>
       callback(new PrismaFacturaRepositoryTx(tx)),
     );
   }
@@ -42,7 +42,7 @@ export class PrismaFacturaRepository implements FacturaRepository {
   ) {
     const skip = (page - 1) * limit;
 
-    return this.prisma.factura.findMany({
+    return await this.prisma.factura.findMany({
       where: {
         usuarioId: userId,
         fechaHoraCompra: {
@@ -63,7 +63,7 @@ export class PrismaFacturaRepository implements FacturaRepository {
     userId: number,
     range: FacturaStatsDateRange,
   ) {
-    return this.prisma.factura.count({
+    return await this.prisma.factura.count({
       where: {
         usuarioId: userId,
         fechaHoraCompra: {
@@ -75,7 +75,7 @@ export class PrismaFacturaRepository implements FacturaRepository {
   }
 
   async findFacturaDetailByUser(userId: number, facturaId: number) {
-    return this.prisma.factura.findFirst({
+    return await this.prisma.factura.findFirst({
       where: {
         id: facturaId,
         usuarioId: userId,
@@ -104,7 +104,7 @@ export class PrismaFacturaRepository implements FacturaRepository {
   }
 
   async findFacturaIdByUser(userId: number, facturaId: number) {
-    return this.prisma.factura.findFirst({
+    return await this.prisma.factura.findFirst({
       where: {
         id: facturaId,
         usuarioId: userId,
@@ -114,14 +114,14 @@ export class PrismaFacturaRepository implements FacturaRepository {
   }
 
   async findProductoById(productoId: number) {
-    return this.prisma.producto.findUnique({
+    return await this.prisma.producto.findUnique({
       where: { id: productoId },
       select: { id: true, precioUnitario: true },
     });
   }
 
   async countFacturasByUser(userId: number) {
-    return this.prisma.factura.count({ where: { usuarioId: userId } });
+    return await this.prisma.factura.count({ where: { usuarioId: userId } });
   }
 
   async sumTotalPagarByUserAndRange(
@@ -149,14 +149,14 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
   constructor(private readonly tx: Prisma.TransactionClient) {}
 
   async findProductosByIds(productIds: number[]) {
-    return this.tx.producto.findMany({
+    return await this.tx.producto.findMany({
       where: { id: { in: productIds } },
       select: { id: true, precioUnitario: true },
     });
   }
 
   async createFactura(data: CreateFacturaRecordInput) {
-    return this.tx.factura.create({
+    return await this.tx.factura.create({
       data: {
         usuarioId: data.usuarioId,
         codigoFactura: data.codigoFactura,
@@ -202,7 +202,7 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
   }
 
   async findFacturaByIdWithRelations(facturaId: number) {
-    return this.tx.factura.findUniqueOrThrow({
+    return await this.tx.factura.findUniqueOrThrow({
       where: { id: facturaId },
       include: {
         usuario: {
@@ -228,14 +228,14 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
   }
 
   async findProductoByNombre(nombre: string) {
-    return this.tx.producto.findFirst({
+    return await this.tx.producto.findFirst({
       where: { nombre },
       select: { id: true },
     });
   }
 
   async createProducto(data: CreateProductoInput) {
-    return this.tx.producto.create({
+    return await this.tx.producto.create({
       data: {
         nombre: data.nombre,
         codigo: data.codigo,
@@ -246,7 +246,7 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
   }
 
   async updateFacturaTotalAndGetDetails(facturaId: number, increment: number) {
-    return this.tx.factura.update({
+    return await this.tx.factura.update({
       where: { id: facturaId },
       data: {
         totalPagar: { increment },
