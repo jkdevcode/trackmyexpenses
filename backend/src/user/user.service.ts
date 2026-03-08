@@ -31,7 +31,7 @@ export class UserService {
   constructor(
     private prisma: PrismaService,
     private storage: StorageService,
-  ) { }
+  ) {}
 
   async me(userId: number) {
     const user = await this.prisma.usuario.findUnique({

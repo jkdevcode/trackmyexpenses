@@ -104,11 +104,9 @@ describe('UserController (e2e)', () => {
   });
 
   it('/api/users/:id (DELETE)', () => {
-    return (
-      request(httpServer())
-        .delete(`/api/users/${userId}`)
-        .set('Cookie', authCookie)
-        .expect(200)
-    );
+    return request(httpServer())
+      .delete(`/api/users/${userId}`)
+      .set('Cookie', authCookie)
+      .expect(200);
   });
 });
