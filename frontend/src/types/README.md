@@ -1,9 +1,20 @@
-# Types Directory
+# frontend/src/types
 
-Global TypeScript definitions and interfaces.
+Tipos globales compartidos por multiples features.
+
+## Responsibilities
+
+- Exponer contratos comunes de TypeScript.
+- Evitar duplicacion de tipos entre modulos.
+- Servir como punto de export para tipos transversales.
+
+## Main Files
+
+- **`index.ts`**: Barrel de tipos globales del proyecto.
+- **`README.md`**: Convenciones para agregar nuevos tipos compartidos.
 
 ## Usage
 
-- **`index.ts`**: Exports shared types used across multiple features.
-- Place specific feature types (like DTOs or Component props) near their usage in `src/features`.
-- Use this folder for truly global types (e.g. `UserSession`, `ApiResponse`).
+- Importado por features cuando el tipo no es de dominio local.
+- Los tipos especificos de feature deben vivir en `src/features/*/types.ts`.
+- Mantener nombres claros y estables para evitar acoplamiento.

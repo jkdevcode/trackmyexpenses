@@ -1,9 +1,20 @@
-# Utils Directory
+# frontend/src/utils
 
-Helper functions and standalone logic.
+Funciones auxiliares puras usadas por varias capas del frontend.
+
+## Responsibilities
+
+- Normalizar manejo de errores de red/backend.
+- Centralizar helpers agnosticos de React.
+- Reducir repeticion de logica utilitaria.
+
+## Main Files
+
+- **`errors.ts`**: Extrae mensajes amigables desde Axios/backend/i18n.
+- **`README.md`**: Convenciones para utilidades compartidas.
 
 ## Usage
 
-- **`errors.ts`**: Standardized error handling and messaging.
-- Contains pure functions that are not React hooks.
-- Use for date formatting, string manipulation, or API wrappers.
+- Consumido por hooks y paginas al manejar `catch`.
+- Mantener funciones puras y tipadas (`unknown` en entradas externas).
+- No incluir estado ni dependencias de UI en este directorio.

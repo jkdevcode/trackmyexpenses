@@ -1,13 +1,21 @@
-# Layouts Directory
+# frontend/src/layouts
 
-High-level wrapper components that define the page structure.
+Layouts de pagina para composicion de vistas de alto nivel.
 
-## Components
+## Responsibilities
 
-- **`AppLayout`**: Main authenticated layout with responsive `Sidebar` (desktop) and `MobileNavbar`.
-- **`AuthLayout`**: Simplified layout for login/register pages (centered content).
+- Definir estructuras base reutilizables entre paginas.
+- Encapsular contenedores visuales (publico/autenticado).
+- Reducir codigo repetido en paginas concretas.
+
+## Main Files
+
+- **`default.tsx`**: Layout base reutilizable para vistas internas.
+- **`landing.tsx`**: Layout de la pagina publica de inicio.
+- **`README.md`**: Referencia de responsabilidades de layout.
 
 ## Usage
 
-- Used in `src/routes.tsx` or `App.tsx` to wrap page components.
-- Ensures consistent navigation and styling across different sections of the app.
+- Importados por paginas en `src/pages` y features publicas.
+- Complementan `AppLayout` cuando se necesita estructura mas simple.
+- Mantienen coherencia entre responsive, espaciados y wrappers.

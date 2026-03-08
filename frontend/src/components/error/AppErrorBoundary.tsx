@@ -21,8 +21,8 @@ export class AppErrorBoundary extends Component<Props, State> {
     return { hasError: true };
   }
 
-  componentDidCatch(error: unknown) {
-    console.error("UI runtime error:", error);
+  componentDidCatch(_error: unknown) {
+    // Reserved for error reporting integration (Sentry, Datadog, etc.)
   }
 
   private handleRetry = () => {

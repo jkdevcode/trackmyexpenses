@@ -1,13 +1,20 @@
-# Hooks Directory
+# frontend/src/hooks
 
-Custom React hooks for reusable logic across the application.
+Hooks transversales no ligados a una feature especifica.
 
-## Contents
+## Responsibilities
 
-- includes hooks like `useTheme` for logic that doesn't fit into a specific feature.
+- Encapsular logica reutilizable de estado/efectos globales.
+- Evitar duplicacion en componentes de presentacion.
+- Mantener separada la logica comun de los hooks por feature.
+
+## Main Files
+
+- **`use-theme.ts`**: Utilidades para lectura/cambio del tema de aplicacion.
+- **`README.md`**: Convenciones de uso para hooks compartidos.
 
 ## Usage
 
-- Encapsulate complex stateful logic or side effects here.
-- Avoid placing feature-specific hooks here; keep them in `src/features`.
-- Prefix all files and functions with `use`.
+- Importado por providers y componentes de UI.
+- Los hooks de negocio deben vivir en `src/features/*/hooks`.
+- Mantener funciones puras y tipadas para facilitar testeo.

@@ -1,175 +1,86 @@
-import type {
-  ScanResponse,
-  ProductSuggestion,
-  ConfirmFacturaDto,
-} from "@/features/invoices/types";
-
+import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
-import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { addToast } from "@heroui/toast";
-import { useNavigate } from "react-router-dom";
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-} from "@heroui/modal";
-import { Button } from "@heroui/button";
+import { Tabs, Tab } from "@heroui/tabs";
 
-import { InvoiceForm } from "@/features/invoices/components/InvoiceForm";
-import { InvoiceUpload } from "@/features/invoices/components/InvoiceUpload";
-import { appColor } from "@/theme/theme.config";
-import { useConfirmInvoiceMutation } from "@/features/invoices/hooks/useInvoiceMutations";
+const OcrInvoiceFlow = lazy(() =>
+  import("@/features/invoices/components/OcrInvoiceFlow").then((module) => ({
+    default: module.OcrInvoiceFlow,
+  })),
+);
+const ManualInvoiceForm = lazy(() =>
+  import("@/features/invoices/components/ManualInvoiceForm").then((module) => ({
+    default: module.ManualInvoiceForm,
+  })),
+);
+const InvoiceListView = lazy(() =>
+  import("@/features/invoices/components/InvoiceListView").then((module) => ({
+    default: module.InvoiceListView,
+  })),
+);
+
+type InvoiceTabKey = "ocr" | "manual" | "list";
 
 export const NewInvoicePage = () => {
   const { t } = useTranslation("invoices");
-  const [step, setStep] = useState<"upload" | "edit">("upload");
-  const [scanData, setScanData] = useState<ScanResponse | null>(null);
-  const confirmInvoiceMutation = useConfirmInvoiceMutation();
-  const navigate = useNavigate();
-
-  // Confirmation Dialog State
-  const {
-    isOpen: isConfirmOpen,
-    onOpen: onConfirmOpen,
-    onClose: onConfirmClose,
-  } = useDisclosure();
-  const [pendingData, setPendingData] = useState<{
-    formData: any;
-    products: ProductSuggestion[];
-  } | null>(null);
-
-  const handleScanComplete = (data: ScanResponse) => {
-    setScanData(data);
-    setStep("edit");
-  };
-
-  const handlePreSave = (formData: any, products: ProductSuggestion[]) => {
-    setPendingData({ formData, products });
-    onConfirmOpen();
-  };
-
-  const handleConfirmSave = async () => {
-    if (!pendingData) return;
-    onConfirmClose(); // Close dialog, show loading on Form button if needed, or global loading
-
-    try {
-      const payload: ConfirmFacturaDto = {
-        factura: {
-          fechaHoraCompra: new Date(
-            pendingData.formData.fechaHoraCompra,
-          ).toISOString(),
-          metodoPago: pendingData.formData.metodoPago,
-          lugarCompra: pendingData.formData.lugarCompra.trim(),
-          nitProveedor: pendingData.formData.nitProveedor?.trim() || undefined,
-          totalPagar: pendingData.formData.totalPagar,
-        },
-        productos: pendingData.products
-          .filter((p) => p.nombreDetected && p.nombreDetected.trim() !== "")
-          .map((p) => ({
-            nombreDetectado: p.nombreDetected.trim(),
-            precioUnitario: Number(p.precioUnitario),
-            cantidadDetectada: Number(p.cantidad),
-            unidadDetectada: p.unidad || "u",
-            descuentoDetectado: 0,
-          })),
-      };
-
-      await confirmInvoiceMutation.mutateAsync(payload);
-
-      addToast({
-        title: t("toast.save_success_title"),
-        description: t("toast.save_success_desc"),
-        color: "success",
-      });
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("Error saving invoice:", error);
-      addToast({
-        title: t("toast.save_error_title"),
-        description: t("toast.save_error_desc"),
-        color: "danger",
-      });
-    }
-  };
+  const [activeTab, setActiveTab] = useState<InvoiceTabKey>("ocr");
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
       <h1 className="text-3xl font-bold mb-6">
         {t("page.title", "Nueva Factura")}
       </h1>
-
-      <LazyMotion features={domAnimation}>
-        <AnimatePresence mode="wait">
-          {step === "upload" && (
-            <m.div
-              key="upload"
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              initial={{ opacity: 0, y: 20 }}
-            >
-              <InvoiceUpload onScanComplete={handleScanComplete} />
-            </m.div>
-          )}
-
-          {step === "edit" && scanData && (
-            <m.div
-              key="edit"
-              animate={{ opacity: 1, x: 0 }}
-              initial={{ opacity: 0, x: 20 }}
-            >
-              <InvoiceForm
-                initialData={scanData.parsed}
-                saving={confirmInvoiceMutation.isPending}
-                onCancel={() => setStep("upload")}
-                onSave={handlePreSave}
-              />
-            </m.div>
-          )}
-        </AnimatePresence>
-      </LazyMotion>
-
-      {/* Confirmation Dialog */}
-      <Modal isOpen={isConfirmOpen} onClose={onConfirmClose}>
-        <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            {t("confirm.title")}
-          </ModalHeader>
-          <ModalBody>
-            <p>{t("confirm.message")}</p>
-            <div className="bg-default-100 p-4 rounded-lg space-y-2 mt-2">
-              <div className="flex justify-between">
-                <span className="font-semibold">{t("confirm.products")}:</span>
-                <span>{pendingData?.products.length}</span>
-              </div>
-              <div className="flex justify-between text-lg">
-                <span className="font-bold">{t("confirm.total")}:</span>
-                <span className={`font-bold text-${appColor}-600`}>
-                  $
-                  {new Intl.NumberFormat("es-CO").format(
-                    pendingData?.formData.totalPagar || 0,
-                  )}
-                </span>
-              </div>
+      <Tabs
+        aria-label={t("page.title")}
+        selectedKey={activeTab}
+        variant="underlined"
+        onSelectionChange={(key) => setActiveTab(key as InvoiceTabKey)}
+      >
+        <Tab key="ocr" title={t("tabs.ocr")}>
+          {activeTab === "ocr" ? (
+            <div className="pt-4">
+              <Suspense
+                fallback={
+                  <div className="py-8 text-center text-default-500">
+                    Cargando...
+                  </div>
+                }
+              >
+                <OcrInvoiceFlow />
+              </Suspense>
             </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button color="danger" variant="light" onPress={onConfirmClose}>
-              {t("confirm.cancel")}
-            </Button>
-            <Button
-              color="primary"
-              isLoading={confirmInvoiceMutation.isPending}
-              onPress={handleConfirmSave}
-            >
-              {t("confirm.confirm")}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          ) : null}
+        </Tab>
+        <Tab key="manual" title={t("tabs.manual")}>
+          {activeTab === "manual" ? (
+            <div className="pt-4">
+              <Suspense
+                fallback={
+                  <div className="py-8 text-center text-default-500">
+                    Cargando...
+                  </div>
+                }
+              >
+                <ManualInvoiceForm />
+              </Suspense>
+            </div>
+          ) : null}
+        </Tab>
+        <Tab key="list" title={t("tabs.list")}>
+          {activeTab === "list" ? (
+            <div className="pt-4">
+              <Suspense
+                fallback={
+                  <div className="py-8 text-center text-default-500">
+                    Cargando...
+                  </div>
+                }
+              >
+                <InvoiceListView />
+              </Suspense>
+            </div>
+          ) : null}
+        </Tab>
+      </Tabs>
     </div>
   );
 };

@@ -104,7 +104,7 @@ export const LanguageSwitch: FC<LanguageSwitchProps> = ({
       availableLanguages.find((lang) => lang.code === language)?.isRTL || false;
 
     document.documentElement.dir = isRTL ? "rtl" : "ltr";
-  }, [language]);
+  }, [language, availableLanguages]);
 
   // Sync state with i18n when language changes externally
   useEffect(() => {

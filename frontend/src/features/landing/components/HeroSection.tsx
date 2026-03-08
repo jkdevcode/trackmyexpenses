@@ -3,6 +3,7 @@ import { Link } from "@heroui/link";
 import { useTranslation } from "react-i18next";
 
 import { appColor } from "@/theme/theme.config";
+import { appColorVariants } from "@/theme/app-color-variants";
 
 export const HeroSection = () => {
   const { t } = useTranslation();
@@ -12,7 +13,7 @@ export const HeroSection = () => {
       <div className="max-w-3xl flex flex-col gap-4">
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
           {t("landing:hero-title")}{" "}
-          <span className={`text-${appColor} text-6xl`}>
+          <span className={`text-6xl ${appColorVariants.text}`}>
             {t("landing:hero-title-highlight")}
           </span>
         </h1>

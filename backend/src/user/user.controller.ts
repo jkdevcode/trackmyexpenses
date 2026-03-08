@@ -12,17 +12,26 @@ import {
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
-/* import { Request } from 'express'; */
+import type { Request as ExpressRequest } from 'express';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { SelfOrAdminGuard } from '../auth/guards/self-or-admin.guard';
+import { AppRole } from '../auth/roles.enum';
+import {
+  imageFileInterceptorOptions,
+  optionalImageFilePipe,
+} from '../common/upload/upload-options';
 
-interface RequestWithUser extends Request {
+interface RequestWithUser extends ExpressRequest {
   user: {
     id: number;
+    rol: AppRole;
   };
 }
 @Controller('users')
@@ -31,6 +40,8 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
+  @Roles(AppRole.ADMIN)
+  @UseGuards(RolesGuard)
   async findAll() {
     return this.userService.getAllUsers();
   }
@@ -41,6 +52,7 @@ export class UserController {
   }
 
   @Get(':id')
+  @UseGuards(SelfOrAdminGuard)
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.userService.findOne(id);
   }
@@ -54,12 +66,13 @@ export class UserController {
   }
 
   @Patch(':id')
+  @UseGuards(SelfOrAdminGuard)
   @UsePipes(ZodValidationPipe)
-  @UseInterceptors(FileInterceptor('foto'))
+  @UseInterceptors(FileInterceptor('foto', imageFileInterceptorOptions))
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(optionalImageFilePipe) file: Express.Multer.File,
   ) {
     return this.userService.updateProfile(
       id,
@@ -70,10 +83,8 @@ export class UserController {
   }
 
   @Delete(':id')
-  async remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: RequestWithUser,
-  ) {
-    return this.userService.deleteUser(id, req.user.id);
+  @UseGuards(SelfOrAdminGuard)
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return this.userService.deleteUser(id);
   }
 }

@@ -17,6 +17,7 @@ import {
 
 import { useSession } from "@/contexts/session-context";
 import { appColor } from "@/theme/theme.config";
+import { appColorVariants } from "@/theme/app-color-variants";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { LanguageSwitch } from "@/components/ui/language-switch";
 
@@ -61,6 +62,11 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
   return (
     <aside
       className={`hidden md:flex flex-col h-screen border-r border-divider bg-background transition-all duration-300 ease-in-out sticky top-0
@@ -85,7 +91,7 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
           <Logo size={isCollapsed ? 32 : 40} />
           {!isCollapsed && (
             <span
-              className={`font-bold text-xl text-${appColor} whitespace-nowrap overflow-hidden`}
+              className={`font-bold text-xl whitespace-nowrap overflow-hidden ${appColorVariants.text}`}
             >
               {t("app-name")}
             </span>
@@ -141,7 +147,9 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
             />
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">
-                <span className={`font-bold text-${appColor} text-sm truncate`}>
+                <span
+                  className={`font-bold text-sm truncate ${appColorVariants.text}`}
+                >
                   {user?.nombres} {user?.apellidos}
                 </span>
                 <span className="text-default-500 font-medium text-xs truncate">
@@ -163,7 +171,9 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
               isIconOnly={isCollapsed}
               size="sm"
               variant="flat"
-              onClick={logout}
+              onClick={() => {
+                void handleLogout();
+              }}
             >
               <LogoutIcon />
               {!isCollapsed && <span>{t("auth.logout")}</span>}

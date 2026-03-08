@@ -3,6 +3,7 @@ import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 
 import { appColor } from "@/theme/theme.config";
+import { appColorVariants } from "@/theme/app-color-variants";
 
 interface InvoiceSummaryProps {
   totalItems: number;
@@ -37,7 +38,9 @@ export const InvoiceSummary = ({
             <span className="text-default-500 text-sm">
               {t("summary.calculated_total")}
             </span>
-            <span className={`text-xl font-bold text-${appColor}-600`}>
+            <span
+              className={`text-xl font-bold ${appColorVariants.textStrong}`}
+            >
               ${new Intl.NumberFormat("es-CO").format(totalAmount)}
             </span>
           </div>

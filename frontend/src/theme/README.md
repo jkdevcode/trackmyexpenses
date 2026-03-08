@@ -1,13 +1,21 @@
-# Theme Directory
+# frontend/src/theme
 
-Configuration for application design tokens and standard styles.
+Configuracion central de tokens visuales y variantes de color.
 
-## Files
+## Responsibilities
 
-- **`theme.config.ts`**: Defines strict color palettes (HeroUI semantic colors), fonts, and global overrides.
+- Definir paleta semantica usada por HeroUI/Tailwind.
+- Exponer variantes reutilizables para componentes.
+- Mantener coherencia visual entre modulos y features.
+
+## Main Files
+
+- **`theme.config.ts`**: Colores base, app color y utilidades de tema.
+- **`app-color-variants.ts`**: Clases/variantes derivadas para UI.
+- **`README.md`**: Guia de uso de tokens compartidos.
 
 ## Usage
 
-- Use variables from `colorApp` for consistent branding.
-- Refer to this configuration when extending Tailwind classes.
-- Ensures visual consistency between Light and Dark modes.
+- Consumido por componentes de layout y features.
+- Referenciado por estilos y utilidades de presentacion.
+- Evitar hardcodear colores fuera de este directorio.

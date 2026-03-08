@@ -15,6 +15,7 @@ import { availableLanguages } from "@/i18n";
 
 export const LandingHeader = () => {
   const { t } = useTranslation();
+  const linkColor = appColor === "default" ? "foreground" : "primary";
 
   return (
     <HeroNavbar maxWidth="xl" position="sticky">
@@ -35,10 +36,7 @@ export const LandingHeader = () => {
       </NavbarContent>
       <NavbarContent justify="end">
         <NavbarItem className="hidden lg:flex">
-          <Link
-            color={appColor === "default" ? "foreground" : (appColor as any)}
-            href="/login"
-          >
+          <Link color={linkColor} href="/login">
             {t("login")}
           </Link>
         </NavbarItem>

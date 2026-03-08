@@ -1,47 +1,21 @@
-# Backend - TrackMyExpenses
+# backend
+API NestJS del proyecto, responsable de autenticacion, negocio de facturas/productos y acceso a datos.
 
-API RESTful construida con NestJS para la gestión de gastos y procesamiento de facturas.
+## Responsibilities
+- Exponer endpoints REST bajo prefijo `/api`.
+- Gestionar autenticacion con JWT en cookie HttpOnly (`token`).
+- Integrar Prisma (MySQL), OCR y parsing de facturas.
 
-## Descripción
+## Main Files
+- **`src/main.ts`**: Bootstrap, CORS, cookie parser, CSRF check y Swagger.
+- **`src/app.module.ts`**: Composicion de modulos y middlewares globales.
+- **`prisma/schema.prisma`**: Modelo de datos (`Usuario`, `Factura`, `Producto`).
+- **`test/*.e2e-spec.ts`**: Suite e2e de API.
 
-Servidor encargado de la lógica de negocio, autenticación, persistencia de datos y servicios de integración con IA para el procesamiento de imágenes.
+## API Documentation
+El backend publica OpenAPI con Swagger UI. Levanta el servidor con `npm install && npm run start:dev` y abre `http://localhost:3000/docs`. Desde Swagger puedes ejecutar endpoints publicos y protegidos; la API usa cookie auth (`token`), por lo que tras `POST /api/auth/login` la cookie queda en el navegador y puedes probar rutas protegidas en la misma sesion. En `Authorize` tambien puedes cargar el esquema cookie `token` manualmente.
 
-## Stack Tecnológico
-
-- **Core:** NestJS 11
-- **ORM:** Prisma (MySQL)
-- **Validación:** Zod (nestjs-zod)
-- **Documentación:** Swagger (OpenAPI)
-- **Autenticación:** Passport-JWT
-- **Servicios Externos:** Google Generative AI, Tesseract.js
-
-## Arquitectura
-
-Sigue la arquitectura modular de NestJS, organizada en controladores, servicios y módulos.
-Las entidades principales están definidas en el esquema de Prisma y mapeadas a DTOs validados con Zod.
-
-### Módulos Principales
-
-- **AuthModule:** Manejo de sesiones, Login, Registro, Generación y validación de JWT.
-- **UserModule:** Gestión de usuarios, Perfil, Actualización de datos, Cambio de contraseña.
-- **FacturaModule:** CRUD de facturas y asociación con usuarios.
-- **FacturaOcrModule:** Lógica para procesamiento de imágenes (OCR + LLM) y extracción de datos estructurados.
-
-## Manejo de Errores
-
-Se utiliza un filtro global de excepciones para estandarizar las respuestas JSON.
-
-- `ConflictException`: Para duplicados (ej. correo ya registrado).
-- `UnauthorizedException`: Fallos de autenticación.
-- `BadRequestException`: Errores de validación de datos (Zod).
-
-## Seguridad
-
-- **Contraseñas:** Hashing seguro utilizando `bcrypt`.
-- **JWT:** Tokens firmados para control de sesión stateless.
-- **Separación de Responsabilidades:** Endpoints dedicados para actualización de perfil vs. cambio de contraseña para mayor seguridad.
-
-## Documentación API
-
-El proyecto incluye documentación automática con Swagger.
-Acceso (en desarrollo): `http://localhost:3000/api` (o la ruta configurada).
+## Usage
+- Desarrollo: `npm run start:dev`.
+- Build/produccion: `npm run build && npm run start:prod`.
+- Tests: `npm test` y `npm run test:e2e`.

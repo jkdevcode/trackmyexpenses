@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Post,
   Get,
@@ -9,7 +10,10 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { FacturaService } from './factura.service';
 import { CreateFacturaDto } from './dto/create-factura.dto';
 import { AddProductoFacturaDto } from './dto/add-producto.dto';
@@ -17,8 +21,15 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ZodValidationPipe } from 'nestjs-zod';
 
 import { GetFacturasQueryDto } from './dto/get-facturas-query.dto';
+import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
+import { FacturaOcrService } from './factura-ocr.service';
+import type { Request as ExpressRequest } from 'express';
+import {
+  MAX_UPLOAD_FILE_SIZE,
+  imageFileInterceptorOptions,
+} from '../common/upload/upload-options';
 
-interface RequestWithUser extends Request {
+interface RequestWithUser extends ExpressRequest {
   user: {
     id: number;
   };
@@ -27,7 +38,10 @@ interface RequestWithUser extends Request {
 @Controller('facturas')
 @UseGuards(JwtAuthGuard)
 export class FacturaController {
-  constructor(private readonly facturaService: FacturaService) {}
+  constructor(
+    private readonly facturaService: FacturaService,
+    private readonly facturaOcrService: FacturaOcrService,
+  ) {}
 
   @Post()
   @UsePipes(ZodValidationPipe)
@@ -58,6 +72,14 @@ export class FacturaController {
     return this.facturaService.getStats(req.user.id, query.period);
   }
 
+  @Get(':id')
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: RequestWithUser,
+  ) {
+    return this.facturaService.findOne(req.user.id, id);
+  }
+
   @Post(':id/productos')
   @UsePipes(ZodValidationPipe)
   async addProducto(
@@ -66,5 +88,34 @@ export class FacturaController {
     @Request() req: RequestWithUser,
   ) {
     return this.facturaService.addProducto(req.user.id, id, dto);
+  }
+
+  @Post('ocr')
+  @UseInterceptors(FileInterceptor('image', imageFileInterceptorOptions))
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('Se requiere una imagen (field: image)');
+    }
+
+    if (file.size > MAX_UPLOAD_FILE_SIZE) {
+      throw new BadRequestException('El archivo supera el limite de 5MB');
+    }
+
+    if (!file.mimetype.match(/^image\/(jpeg|png|webp)$/)) {
+      throw new BadRequestException(
+        'Solo se permiten imagenes (JPEG, PNG, WEBP)',
+      );
+    }
+
+    return this.facturaOcrService.processImage(file);
+  }
+
+  @Post('ocr/confirmar')
+  @UsePipes(ZodValidationPipe)
+  async confirmarFactura(
+    @Request() req: RequestWithUser,
+    @Body() dto: ConfirmFacturaDto,
+  ) {
+    return this.facturaOcrService.confirmarFactura(req.user.id, dto);
   }
 }

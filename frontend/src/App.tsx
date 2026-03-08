@@ -2,7 +2,6 @@ import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import { CookieConsentProvider } from "@/contexts/cookie-consent-context";
-import { CookieConsent } from "@/components/ui/cookie-consent";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { PublicOnlyRoute } from "@/features/auth/components/PublicOnlyRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -22,11 +21,28 @@ const NewInvoicePage = lazy(() =>
 const PageNotFound = lazy(() =>
   import("@/pages/404").then((module) => ({ default: module.PageNotFound })),
 );
+const CookieConsent = lazy(() =>
+  import("@/components/ui/cookie-consent").then((module) => ({
+    default: module.CookieConsent,
+  })),
+);
+
+const shouldRenderCookieConsent = () => {
+  if (typeof window === "undefined") return false;
+
+  const consent = window.localStorage.getItem("cookie-consent-status");
+
+  return consent !== "accepted" && consent !== "rejected";
+};
 
 function App() {
   return (
     <CookieConsentProvider>
-      <CookieConsent />
+      {shouldRenderCookieConsent() ? (
+        <Suspense fallback={null}>
+          <CookieConsent />
+        </Suspense>
+      ) : null}
       <Routes>
         <Route
           element={

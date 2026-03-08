@@ -4,6 +4,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { Request } from 'express';
+import { AppRole } from './roles.enum';
 
 function extractTokenFromCookies(req: Request): string | null {
   const maybeCookies: unknown = (req as Request & { cookies?: unknown })
@@ -65,12 +66,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const user = await this.prisma.usuario.findUnique({
       where: { id: jwtPayload.id },
-      select: { id: true },
+      select: { id: true, rol: true },
     });
     if (!user) {
       throw new UnauthorizedException();
     }
-    // Return user object which will be injected into request
-    return user;
+
+    return {
+      id: user.id,
+      rol: user.rol as AppRole,
+    };
   }
 }

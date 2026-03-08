@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-import { appColor } from "@/theme/theme.config";
+import { appColorVariants } from "@/theme/app-color-variants";
 
 export const FeatureShowcase = () => {
   const { t } = useTranslation();
@@ -11,7 +11,7 @@ export const FeatureShowcase = () => {
         <div className="flex flex-col gap-6">
           <h2 className="text-3xl md:text-4xl font-bold">
             {t("landing:features-title")}{" "}
-            <span className={`text-${appColor}`}>
+            <span className={appColorVariants.text}>
               {t("landing:features-title-highlight")}
             </span>
           </h2>
@@ -21,7 +21,7 @@ export const FeatureShowcase = () => {
           <ul className="space-y-4">
             <li className="flex items-center gap-3">
               <div
-                className={`w-6 h-6 rounded-full bg-${appColor}/10 flex items-center justify-center text-${appColor} text-xs`}
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${appColorVariants.softBgText}`}
               >
                 ✓
               </div>
@@ -29,7 +29,7 @@ export const FeatureShowcase = () => {
             </li>
             <li className="flex items-center gap-3">
               <div
-                className={`w-6 h-6 rounded-full bg-${appColor}/10 flex items-center justify-center text-${appColor} text-xs`}
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${appColorVariants.softBgText}`}
               >
                 ✓
               </div>
@@ -37,7 +37,7 @@ export const FeatureShowcase = () => {
             </li>
             <li className="flex items-center gap-3">
               <div
-                className={`w-6 h-6 rounded-full bg-${appColor}/10 flex items-center justify-center text-${appColor} text-xs`}
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${appColorVariants.softBgText}`}
               >
                 ✓
               </div>

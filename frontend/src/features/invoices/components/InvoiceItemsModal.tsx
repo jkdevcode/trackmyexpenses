@@ -66,7 +66,7 @@ export const InvoiceItemsModal = ({
   const handleUpdate = (
     index: number,
     field: keyof ProductSuggestion,
-    value: any,
+    value: string | number,
   ) => {
     const itemToUpdate = items[index];
     const originalIndex = products.indexOf(itemToUpdate);

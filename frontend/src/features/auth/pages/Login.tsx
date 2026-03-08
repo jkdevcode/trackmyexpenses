@@ -27,6 +27,7 @@ const LoginPage = () => {
   const { login } = useSession();
   const [isVisible, setIsVisible] = useState(false);
   const loginMutation = useLoginMutation();
+  const linkColor = appColor === "default" ? "foreground" : "primary";
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
@@ -46,9 +47,8 @@ const LoginPage = () => {
   const onSubmit = async (values: LoginFormValues) => {
     try {
       const data = await loginMutation.mutateAsync(values);
-      const userInfo = Array.isArray(data.user) ? data.user[0] : data.user;
 
-      login(userInfo);
+      login(data.user);
 
       addToast({
         title: t("auth:login.success"),
@@ -59,7 +59,7 @@ const LoginPage = () => {
       });
 
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
       addToast({
         title: t("auth:login.error"),
         description: getErrorMessage(error, t),
@@ -122,9 +122,7 @@ const LoginPage = () => {
             <div className="text-sm">
               <Link
                 as={RouterLink}
-                color={
-                  appColor === "default" ? "foreground" : (appColor as any)
-                }
+                color={linkColor}
                 href="#"
                 to="/forgot-contrasena"
               >
@@ -151,9 +149,7 @@ const LoginPage = () => {
               <Link
                 as={RouterLink}
                 className="font-semibold"
-                color={
-                  appColor === "default" ? "foreground" : (appColor as any)
-                }
+                color={linkColor}
                 to="/register"
               >
                 {t("auth:login.register_link")}

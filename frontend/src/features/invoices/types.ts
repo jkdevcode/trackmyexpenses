@@ -49,3 +49,60 @@ export interface ConfirmFacturaDto {
     descuentoDetectado?: number;
   }[];
 }
+
+export interface CreateFacturaDto {
+  fechaHoraCompra?: string;
+  metodoPago: string;
+  lugarCompra: string;
+  nitProveedor?: string;
+  items: {
+    productoId: number;
+    cantidad: number;
+    descuento?: number;
+  }[];
+}
+
+export interface ProductCatalogItem {
+  id: number;
+  nombre: string;
+  precioUnitario: number;
+}
+
+export type InvoicePeriod = "day" | "week" | "month" | "year";
+
+export interface InvoiceSummaryItem {
+  id: number;
+  codigoFactura: string;
+  fechaHoraCompra: string;
+  lugarCompra: string;
+  metodoPago: string;
+  totalPagar: number;
+}
+
+export interface InvoiceDetailItem {
+  cantidad: number;
+  unidad?: string | null;
+  descuento?: number | null;
+  precioTotal: number;
+  producto: {
+    id: number;
+    nombre: string;
+    precioUnitario: number;
+  };
+}
+
+export interface InvoiceDetail {
+  id: number;
+  codigoFactura: string;
+  metodoPago: string;
+  lugarCompra: string;
+  nitProveedor?: string | null;
+  fechaHoraCompra: string;
+  totalPagar: number;
+  usuario: {
+    id: number;
+    nombres: string;
+    apellidos: string;
+  };
+  productos: InvoiceDetailItem[];
+}

@@ -1,9 +1,6 @@
 import {
   Injectable,
-  NotFoundException,
   UnauthorizedException,
-  ConflictException,
-  ForbiddenException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -13,6 +10,8 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { StorageService } from '../infra/storage/storage.service';
+import { UserNotFoundError } from './errors/user-not-found.error';
+import { DomainConflictError } from '../common/errors/domain-conflict.error';
 
 const userSelect = {
   id: true,
@@ -21,6 +20,7 @@ const userSelect = {
   nombres: true,
   apellidos: true,
   correo: true,
+  rol: true,
   foto: true,
   fechaIngreso: true,
   fechaUltimaEdicion: true,
@@ -40,7 +40,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException('Usuario no encontrado');
+      throw new UserNotFoundError();
     }
 
     return {
@@ -76,7 +76,7 @@ export class UserService {
       });
 
       if (exists) {
-        throw new ConflictException(
+        throw new DomainConflictError(
           'El correo o documento ya esta en uso por otro usuario',
         );
       }
@@ -139,7 +139,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException('Usuario no encontrado');
+      throw new UserNotFoundError();
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -189,7 +189,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException('Usuario no encontrado');
+      throw new UserNotFoundError();
     }
 
     return {
@@ -199,18 +199,14 @@ export class UserService {
     };
   }
 
-  async deleteUser(id: number, currentUserId: number) {
+  async deleteUser(id: number) {
     const userExists = await this.prisma.usuario.findUnique({
       where: { id },
       select: { id: true },
     });
 
     if (!userExists) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
-
-    if (id === currentUserId) {
-      throw new ForbiddenException('No puedes eliminar tu propia cuenta');
+      throw new UserNotFoundError();
     }
 
     await this.prisma.usuario.delete({

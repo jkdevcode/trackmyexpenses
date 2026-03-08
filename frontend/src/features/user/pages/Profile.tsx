@@ -1,11 +1,13 @@
-import { useState, useRef } from "react";
-import { useFormik } from "formik";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { useTranslation } from "react-i18next";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Avatar } from "@heroui/avatar";
 import { addToast } from "@heroui/toast";
+import { isAxiosError } from "axios";
 
 import ChangePasswordCard from "../components/ChangePasswordCard";
 import { useUpdateProfileMutation } from "../hooks/useUserMutations";
@@ -15,6 +17,13 @@ import { getErrorMessage } from "@/utils/errors";
 import { appColor } from "@/theme/theme.config";
 import { getProfileSchema } from "@/schemas/profile";
 import { CameraIcon } from "@/components/ui/CameraIcon";
+
+interface ProfileFormValues {
+  nombres: string;
+  apellidos: string;
+  correo: string;
+  documento: string;
+}
 
 const ProfilePage = () => {
   const { t } = useTranslation(["profile", "auth", "validation"]);
@@ -49,64 +58,80 @@ const ProfilePage = () => {
     }
   };
 
-  const formik = useFormik({
-    initialValues: {
+  const defaultValues = useMemo<ProfileFormValues>(
+    () => ({
       nombres: user?.nombres || "",
       apellidos: user?.apellidos || "",
       correo: user?.correo || "",
       documento: user?.documento || "",
-    },
-    enableReinitialize: true,
-    validationSchema: getProfileSchema(t),
-    onSubmit: async (values) => {
-      try {
-        if (!user?.id) return;
+    }),
+    [user],
+  );
 
-        const response = await updateProfileMutation.mutateAsync({
-          userId: user.id,
-          names: values,
-          currentUser: {
-            nombres: user.nombres,
-            apellidos: user.apellidos,
-            correo: user.correo,
-            documento: user.documento,
-          },
-          foto,
-        });
+  const {
+    handleSubmit,
+    register,
+    reset,
+    formState: { errors, touchedFields, isDirty },
+  } = useForm<ProfileFormValues>({
+    defaultValues,
+    resolver: yupResolver(getProfileSchema(t)),
+    mode: "onTouched",
+  });
 
-        if (!response) {
-          addToast({
-            title: t("profile:success"),
-            color: "success",
-            timeout: 3000,
-          });
+  useEffect(() => {
+    reset(defaultValues);
+  }, [defaultValues, reset]);
 
-          return;
-        }
+  const onSubmit = async (values: ProfileFormValues) => {
+    try {
+      if (!user?.id) return;
 
+      const response = await updateProfileMutation.mutateAsync({
+        userId: user.id,
+        names: values,
+        currentUser: {
+          nombres: user.nombres,
+          apellidos: user.apellidos,
+          correo: user.correo,
+          documento: user.documento,
+        },
+        foto,
+      });
+
+      if (!response) {
         addToast({
           title: t("profile:success"),
           color: "success",
           timeout: 3000,
         });
 
-        login(response.user);
-      } catch (error: any) {
-        addToast({
-          title: t("profile:error"),
-          description:
-            error.response?.status === 409
-              ? t("auth:errors.user_exists")
-              : getErrorMessage(error, t),
-          color: "danger",
-          timeout: 5000,
-        });
+        return;
       }
-    },
-  });
+
+      addToast({
+        title: t("profile:success"),
+        color: "success",
+        timeout: 3000,
+      });
+
+      login(response.user);
+    } catch (error: unknown) {
+      const isConflict = isAxiosError(error) && error.response?.status === 409;
+
+      addToast({
+        title: t("profile:error"),
+        description: isConflict
+          ? t("auth:errors.user_exists")
+          : getErrorMessage(error, t),
+        color: "danger",
+        timeout: 5000,
+      });
+    }
+  };
 
   const handleReset = () => {
-    formik.resetForm();
+    reset(defaultValues);
     setFoto(null);
     setFotoPreview(user?.foto ? `${ASSETS_URL}${user.foto}` : "");
   };
@@ -146,62 +171,46 @@ const ProfilePage = () => {
         </CardHeader>
 
         <CardBody className="mt-8">
-          <form className="space-y-8" onSubmit={formik.handleSubmit}>
+          <form className="space-y-8" onSubmit={handleSubmit(onSubmit)}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
                 color={appColor}
-                errorMessage={formik.errors.nombres}
-                isInvalid={formik.touched.nombres && !!formik.errors.nombres}
+                errorMessage={errors.nombres?.message}
+                isInvalid={!!touchedFields.nombres && !!errors.nombres}
                 label={t("auth:fields.name.label")}
-                name="nombres"
                 placeholder={t("auth:fields.name.placeholder")}
-                value={formik.values.nombres}
                 variant="bordered"
-                onBlur={formik.handleBlur}
-                onChange={formik.handleChange}
+                {...register("nombres")}
               />
               <Input
                 color={appColor}
-                errorMessage={formik.errors.apellidos}
-                isInvalid={
-                  formik.touched.apellidos && !!formik.errors.apellidos
-                }
+                errorMessage={errors.apellidos?.message}
+                isInvalid={!!touchedFields.apellidos && !!errors.apellidos}
                 label={t("auth:fields.lastname.label")}
-                name="apellidos"
                 placeholder={t("auth:fields.lastname.placeholder")}
-                value={formik.values.apellidos}
                 variant="bordered"
-                onBlur={formik.handleBlur}
-                onChange={formik.handleChange}
+                {...register("apellidos")}
               />
 
               <Input
                 color={appColor}
-                errorMessage={formik.errors.correo}
-                isInvalid={formik.touched.correo && !!formik.errors.correo}
+                errorMessage={errors.correo?.message}
+                isInvalid={!!touchedFields.correo && !!errors.correo}
                 label={t("auth:fields.email.label")}
-                name="correo"
                 placeholder={t("auth:fields.email.placeholder")}
                 type="email"
-                value={formik.values.correo}
                 variant="bordered"
-                onBlur={formik.handleBlur}
-                onChange={formik.handleChange}
+                {...register("correo")}
               />
 
               <Input
                 color={appColor}
-                errorMessage={formik.errors.documento}
-                isInvalid={
-                  formik.touched.documento && !!formik.errors.documento
-                }
+                errorMessage={errors.documento?.message}
+                isInvalid={!!touchedFields.documento && !!errors.documento}
                 label={t("auth:fields.document_id.label")}
-                name="documento"
                 placeholder={t("auth:fields.document_id.placeholder")}
-                value={formik.values.documento}
                 variant="bordered"
-                onBlur={formik.handleBlur}
-                onChange={formik.handleChange}
+                {...register("documento")}
               />
             </div>
 
@@ -209,7 +218,7 @@ const ProfilePage = () => {
               <Button
                 className="w-full font-semibold shadow-lg"
                 color={appColor}
-                disabled={!formik.dirty && !foto}
+                disabled={!isDirty && !foto}
                 isLoading={updateProfileMutation.isPending}
                 type="submit"
                 variant="solid"

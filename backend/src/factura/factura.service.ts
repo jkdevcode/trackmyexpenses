@@ -1,30 +1,34 @@
 import {
+  BadRequestException,
   Inject,
   Injectable,
   InternalServerErrorException,
-  NotFoundException,
-  ConflictException,
 } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
-import { PrismaService } from '../prisma/prisma.service';
 import { AddProductoFacturaDto } from './dto/add-producto.dto';
+import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
 import { CreateFacturaDto } from './dto/create-factura.dto';
-import { Prisma } from '@prisma/client';
 import { Logger } from 'nestjs-pino';
 import { PeriodFilter } from './factura.types';
 import { RequestContext } from '../common/context/request-context';
-
-const FACTURA_LIST_SELECT = {
-  id: true,
-  codigoFactura: true,
-  metodoPago: true,
-  lugarCompra: true,
-  nitProveedor: true,
-  fechaHoraCompra: true,
-  totalPagar: true,
-  usuarioId: true,
-} as const;
+import {
+  assertValidFacturaItems,
+  calculateDiscountedTotal,
+  calculateFacturaTotal,
+  calculateSpendingTrend,
+  FacturaDomainValidationError,
+  getPeriodWindow,
+  normalizeAndValidateOcrItem,
+} from './factura.domain';
+import { FacturaNotFoundError } from './errors/factura-not-found.error';
+import { DomainConflictError } from '../common/errors/domain-conflict.error';
+import {
+  FACTURA_REPOSITORY,
+  FacturaRepositoryTx,
+} from './factura.repository.port';
+import type { FacturaRepository } from './factura.repository.port';
+import type { MetodoPagoValue } from './factura.repository.port';
 
 type FacturaStats = {
   currentPeriodInvoices: number;
@@ -33,30 +37,47 @@ type FacturaStats = {
   totalInvoices: number;
 };
 
+type CreateFacturaItemInput = {
+  productoId: number;
+  cantidad: number;
+  descuento?: number;
+  unidad?: string;
+};
+
+type CreateFacturaInput = {
+  metodoPago: MetodoPagoValue;
+  lugarCompra: string;
+  nitProveedor?: string;
+  fechaHoraCompra?: Date;
+  items: CreateFacturaItemInput[];
+};
+
 @Injectable()
 export class FacturaService {
   constructor(
-    private prisma: PrismaService,
+    @Inject(FACTURA_REPOSITORY) private readonly repo: FacturaRepository,
     private logger: Logger,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   async create(userId: number, dto: CreateFacturaDto) {
     try {
-      const codigoFactura = `FAC-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-      const factura = await this.prisma.factura.create({
-        data: {
-          codigoFactura,
-          metodoPago: dto.metodoPago,
-          lugarCompra: dto.lugarCompra || 'Comercio Desconocido',
-          nitProveedor: dto.nitProveedor,
-          fechaHoraCompra: new Date(dto.fecha),
-          totalPagar: dto.total,
-          usuarioId: userId,
-        },
-        select: FACTURA_LIST_SELECT,
-      });
+      const factura = await this.repo.transaction((tx) =>
+        this.createFacturaWithItemsTx(
+          tx,
+          userId,
+          {
+            metodoPago: dto.metodoPago,
+            lugarCompra: dto.lugarCompra || 'Comercio Desconocido',
+            nitProveedor: dto.nitProveedor,
+            fechaHoraCompra: dto.fechaHoraCompra
+              ? new Date(dto.fechaHoraCompra)
+              : undefined,
+            items: dto.items,
+          },
+          'FAC',
+        ),
+      );
 
       return {
         status: 201,
@@ -64,12 +85,48 @@ export class FacturaService {
         factura,
       };
     } catch (error: unknown) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof FacturaNotFoundError
+      ) {
+        throw error;
+      }
+
       this.logger.error({
         msg: 'Error al crear factura',
         requestId: RequestContext.getRequestId(),
         error,
       });
       throw new InternalServerErrorException('Error al crear factura');
+    }
+  }
+
+  async createFromOcr(userId: number, dto: ConfirmFacturaDto) {
+    try {
+      const factura = await this.repo.transaction(async (tx) => {
+        const input = await this.buildCreateInputFromOcrTx(tx, dto);
+        return this.createFacturaWithItemsTx(tx, userId, input, 'OCR');
+      });
+
+      return {
+        status: 201,
+        message: 'Factura OCR confirmada exitosamente',
+        data: { factura },
+      };
+    } catch (error: unknown) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof FacturaNotFoundError
+      ) {
+        throw error;
+      }
+
+      this.logger.error({
+        msg: 'Error al crear factura desde OCR',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
+      throw new InternalServerErrorException('Error al confirmar factura');
     }
   }
 
@@ -81,29 +138,16 @@ export class FacturaService {
   ) {
     try {
       const { startDate, endDate, prevStartDate, prevEndDate } =
-        this.getPeriodWindow(period);
-
-      const where = {
-        usuarioId: userId,
-        fechaHoraCompra: {
-          gte: startDate,
-          lte: endDate,
-        },
-      };
-
-      const skip = (page - 1) * limit;
+        getPeriodWindow(period);
 
       const [facturas, total, stats] = await Promise.all([
-        this.prisma.factura.findMany({
-          where,
-          orderBy: {
-            fechaHoraCompra: 'desc',
-          },
-          skip,
-          take: limit,
-          select: FACTURA_LIST_SELECT,
-        }),
-        this.prisma.factura.count({ where }),
+        this.repo.findFacturasByUserAndRange(
+          userId,
+          { startDate, endDate },
+          page,
+          limit,
+        ),
+        this.repo.countFacturasByUserAndRange(userId, { startDate, endDate }),
         this.calculateStats(
           userId,
           startDate,
@@ -135,6 +179,36 @@ export class FacturaService {
     }
   }
 
+  async findOne(userId: number, facturaId: number) {
+    try {
+      const factura = await this.repo.findFacturaDetailByUser(
+        userId,
+        facturaId,
+      );
+
+      if (!factura) {
+        throw new FacturaNotFoundError();
+      }
+
+      return {
+        status: 200,
+        message: 'Factura obtenida exitosamente',
+        factura,
+      };
+    } catch (error: unknown) {
+      if (error instanceof FacturaNotFoundError) {
+        throw error;
+      }
+
+      this.logger.error({
+        msg: 'Error al obtener detalle de factura',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
+      throw new InternalServerErrorException('Error al obtener factura');
+    }
+  }
+
   async getStats(userId: number, period: PeriodFilter = 'month') {
     const cacheKey = `factura:stats:${userId}:${period}`;
     const cached = await this.cacheManager.get<FacturaStats>(cacheKey);
@@ -147,7 +221,7 @@ export class FacturaService {
     }
 
     const { startDate, endDate, prevStartDate, prevEndDate } =
-      this.getPeriodWindow(period);
+      getPeriodWindow(period);
 
     const stats = await this.calculateStats(
       userId,
@@ -171,80 +245,41 @@ export class FacturaService {
     facturaId: number,
     dto: AddProductoFacturaDto,
   ) {
-    const factura = await this.prisma.factura.findFirst({
-      where: {
-        id: facturaId,
-        usuarioId: userId,
-      },
-      select: { id: true },
-    });
+    const factura = await this.repo.findFacturaIdByUser(userId, facturaId);
 
     if (!factura) {
-      throw new NotFoundException('Factura no encontrada');
+      throw new FacturaNotFoundError();
     }
 
-    const producto = await this.prisma.producto.findUnique({
-      where: { id: dto.productoId },
-      select: { id: true, precioUnitario: true },
-    });
+    const producto = await this.repo.findProductoById(dto.productoId);
 
     if (!producto) {
-      throw new NotFoundException('Producto no encontrado');
+      throw new FacturaNotFoundError('Producto no encontrado');
     }
 
     const precioUnitario = Number(producto.precioUnitario);
     const descuento = dto.descuento || 0;
-    const precioConDescuento = precioUnitario * (1 - descuento / 100);
-    const precioTotal = precioConDescuento * dto.cantidad;
+    const precioTotal = calculateDiscountedTotal(
+      precioUnitario,
+      dto.cantidad,
+      descuento,
+      false,
+    );
 
     try {
-      const result = await this.prisma.$transaction(async (tx) => {
-        const fp = await tx.facturaProducto.create({
-          data: {
-            facturaId,
-            productoId: dto.productoId,
-            cantidad: dto.cantidad,
-            descuento: new Prisma.Decimal(descuento),
-            precioTotal: new Prisma.Decimal(precioTotal),
-          },
-          select: {
-            id: true,
-            facturaId: true,
-            productoId: true,
-            cantidad: true,
-            descuento: true,
-            precioTotal: true,
-          },
+      const result = await this.repo.transaction(async (tx) => {
+        const fp = await tx.createFacturaProducto({
+          facturaId,
+          productoId: dto.productoId,
+          cantidad: dto.cantidad,
+          descuento,
+          precioTotal,
         });
 
-        const updatedFactura = await tx.factura.update({
-          where: { id: facturaId },
-          data: {
-            totalPagar: { increment: precioTotal },
-          },
-          select: {
-            id: true,
-            codigoFactura: true,
-            totalPagar: true,
-            productos: {
-              select: {
-                id: true,
-                productoId: true,
-                cantidad: true,
-                descuento: true,
-                precioTotal: true,
-                producto: {
-                  select: {
-                    id: true,
-                    codigo: true,
-                    nombre: true,
-                    precioUnitario: true,
-                  },
-                },
-              },
-            },
-          },
-        });
+        const updatedFactura = await tx.updateFacturaTotalAndGetDetails(
+          facturaId,
+          precioTotal,
+        );
 
         return { fp, updatedFactura };
       });
@@ -255,13 +290,9 @@ export class FacturaService {
         data: result,
       };
     } catch (error: unknown) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException('El producto ya esta en la factura');
+      if (error instanceof DomainConflictError) {
+        throw error;
       }
-
       this.logger.error({
         msg: 'Error agregando producto',
         requestId: RequestContext.getRequestId(),
@@ -274,55 +305,136 @@ export class FacturaService {
     }
   }
 
-  private getPeriodWindow(period: PeriodFilter) {
-    const now = new Date();
-    const startDate = new Date();
-    const endDate = new Date();
-    const prevStartDate = new Date();
-    const prevEndDate = new Date();
-
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
-
-    switch (period) {
-      case 'day':
-        prevStartDate.setDate(now.getDate() - 1);
-        prevStartDate.setHours(0, 0, 0, 0);
-        prevEndDate.setDate(now.getDate() - 1);
-        prevEndDate.setHours(23, 59, 59, 999);
-        break;
-      case 'week': {
-        const day = now.getDay();
-        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-        startDate.setDate(diff);
-
-        prevStartDate.setTime(startDate.getTime());
-        prevStartDate.setDate(startDate.getDate() - 7);
-        prevEndDate.setTime(prevStartDate.getTime());
-        prevEndDate.setDate(prevStartDate.getDate() + 6);
-        prevEndDate.setHours(23, 59, 59, 999);
-        break;
+  private async createFacturaWithItemsTx(
+    tx: FacturaRepositoryTx,
+    userId: number,
+    input: CreateFacturaInput,
+    codePrefix: 'FAC' | 'OCR',
+  ) {
+    try {
+      assertValidFacturaItems(input.items);
+    } catch (error: unknown) {
+      if (error instanceof FacturaDomainValidationError) {
+        throw new BadRequestException(error.message);
       }
-      case 'year':
-        startDate.setMonth(0, 1);
-
-        prevStartDate.setFullYear(now.getFullYear() - 1, 0, 1);
-        prevStartDate.setHours(0, 0, 0, 0);
-        prevEndDate.setFullYear(now.getFullYear() - 1, 11, 31);
-        prevEndDate.setHours(23, 59, 59, 999);
-        break;
-      case 'month':
-      default:
-        startDate.setDate(1);
-
-        prevStartDate.setMonth(now.getMonth() - 1, 1);
-        prevStartDate.setHours(0, 0, 0, 0);
-        prevEndDate.setDate(0);
-        prevEndDate.setHours(23, 59, 59, 999);
-        break;
+      throw error;
     }
 
-    return { startDate, endDate, prevStartDate, prevEndDate };
+    const productIds = [...new Set(input.items.map((item) => item.productoId))];
+
+    const products = await tx.findProductosByIds(productIds);
+
+    if (products.length !== productIds.length) {
+      const foundIds = new Set(products.map((product) => product.id));
+      const missingIds = productIds.filter((id) => !foundIds.has(id));
+
+      throw new FacturaNotFoundError(
+        `Productos no encontrados: ${missingIds.join(', ')}`,
+      );
+    }
+
+    const productById = new Map(
+      products.map((product) => [product.id, product]),
+    );
+
+    const detalles = input.items.map((item) => {
+      const product = productById.get(item.productoId)!;
+      const precioUnitario = Number(product.precioUnitario);
+      const descuento = item.descuento ?? 0;
+      const precioTotal = calculateDiscountedTotal(
+        precioUnitario,
+        item.cantidad,
+        descuento,
+      );
+
+      return {
+        ...item,
+        descuento,
+        precioTotal,
+      };
+    });
+
+    const totalPagar = calculateFacturaTotal(
+      detalles.map((item) => item.precioTotal),
+    );
+
+    const factura = await tx.createFactura({
+      usuarioId: userId,
+      codigoFactura: this.generateFacturaCode(codePrefix),
+      metodoPago: input.metodoPago,
+      lugarCompra: input.lugarCompra,
+      nitProveedor: input.nitProveedor,
+      fechaHoraCompra: input.fechaHoraCompra ?? new Date(),
+      totalPagar,
+    });
+
+    await Promise.all(
+      detalles.map((item) =>
+        tx.createFacturaProducto({
+          facturaId: factura.id,
+          productoId: item.productoId,
+          cantidad: item.cantidad,
+          unidad: item.unidad,
+          descuento: item.descuento,
+          precioTotal: item.precioTotal,
+        }),
+      ),
+    );
+
+    return tx.findFacturaByIdWithRelations(factura.id);
+  }
+
+  private async buildCreateInputFromOcrTx(
+    tx: FacturaRepositoryTx,
+    dto: ConfirmFacturaDto,
+  ): Promise<CreateFacturaInput> {
+    const items: CreateFacturaItemInput[] = [];
+
+    for (const item of dto.productos) {
+      let normalized: ReturnType<typeof normalizeAndValidateOcrItem>;
+      try {
+        normalized = normalizeAndValidateOcrItem(item);
+      } catch (error: unknown) {
+        if (error instanceof FacturaDomainValidationError) {
+          throw new BadRequestException(error.message);
+        }
+        throw error;
+      }
+
+      let producto = await tx.findProductoByNombre(normalized.nombreDetectado);
+
+      if (!producto) {
+        if (
+          !Number.isFinite(normalized.precioUnitario) ||
+          normalized.precioUnitario <= 0
+        ) {
+          throw new BadRequestException(
+            'Items OCR sin producto existente requieren precioUnitario valido',
+          );
+        }
+
+        producto = await tx.createProducto({
+          nombre: normalized.nombreDetectado,
+          codigo: this.generateProductoCode(),
+          precioUnitario: normalized.precioUnitario,
+        });
+      }
+
+      items.push({
+        productoId: producto.id,
+        cantidad: normalized.cantidad,
+        descuento: normalized.descuento,
+        unidad: normalized.unidad,
+      });
+    }
+
+    return {
+      metodoPago: dto.factura.metodoPago,
+      lugarCompra: dto.factura.lugarCompra,
+      nitProveedor: dto.factura.nitProveedor,
+      fechaHoraCompra: new Date(dto.factura.fechaHoraCompra),
+      items,
+    };
   }
 
   private async calculateStats(
@@ -334,65 +446,32 @@ export class FacturaService {
   ): Promise<FacturaStats> {
     const [
       currentPeriodCount,
-      currentPeriodAggregate,
+      totalSpending,
       totalInvoices,
-      prevFacturasAggregate,
+      prevTotalSpending,
     ] = await Promise.all([
-      this.prisma.factura.count({
-        where: {
-          usuarioId: userId,
-          fechaHoraCompra: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-      }),
-      this.prisma.factura.aggregate({
-        where: {
-          usuarioId: userId,
-          fechaHoraCompra: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-        _sum: {
-          totalPagar: true,
-        },
-      }),
-      this.prisma.factura.count({
-        where: { usuarioId: userId },
-      }),
-      this.prisma.factura.aggregate({
-        where: {
-          usuarioId: userId,
-          fechaHoraCompra: {
-            gte: prevStartDate,
-            lte: prevEndDate,
-          },
-        },
-        _sum: {
-          totalPagar: true,
-        },
+      this.repo.countFacturasByUserAndRange(userId, { startDate, endDate }),
+      this.repo.sumTotalPagarByUserAndRange(userId, { startDate, endDate }),
+      this.repo.countFacturasByUser(userId),
+      this.repo.sumTotalPagarByUserAndRange(userId, {
+        startDate: prevStartDate,
+        endDate: prevEndDate,
       }),
     ]);
-
-    const totalSpending = Number(currentPeriodAggregate._sum.totalPagar) || 0;
-    const prevTotalSpending =
-      Number(prevFacturasAggregate._sum.totalPagar) || 0;
-
-    let spendingTrend = 0;
-    if (prevTotalSpending > 0) {
-      spendingTrend =
-        ((totalSpending - prevTotalSpending) / prevTotalSpending) * 100;
-    } else if (totalSpending > 0) {
-      spendingTrend = 100;
-    }
 
     return {
       currentPeriodInvoices: currentPeriodCount,
       totalSpending,
-      spendingTrend: Number(spendingTrend.toFixed(1)),
+      spendingTrend: calculateSpendingTrend(totalSpending, prevTotalSpending),
       totalInvoices,
     };
+  }
+
+  private generateFacturaCode(prefix: 'FAC' | 'OCR'): string {
+    return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  }
+
+  private generateProductoCode(): string {
+    return `PROD-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   }
 }

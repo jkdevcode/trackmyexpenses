@@ -16,5 +16,7 @@ const heroUIPackages = extractPerVendorDependencies(packageJson, "@heroui");
 //add @beta tag to  each package
 const heroUIPackagesBeta = heroUIPackages.map((_package) => `${_package}@beta`);
 
-console.log(`Updating @heroui packages: ${heroUIPackagesBeta.join(", ")}`);
+process.stdout.write(
+  `Updating @heroui packages: ${heroUIPackagesBeta.join(", ")}\n`,
+);
 execSync(`npm i --save ${heroUIPackagesBeta.join(" ")}`);

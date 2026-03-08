@@ -1,14 +1,22 @@
-# Features Directory
+# frontend/src/features
 
-Contains vertical slices of functionality, organizing code by domain rather than type.
+Arquitectura vertical por dominio funcional del frontend.
 
-## Structure
+## Responsibilities
 
-- **`/auth`**: Login, Register components, and logic.
-- **`/user`**: User profile and management.
-- **`/landing`**: Components specific to the landing page.
+- Agrupar componentes, hooks, servicios y tipos por feature.
+- Encapsular logica de negocio de UI/API por dominio.
+- Facilitar escalabilidad sin mezclar capas entre modulos.
 
-## Guidelines
+## Main Files
 
-- Each feature folder should ideally contain its own components, hooks, and logic.
-- Promotes isolation and modularity, making the codebase easier to scale.
+- **`auth/`**: Login, registro, guards y servicios de autenticacion.
+- **`dashboard/`**: KPIs, graficas y consumo agregado de facturas.
+- **`invoices/`**: OCR, formulario manual, listado y detalle de facturas.
+- **`user/`**: Perfil y cambio de contrasena.
+
+## Usage
+
+- Cada feature se integra en rutas desde `src/App.tsx`.
+- Los hooks de datos usan React Query y `axiosClient` compartido.
+- Mantener dependencias cruzadas al minimo entre features.
