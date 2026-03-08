@@ -1,5 +1,12 @@
 import type { ExpenseData } from "../types";
-import type { ComponentType } from "react";
+import type {
+  BarChart as BarChartType,
+  Bar as BarType,
+  XAxis as XAxisType,
+  CartesianGrid as CartesianGridType,
+  Tooltip as TooltipType,
+  ResponsiveContainer as ResponsiveContainerType,
+} from "recharts";
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,12 +22,12 @@ interface RevenueChartProps {
 export const RevenueChart = ({ data, loading }: RevenueChartProps) => {
   const { t } = useTranslation("dashboard");
   const [recharts, setRecharts] = useState<{
-    BarChart: ComponentType<any>;
-    Bar: ComponentType<any>;
-    XAxis: ComponentType<any>;
-    CartesianGrid: ComponentType<any>;
-    Tooltip: ComponentType<any>;
-    ResponsiveContainer: ComponentType<any>;
+    BarChart: typeof BarChartType;
+    Bar: typeof BarType;
+    XAxis: typeof XAxisType;
+    CartesianGrid: typeof CartesianGridType;
+    Tooltip: typeof TooltipType;
+    ResponsiveContainer: typeof ResponsiveContainerType;
   } | null>(null);
 
   useEffect(() => {
