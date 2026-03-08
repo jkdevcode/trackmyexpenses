@@ -84,10 +84,7 @@ export class UserController {
 
   @Delete(':id')
   @UseGuards(SelfOrAdminGuard)
-  async remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: RequestWithUser,
-  ) {
-    return this.userService.deleteUser(id, req.user.id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return this.userService.deleteUser(id);
   }
 }
