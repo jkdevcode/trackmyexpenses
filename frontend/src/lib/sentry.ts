@@ -1,16 +1,29 @@
-import * as Sentry from "@sentry/react";
-
 export const initSentry = () => {
-  const dsn = import.meta.env.VITE_SENTRY_DSN; // Sentry DSN (Data Source Name) from environment variables
+  const dsn = import.meta.env.VITE_SENTRY_DSN;
+  const isProd = import.meta.env.PROD;
 
-  if (!dsn) {
+  if (!dsn || !isProd) {
     return;
   }
 
-  Sentry.init({
-    dsn,
-    environment: import.meta.env.VITE_SENTRY_ENVIRONMENT, // staging, development & production.
-    enabled: !import.meta.env.DEV, // Disable Sentry in development mode
-    tracesSampleRate: 0.1,
+  const schedule = (callback: () => void) => {
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      window.requestIdleCallback(callback, { timeout: 2500 });
+
+      return;
+    }
+
+    globalThis.setTimeout(callback, 1200);
+  };
+
+  schedule(() => {
+    void import("@sentry/react").then(({ init }) => {
+      init({
+        dsn,
+        environment: import.meta.env.VITE_SENTRY_ENVIRONMENT,
+        enabled: true,
+        tracesSampleRate: 0.1,
+      });
+    });
   });
 };

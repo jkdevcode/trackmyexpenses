@@ -46,7 +46,6 @@
     "@tailwindcss/postcss": "^4.1.5",
     "@tanstack/react-query": "^5.90.21",
     "axios": "^1.13.2",
-    "formik": "^2.4.9",
     "framer-motion": "^12.23.12",
     "i18next": "^25.0.2",
     "i18next-http-backend": "^3.0.2",
