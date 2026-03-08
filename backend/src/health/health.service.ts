@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { mkdir, access, constants } from 'fs/promises';
 import { join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class HealthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async check() {
     const [database, storage] = await Promise.all([
@@ -42,10 +46,9 @@ export class HealthService {
     status: 'ok' | 'error';
     detail?: string;
   }> {
-    const uploadsDir = join(
-      process.cwd(),
-      process.env.UPLOADS_DIR || './uploads',
-    );
+    const configuredUploadsDir =
+      this.configService.get<string>('UPLOADS_DIR') ?? './uploads/users';
+    const uploadsDir = join(process.cwd(), configuredUploadsDir);
 
     try {
       await mkdir(uploadsDir, { recursive: true });

@@ -11,7 +11,6 @@ import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { StorageService } from '../infra/storage/storage.service';
 import { UserNotFoundError } from './errors/user-not-found.error';
-import { UnauthorizedActionError } from './errors/unauthorized-action.error';
 import { DomainConflictError } from '../common/errors/domain-conflict.error';
 
 const userSelect = {
@@ -200,7 +199,7 @@ export class UserService {
     };
   }
 
-  async deleteUser(id: number, currentUserId: number) {
+  async deleteUser(id: number) {
     const userExists = await this.prisma.usuario.findUnique({
       where: { id },
       select: { id: true },
@@ -208,10 +207,6 @@ export class UserService {
 
     if (!userExists) {
       throw new UserNotFoundError();
-    }
-
-    if (id === currentUserId) {
-      throw new UnauthorizedActionError('No puedes eliminar tu propia cuenta');
     }
 
     await this.prisma.usuario.delete({

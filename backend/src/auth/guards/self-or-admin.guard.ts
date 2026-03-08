@@ -31,7 +31,7 @@ export class SelfOrAdminGuard implements CanActivate {
 
     if (!isSelf && !isAdmin) {
       throw new UnauthorizedActionError(
-        'No autorizado para editar este usuario',
+        'No autorizado para acceder a este recurso',
       );
     }
 

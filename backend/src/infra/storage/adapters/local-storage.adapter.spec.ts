@@ -1,5 +1,6 @@
 import { InternalServerErrorException } from '@nestjs/common';
 import { mkdir, writeFile } from 'fs/promises';
+import { ConfigService } from '@nestjs/config';
 import { LocalStorageAdapter } from './local-storage.adapter';
 
 jest.mock('fs/promises', () => ({
@@ -11,7 +12,10 @@ describe('LocalStorageAdapter', () => {
   let adapter: LocalStorageAdapter;
 
   beforeEach(() => {
-    adapter = new LocalStorageAdapter();
+    const configService = {
+      get: jest.fn().mockReturnValue('./uploads/users'),
+    } as unknown as ConfigService;
+    adapter = new LocalStorageAdapter(configService);
     (mkdir as jest.Mock).mockResolvedValue(undefined);
     (writeFile as jest.Mock).mockResolvedValue(undefined);
   });

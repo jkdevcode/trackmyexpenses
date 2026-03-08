@@ -34,6 +34,7 @@ describe('AuthController', () => {
     expect(controller).toBeDefined();
     expect(typeof controller.register).toBe('function');
     expect(typeof controller.login).toBe('function');
+    expect(typeof controller.logout).toBe('function');
   });
 
   it('should call authService.register with dto and uploaded file info', async () => {
@@ -68,7 +69,13 @@ describe('AuthController', () => {
       response: { status: 200, message: 'Login exitoso', user: { id: 1 } },
     };
     authService.login.mockResolvedValue(serviceResponse);
-    configService.get.mockReturnValue('7d');
+    configService.get.mockImplementation(
+      (key: string, defaultValue?: string) => {
+        if (key === 'JWT_EXPIRES_IN') return '7d';
+        if (key === 'NODE_ENV') return 'test';
+        return defaultValue;
+      },
+    );
     const cookie = jest.fn();
     const res = { cookie } as unknown as Response;
 
@@ -81,11 +88,35 @@ describe('AuthController', () => {
       'jwt-token',
       expect.objectContaining({
         httpOnly: true,
-        secure: true,
+        secure: false,
         sameSite: 'strict',
         maxAge: 604800000,
       }),
     );
     expect(result).toEqual(serviceResponse.response);
+  });
+
+  it('should clear auth cookie on logout', () => {
+    configService.get.mockImplementation(
+      (key: string, defaultValue?: string) => {
+        if (key === 'NODE_ENV') return 'test';
+        return defaultValue;
+      },
+    );
+    const clearCookie = jest.fn();
+    const res = { clearCookie } as unknown as Response;
+
+    const result = controller.logout(res);
+
+    expect(clearCookie).toHaveBeenCalledWith(
+      'token',
+      expect.objectContaining({
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        path: '/',
+      }),
+    );
+    expect(result).toEqual({ status: 200, message: 'Logout exitoso' });
   });
 });
