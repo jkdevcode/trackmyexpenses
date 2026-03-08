@@ -1,45 +1,23 @@
-# Frontend - TrackMyExpenses
+# frontend
 
-Aplicación web moderna construida con React y HeroUI para la gestión de finanzas personales.
+SPA React (Vite + TypeScript) que consume la API del backend y renderiza dashboard, perfil y flujo OCR.
 
-## Descripción
+## Responsibilities
 
-Interfaz de usuario responsiva y amigable que permite a los usuarios interactuar con el sistema de gastos, visualizar su perfil y cargar facturas.
+- Implementar UI por features (`auth`, `dashboard`, `invoices`, `user`, `landing`).
+- Consumir API con `axiosClient` y cachear datos con React Query.
+- Gestionar sesion mediante cookies HttpOnly (login/logout/me) y rutas protegidas.
 
-## Stack Tecnológico
+## Main Files
 
-- **Core:** React 19, TypeScript, Vite
-- **UI:** HeroUI (NextUI), Tailwind CSS v4, Framer Motion
-- **Routing:** React Router v7
-- **Estado/Forms:** Context API, Yup, Formik/React Hook Form
-- **i18n:** i18next, react-i18next
+- **`src/main.tsx`**: Entrada de app, router, providers y estilos globales.
+- **`src/provider.tsx`**: QueryClient, HeroUI, SessionProvider, ThemeProvider y error boundary.
+- **`src/App.tsx`**: Definicion de rutas lazy + wrappers `ProtectedRoute/PublicOnlyRoute`.
+- **`src/lib/axiosClient.ts`**: Cliente HTTP central (`withCredentials: true`).
 
-## Arquitectura
+## Usage
 
-La estructura del proyecto está organizada por capas funcionales:
-
-- `src/pages`: Vistas principales (Login, Dashboard, Profile).
-- `src/components`: Componentes reutilizables (UI) y específicos de dominio.
-- `src/layouts`: Estructuras base (AppLayout, AuthLayout).
-- `src/contexts`: Gestión de estado global (SessionContext, ThemeContext).
-- `src/features`: Lógica encapsulada por funcionalidad (auth, facturas).
-
-## Sistema de Navegación
-
-Diseño adaptativo para ofrecer la mejor experiencia en cualquier dispositivo:
-
-- **Desktop/Tablet:** `Sidebar` lateral fijo o colapsable.
-- **Mobile:** `MobileNavbar` inferior/superior para acceso rápido.
-- Estilos visuales gestionados mediante variables de tema y `colorApp`.
-
-## Autenticación
-
-- **Rutas Protegidas:** Wrapper `ProtectedRoute` que verifica la sesión antes de renderizar contenido privado.
-- **Manejo de Sesión:** `SessionContext` mantiene el estado del usuario y token.
-- **Persistencia:** Recuperación de sesión al recargar mediante almacenamiento local/cookies.
-
-## UX/UI
-
-- **Temas:** Soporte nativo para modo Claro y Oscuro, sincronizado con HeroUI.
-- **Internacionalización:** Cambio dinámico de idioma (Español / Inglés).
-- **Feedback:** Uso de Toasts para notificaciones de éxito o error en operaciones asíncronas.
+- Desarrollo: `npm install && npm run dev`.
+- Calidad: `npm run lint`.
+- Build: `npm run build`.
+- Arquitectura: componentes genericos en `src/components`, logica vertical en `src/features` y formularios validados via `src/schemas`.
