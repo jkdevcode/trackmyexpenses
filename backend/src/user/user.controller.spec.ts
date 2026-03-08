@@ -68,7 +68,11 @@ describe('UserController', () => {
   });
 
   it('should call changePassword with request user id and dto', async () => {
-    const dto = { currentPassword: 'old', newPassword: 'new' };
+    const dto = {
+      currentPassword: 'old',
+      newPassword: 'new',
+      confirmPassword: 'new',
+    };
     const req = {
       user: { id: 10, rol: AppRole.USER },
     } as unknown as RequestWithUserArg;
