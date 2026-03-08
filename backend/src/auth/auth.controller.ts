@@ -15,6 +15,14 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { parseJwtExpiryToMs } from './utils/parse-jwt-expiry.util';
+import {
+  AUTH_COOKIE_NAME,
+  buildAuthCookieOptions,
+} from './utils/auth-cookie-options.util';
+import {
+  imageFileInterceptorOptions,
+  optionalImageFilePipe,
+} from '../common/upload/upload-options';
 
 @Controller('auth')
 export class AuthController {
@@ -24,10 +32,10 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  @UseInterceptors(FileInterceptor('foto'))
+  @UseInterceptors(FileInterceptor('foto', imageFileInterceptorOptions))
   async register(
     @Body() dto: RegisterUserDto,
-    @UploadedFile() foto?: Express.Multer.File,
+    @UploadedFile(optionalImageFilePipe) foto?: Express.Multer.File,
   ) {
     return this.authService.register(dto, foto?.buffer, foto?.originalname);
   }
@@ -40,14 +48,31 @@ export class AuthController {
   ) {
     const { token, response } = await this.authService.login(dto);
     const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN', '7d');
+    const isProduction =
+      this.configService.get<string>('NODE_ENV') === 'production';
+    const cookieOptions = buildAuthCookieOptions(
+      parseJwtExpiryToMs(expiresIn),
+      isProduction,
+    );
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: parseJwtExpiryToMs(expiresIn),
-    });
+    res.cookie(AUTH_COOKIE_NAME, token, cookieOptions);
 
     return response;
+  }
+
+  @Post('logout')
+  logout(@Res({ passthrough: true }) res: Response) {
+    const isProduction =
+      this.configService.get<string>('NODE_ENV') === 'production';
+
+    res.clearCookie(
+      AUTH_COOKIE_NAME,
+      buildAuthCookieOptions(undefined, isProduction),
+    );
+
+    return {
+      status: 200,
+      message: 'Logout exitoso',
+    };
   }
 }

@@ -23,6 +23,10 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SelfOrAdminGuard } from '../auth/guards/self-or-admin.guard';
 import { AppRole } from '../auth/roles.enum';
+import {
+  imageFileInterceptorOptions,
+  optionalImageFilePipe,
+} from '../common/upload/upload-options';
 
 interface RequestWithUser extends ExpressRequest {
   user: {
@@ -48,6 +52,7 @@ export class UserController {
   }
 
   @Get(':id')
+  @UseGuards(SelfOrAdminGuard)
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.userService.findOne(id);
   }
@@ -63,11 +68,11 @@ export class UserController {
   @Patch(':id')
   @UseGuards(SelfOrAdminGuard)
   @UsePipes(ZodValidationPipe)
-  @UseInterceptors(FileInterceptor('foto'))
+  @UseInterceptors(FileInterceptor('foto', imageFileInterceptorOptions))
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(optionalImageFilePipe) file: Express.Multer.File,
   ) {
     return this.userService.updateProfile(
       id,
@@ -78,10 +83,8 @@ export class UserController {
   }
 
   @Delete(':id')
-  async remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: RequestWithUser,
-  ) {
-    return this.userService.deleteUser(id, req.user.id);
+  @UseGuards(SelfOrAdminGuard)
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return this.userService.deleteUser(id);
   }
 }
