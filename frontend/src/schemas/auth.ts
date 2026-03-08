@@ -1,6 +1,8 @@
+import type { TFunction } from "i18next";
+
 import * as yup from "yup";
 
-export const getLoginSchema = (t: (key: string, options?: any) => string) => {
+export const getLoginSchema = (t: TFunction) => {
   return yup.object({
     documento: yup
       .string()
@@ -14,9 +16,7 @@ export const getLoginSchema = (t: (key: string, options?: any) => string) => {
   });
 };
 
-export const getRegisterSchema = (
-  t: (key: string, options?: any) => string,
-) => {
+export const getRegisterSchema = (t: TFunction) => {
   return yup.object({
     nombre: yup
       .string()

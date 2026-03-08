@@ -62,6 +62,11 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
   return (
     <aside
       className={`hidden md:flex flex-col h-screen border-r border-divider bg-background transition-all duration-300 ease-in-out sticky top-0
@@ -166,7 +171,9 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
               isIconOnly={isCollapsed}
               size="sm"
               variant="flat"
-              onClick={logout}
+              onClick={() => {
+                void handleLogout();
+              }}
             >
               <LogoutIcon />
               {!isCollapsed && <span>{t("auth.logout")}</span>}

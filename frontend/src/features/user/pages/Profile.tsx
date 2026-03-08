@@ -7,6 +7,7 @@ import { Input } from "@heroui/input";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Avatar } from "@heroui/avatar";
 import { addToast } from "@heroui/toast";
+import { isAxiosError } from "axios";
 
 import ChangePasswordCard from "../components/ChangePasswordCard";
 import { useUpdateProfileMutation } from "../hooks/useUserMutations";
@@ -115,13 +116,14 @@ const ProfilePage = () => {
       });
 
       login(response.user);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const isConflict = isAxiosError(error) && error.response?.status === 409;
+
       addToast({
         title: t("profile:error"),
-        description:
-          error.response?.status === 409
-            ? t("auth:errors.user_exists")
-            : getErrorMessage(error, t),
+        description: isConflict
+          ? t("auth:errors.user_exists")
+          : getErrorMessage(error, t),
         color: "danger",
         timeout: 5000,
       });

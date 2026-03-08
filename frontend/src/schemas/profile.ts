@@ -1,6 +1,8 @@
+import type { TFunction } from "i18next";
+
 import * as yup from "yup";
 
-export const getProfileSchema = (t: (key: string, options?: any) => string) => {
+export const getProfileSchema = (t: TFunction) => {
   return yup.object({
     nombres: yup
       .string()
@@ -23,9 +25,7 @@ export const getProfileSchema = (t: (key: string, options?: any) => string) => {
   });
 };
 
-export const getChangePasswordSchema = (
-  t: (key: string, options?: any) => string,
-) => {
+export const getChangePasswordSchema = (t: TFunction) => {
   return yup.object({
     currentPassword: yup.string().required(t("validation:required")),
     newPassword: yup

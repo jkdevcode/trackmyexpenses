@@ -108,7 +108,8 @@
     "processing": "Processing...",
     "success": "Image processed successfully",
     "error": "Error processing image",
-    "invalid_type": "Please upload image files only"
+    "invalid_type": "Only PDF or image files are allowed",
+    "invalid_size": "The file exceeds the 5MB maximum size"
   },
   "form": {
     "title": "Invoice Review",

@@ -1,5 +1,12 @@
 import type { ExpenseData } from "../types";
-import type { ComponentType } from "react";
+import type {
+  LineChart as LineChartType,
+  Line as LineType,
+  XAxis as XAxisType,
+  CartesianGrid as CartesianGridType,
+  Tooltip as TooltipType,
+  ResponsiveContainer as ResponsiveContainerType,
+} from "recharts";
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,12 +25,12 @@ export const AverageTicketChart = ({
 }: AverageTicketChartProps) => {
   const { t } = useTranslation("dashboard");
   const [recharts, setRecharts] = useState<{
-    LineChart: ComponentType<any>;
-    Line: ComponentType<any>;
-    XAxis: ComponentType<any>;
-    CartesianGrid: ComponentType<any>;
-    Tooltip: ComponentType<any>;
-    ResponsiveContainer: ComponentType<any>;
+    LineChart: typeof LineChartType;
+    Line: typeof LineType;
+    XAxis: typeof XAxisType;
+    CartesianGrid: typeof CartesianGridType;
+    Tooltip: typeof TooltipType;
+    ResponsiveContainer: typeof ResponsiveContainerType;
   } | null>(null);
 
   useEffect(() => {

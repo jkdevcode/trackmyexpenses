@@ -9,6 +9,7 @@ import { Link } from "@heroui/link";
 import { Select, SelectItem } from "@heroui/select";
 import { Avatar } from "@heroui/avatar";
 import { addToast } from "@heroui/toast";
+import { isAxiosError } from "axios";
 
 import { useRegisterMutation } from "../hooks/useAuthMutations";
 
@@ -35,6 +36,7 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const registerMutation = useRegisterMutation();
+  const linkColor = appColor === "default" ? "foreground" : "primary";
 
   // Image handling
   const [foto, setFoto] = useState<File | null>(null);
@@ -106,13 +108,14 @@ const RegisterPage = () => {
         timeout: 3000,
       });
       navigate("/login");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const isConflict = isAxiosError(error) && error.response?.status === 409;
+
       addToast({
         title: t("auth:register.error"),
-        description:
-          error.response?.status === 409
-            ? t("auth:errors.user_exists")
-            : getErrorMessage(error, t),
+        description: isConflict
+          ? t("auth:errors.user_exists")
+          : getErrorMessage(error, t),
         color: "danger",
         timeout: 5000,
       });
@@ -313,9 +316,7 @@ const RegisterPage = () => {
               <Link
                 as={RouterLink}
                 className="font-semibold"
-                color={
-                  appColor === "default" ? "foreground" : (appColor as any)
-                }
+                color={linkColor}
                 to="/login"
               >
                 {t("auth:register.login_link")}

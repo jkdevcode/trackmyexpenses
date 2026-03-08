@@ -5,6 +5,7 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { addToast } from "@heroui/toast";
+import { isAxiosError } from "axios";
 
 import { useChangePasswordMutation } from "../hooks/useUserMutations";
 
@@ -47,10 +48,11 @@ const ChangePasswordCard = () => {
         timeout: 3000,
       });
       reset();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If it's a specific 401 from backend "incorrect password", show specific message if possible,
       // or just use generic error. The backend throws Unauthorized for bad current pass.
-      const isUnauthorized = error.response?.status === 401;
+      const isUnauthorized =
+        isAxiosError(error) && error.response?.status === 401;
 
       addToast({
         title: t("profile:security.error"),

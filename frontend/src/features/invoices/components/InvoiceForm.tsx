@@ -9,7 +9,12 @@ import { Card, CardBody, CardHeader } from "@heroui/card";
 import { useDisclosure } from "@heroui/modal";
 import { Select, SelectItem } from "@heroui/select";
 import { DatePicker } from "@heroui/date-picker";
-import { parseDate, getLocalTimeZone, today } from "@internationalized/date";
+import {
+  parseDate,
+  getLocalTimeZone,
+  today,
+  type DateValue,
+} from "@internationalized/date";
 import { useTranslation } from "react-i18next";
 
 import { InvoiceSummary } from "./InvoiceSummary";
@@ -118,7 +123,7 @@ export const InvoiceForm = ({
                       : today(getLocalTimeZone())
                   }
                   variant="bordered"
-                  onChange={(date: any) =>
+                  onChange={(date: DateValue | null) =>
                     field.onChange(date ? date.toString() : "")
                   }
                 />

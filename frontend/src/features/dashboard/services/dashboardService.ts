@@ -7,6 +7,27 @@ import type {
 
 import axiosClient from "@/lib/axiosClient";
 
+type ApiDashboardInvoiceDto = {
+  id: number | string;
+  fechaHoraCompra: string;
+  lugarCompra?: string | null;
+  totalPagar: number | string;
+};
+
+type DashboardFacturasResponse = {
+  facturas?: ApiDashboardInvoiceDto[];
+  stats?: {
+    totalInvoices?: number;
+    totalSpending?: number;
+    currentPeriodInvoices?: number;
+    spendingTrend?: number;
+  };
+};
+
+type DashboardProductosResponse = {
+  productos?: Array<{ id: number | string }>;
+};
+
 interface DashboardViewModel {
   stats: DashboardStats;
   chartData: ExpenseData[];
@@ -17,22 +38,22 @@ export const getDashboardData = async (
   filter: DateFilterType,
 ): Promise<DashboardViewModel> => {
   const [facturasRes, productosRes] = await Promise.all([
-    axiosClient.get(`/facturas?period=${filter}`),
-    axiosClient.get("/productos"),
+    axiosClient.get<DashboardFacturasResponse>(`/facturas?period=${filter}`),
+    axiosClient.get<DashboardProductosResponse>("/productos"),
   ]);
 
   const facturasRaw = facturasRes.data.facturas || [];
   const apiStats = facturasRes.data.stats || {};
   const productosRaw = productosRes.data.productos || [];
 
-  const invoices: Invoice[] = facturasRaw.map((f: any) => ({
+  const invoices: Invoice[] = facturasRaw.map((f) => ({
     id: f.id.toString(),
-    date: f.fechaHoraCompra,
+    date: String(f.fechaHoraCompra),
     provider: f.lugarCompra || "Desconocido",
-    total: parseFloat(f.totalPagar),
+    total: Number(f.totalPagar),
     itemCount: 0,
     status: "processed",
-    rawDate: new Date(f.fechaHoraCompra),
+    rawDate: new Date(String(f.fechaHoraCompra)),
   }));
 
   invoices.sort(
