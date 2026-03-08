@@ -1,21 +1,16 @@
 import React, { createContext, useContext, useEffect, useReducer } from "react";
 
 import axiosClient, { setUnauthorizedHandler } from "@/lib/axiosClient";
-
-interface User {
-  id: number;
-  documento: string;
-  nombres: string;
-  apellidos: string;
-  correo: string;
-  foto: string | null;
-}
+import {
+  logoutRequest,
+  type SessionUser,
+} from "@/features/auth/services/authService";
 
 interface SessionContextType {
-  user: User | null;
+  user: SessionUser | null;
   isAuthenticated: boolean;
-  login: (user: User) => void;
-  logout: () => void;
+  login: (user: SessionUser) => void;
+  logout: () => Promise<void>;
   loading: boolean;
 }
 
@@ -23,7 +18,7 @@ const SessionContext = createContext<SessionContextType>({
   user: null,
   isAuthenticated: false,
   login: () => {},
-  logout: () => {},
+  logout: async () => {},
   loading: true,
 });
 
@@ -35,11 +30,11 @@ export const SessionProvider = ({
   children: React.ReactNode;
 }) => {
   type SessionState = {
-    user: User | null;
+    user: SessionUser | null;
     loading: boolean;
   };
   type SessionAction =
-    | { type: "SET_SESSION"; payload: User | null }
+    | { type: "SET_SESSION"; payload: SessionUser | null }
     | { type: "FINISH_LOADING" };
   const [state, dispatch] = useReducer(
     (currentState: SessionState, action: SessionAction): SessionState => {
@@ -66,7 +61,9 @@ export const SessionProvider = ({
 
     const hydrateSession = async () => {
       try {
-        const response = await axiosClient.get("/users/me");
+        const response = await axiosClient.get<{ user: SessionUser | null }>(
+          "/users/me",
+        );
 
         if (isMounted) {
           dispatch({
@@ -93,12 +90,18 @@ export const SessionProvider = ({
     };
   }, []);
 
-  const login = (newUser: User) => {
+  const login = (newUser: SessionUser) => {
     dispatch({ type: "SET_SESSION", payload: newUser });
   };
 
-  const logout = () => {
-    dispatch({ type: "SET_SESSION", payload: null });
+  const logout = async () => {
+    try {
+      await logoutRequest();
+    } catch {
+      // Always clear local session, even if backend logout endpoint fails.
+    } finally {
+      dispatch({ type: "SET_SESSION", payload: null });
+    }
   };
 
   return (

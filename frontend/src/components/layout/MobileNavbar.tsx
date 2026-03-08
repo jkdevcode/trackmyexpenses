@@ -66,6 +66,12 @@ export const MobileNavbar = () => {
     }
   };
 
+  const handleLogout = async () => {
+    setIsMenuOpen(false);
+    await logout();
+    navigate("/login");
+  };
+
   return (
     <Navbar
       className="md:hidden border-b border-divider"
@@ -195,8 +201,7 @@ export const MobileNavbar = () => {
               startContent={<LogoutIcon />}
               variant="light"
               onPress={() => {
-                setIsMenuOpen(false);
-                logout();
+                void handleLogout();
               }}
             >
               {t("auth.logout")}
