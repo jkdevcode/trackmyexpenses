@@ -1,14 +1,21 @@
-# Contexts Directory
+# frontend/src/contexts
 
-Global state providers using React Context API.
+Providers globales de estado transversal para sesion, tema y consentimiento.
 
-## Key Contexts
+## Responsibilities
 
-- **`SessionContext`**: Manages authenticated user state. Session token is handled by HttpOnly cookies on the backend/browser side.
-- **`ThemeContext`**: Controls light/dark mode theme switching.
-- **`CookieConsentContext`**: Manages user consent for cookies.
+- Mantener estado de usuario autenticado en toda la app.
+- Exponer configuracion de tema claro/oscuro.
+- Registrar consentimiento de cookies del usuario.
+
+## Main Files
+
+- **`session-context.tsx`**: Hydration con `/users/me`, `login`, `logout` y guard de 401.
+- **`theme-context.tsx`**: Estado de tema y persistencia visual.
+- **`cookie-consent-context.tsx`**: Control de banner/estado de consentimiento.
 
 ## Usage
 
-- Wrap the application or specific trees with these providers in `App.tsx` or `Provider.tsx`.
-- Consume using corresponding hooks (e.g., `useSession`).
+- Montados en `src/provider.tsx`.
+- Consumidos via hooks (`useSession`, etc.) desde componentes y rutas.
+- Coordinan autenticacion por cookies sin exponer token en JS.
