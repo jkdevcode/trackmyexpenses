@@ -1,4 +1,11 @@
-import { AxiosError } from "axios";
+import type { TFunction } from "i18next";
+
+import { AxiosError, isAxiosError } from "axios";
+
+type BackendErrorResponse = {
+  message?: string | string[];
+  error?: string;
+};
 
 /**
  * Helper to extract error message from backend response
@@ -6,33 +13,32 @@ import { AxiosError } from "axios";
  * @param t Translation function
  * @returns The translated error message
  */
-export const getErrorMessage = (
-  error: unknown,
-  t: (key: string, options?: any) => string,
-): string => {
-  if (error instanceof Error) {
-    // Check for Axios Error
-    const axiosError = error as AxiosError<any>;
+export const getErrorMessage = (error: unknown, t: TFunction): string => {
+  if (isAxiosError(error)) {
+    const axiosError = error as AxiosError<BackendErrorResponse>;
 
-    if (axiosError.response) {
-      // Backend returned a response with error status
-      const data = axiosError.response.data;
+    if (!axiosError.response) {
+      return t("validation:generic", { defaultValue: "Network error" });
+    }
 
-      // If backend returns a message key or text
-      if (data?.message) {
-        return data.message;
-      }
+    const data = axiosError.response.data;
+    const rawMessage = data?.message;
 
-      // Fallback based on status code
-      if (axiosError.response.status === 404) {
-        return t("validation:generic"); // Or specific not found
-      }
-      if (axiosError.response.status === 401) {
-        return t("validation:unauthorized", { defaultValue: "Unauthorized" });
-      }
-      if (axiosError.response.status === 500) {
-        return t("validation:server_error", { defaultValue: "Server Error" });
-      }
+    if (typeof rawMessage === "string") {
+      return rawMessage;
+    }
+    if (Array.isArray(rawMessage) && rawMessage.length > 0) {
+      return rawMessage.join(", ");
+    }
+
+    if (axiosError.response.status === 404) {
+      return t("validation:not_found");
+    }
+    if (axiosError.response.status === 401) {
+      return t("validation:unauthorized", { defaultValue: "Unauthorized" });
+    }
+    if (axiosError.response.status >= 500) {
+      return t("validation:server_error", { defaultValue: "Server error" });
     }
   }
 

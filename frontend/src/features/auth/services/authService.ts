@@ -5,6 +5,31 @@ export interface LoginPayload {
   contrasena: string;
 }
 
+export interface SessionUser {
+  id: number;
+  documento: string;
+  nombres: string;
+  apellidos: string;
+  correo: string;
+  foto: string | null;
+}
+
+export interface LoginResponse {
+  status: number;
+  message: string;
+  user: SessionUser;
+}
+
+export interface RegisterResponse {
+  status: number;
+  message: string;
+}
+
+export interface LogoutResponse {
+  status: number;
+  message: string;
+}
+
 export interface RegisterPayload {
   tipo_documento: string;
   documento_identidad: string;
@@ -15,13 +40,17 @@ export interface RegisterPayload {
   foto?: File | null;
 }
 
-export const loginRequest = async (payload: LoginPayload) => {
-  const response = await axiosClient.post("auth/login", payload);
+export const loginRequest = async (
+  payload: LoginPayload,
+): Promise<LoginResponse> => {
+  const response = await axiosClient.post<LoginResponse>("auth/login", payload);
 
   return response.data;
 };
 
-export const registerRequest = async (payload: RegisterPayload) => {
+export const registerRequest = async (
+  payload: RegisterPayload,
+): Promise<RegisterResponse> => {
   const formData = new FormData();
 
   formData.append("tipoDocumento", payload.tipo_documento);
@@ -35,9 +64,19 @@ export const registerRequest = async (payload: RegisterPayload) => {
     formData.append("foto", payload.foto);
   }
 
-  const response = await axiosClient.post("/auth/register", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await axiosClient.post<RegisterResponse>(
+    "/auth/register",
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    },
+  );
+
+  return response.data;
+};
+
+export const logoutRequest = async (): Promise<LogoutResponse> => {
+  const response = await axiosClient.post<LogoutResponse>("/auth/logout");
 
   return response.data;
 };
