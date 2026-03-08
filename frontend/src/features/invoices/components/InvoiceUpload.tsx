@@ -1,16 +1,12 @@
 import type { ScanResponse } from "../types";
 
-import { useState } from "react";
-import { Card, CardBody } from "@heroui/card";
-import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
-import { addToast } from "@heroui/toast";
 
-import { useScanInvoiceMutation } from "../hooks/useInvoiceMutations";
+import { useInvoiceUpload } from "../hooks/useInvoiceUpload";
+import { INVOICE_UPLOAD_ACCEPT } from "../constants/upload";
 
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
-import { GalleryIcon } from "@/components/ui/icons";
+import { InvoiceUploadButton } from "./InvoiceUploadButton";
+import { InvoiceUploadDropzone } from "./InvoiceUploadDropzone";
 
 interface InvoiceUploadProps {
   onScanComplete: (data: ScanResponse) => void;
@@ -18,114 +14,36 @@ interface InvoiceUploadProps {
 
 export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
   const { t } = useTranslation("invoices");
-  const scanInvoiceMutation = useScanInvoiceMutation();
-  const [dragActive, setDragActive] = useState(false);
-
-  const handleFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      addToast({
-        title: t("toast.error"),
-        description: t("upload.invalid_type"),
-        color: "danger",
-      });
-
-      return;
-    }
-
-    try {
-      const data = await scanInvoiceMutation.mutateAsync(file);
-
-      onScanComplete(data as ScanResponse);
-      addToast({
-        title: t("toast.success"),
-        description: t("upload.success"),
-        color: "success",
-      });
-    } catch (error) {
-      void error;
-      addToast({
-        title: t("toast.error"),
-        description: t("upload.error"),
-        color: "danger",
-      });
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFile(e.target.files[0]);
-    }
-  };
+  const { dragActive, isPending, handleDrop, handleDrag, handleChange } =
+    useInvoiceUpload({
+      onScanComplete,
+      t,
+    });
 
   return (
-    <Card
-      className={`w-full max-w-xl mx-auto border-2 border-dashed transition-colors ${
-        dragActive
-          ? `${appColorVariants.softBorder} ${appColorVariants.softBg}`
-          : "border-default-300"
-      }`}
+    <InvoiceUploadDropzone
+      dragActive={dragActive}
+      onDragEnter={handleDrag}
+      onDragLeave={handleDrag}
+      onDragOver={handleDrag}
+      onDrop={handleDrop}
     >
-      <CardBody
-        className="py-12 flex flex-col items-center justify-center gap-4 text-center"
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        <div className={`p-4 rounded-full mb-2 ${appColorVariants.softBgText}`}>
-          <GalleryIcon size={48} />
-        </div>
+      <div className="flex gap-2 mt-2">
+        <input
+          accept={INVOICE_UPLOAD_ACCEPT}
+          aria-label="Upload invoice image"
+          className="hidden"
+          disabled={isPending}
+          id="invoice-upload"
+          type="file"
+          onChange={handleChange}
+        />
+        <InvoiceUploadButton disabled={isPending} loading={isPending} />
+      </div>
 
-        <div className="space-y-1">
-          <h3 className="text-xl font-semibold">{t("upload.title")}</h3>
-          <p className="text-default-500 text-sm">{t("upload.subtitle")}</p>
-        </div>
-
-        <div className="flex gap-2 mt-2">
-          <input
-            accept="image/*"
-            aria-label="Upload invoice image"
-            className="hidden"
-            disabled={scanInvoiceMutation.isPending}
-            id="invoice-upload"
-            type="file"
-            onChange={handleChange}
-          />
-          <Button
-            aria-label={t("upload.select_file")}
-            color={appColor}
-            isLoading={scanInvoiceMutation.isPending}
-            onPress={() => document.getElementById("invoice-upload")?.click()}
-          >
-            {scanInvoiceMutation.isPending
-              ? t("upload.processing")
-              : t("upload.select_file")}
-          </Button>
-        </div>
-
-        <p className="text-xs text-default-400 mt-2">
-          JPEG, PNG, WEBP (Max 5MB)
-        </p>
-      </CardBody>
-    </Card>
+      <p className="text-xs text-default-400 mt-2">
+        PDF, JPEG, PNG, WEBP (Max 5MB)
+      </p>
+    </InvoiceUploadDropzone>
   );
 };

@@ -108,7 +108,8 @@
     "processing": "Procesando...",
     "success": "Imagen procesada correctamente",
     "error": "Error al procesar la imagen",
-    "invalid_type": "Por favor, sube solo archivos de imagen"
+    "invalid_type": "Solo se permiten archivos PDF o imagen",
+    "invalid_size": "El archivo supera el límite máximo de 5MB"
   },
   "form": {
     "title": "Revisión de Factura",
