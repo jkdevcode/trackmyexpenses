@@ -24,6 +24,11 @@ import { GetFacturasQueryDto } from './dto/get-facturas-query.dto';
 import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
 import { FacturaOcrService } from './factura-ocr.service';
 import type { Request as ExpressRequest } from 'express';
+import {
+  MAX_UPLOAD_FILE_SIZE,
+  imageFileInterceptorOptions,
+  requiredImageFilePipe,
+} from '../common/upload/upload-options';
 
 interface RequestWithUser extends ExpressRequest {
   user: {
@@ -87,10 +92,16 @@ export class FacturaController {
   }
 
   @Post('ocr')
-  @UseInterceptors(FileInterceptor('image'))
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  @UseInterceptors(FileInterceptor('image', imageFileInterceptorOptions))
+  async uploadFile(
+    @UploadedFile(requiredImageFilePipe) file: Express.Multer.File,
+  ) {
     if (!file) {
       throw new BadRequestException('Se requiere una imagen (field: image)');
+    }
+
+    if (file.size > MAX_UPLOAD_FILE_SIZE) {
+      throw new BadRequestException('El archivo supera el limite de 5MB');
     }
 
     if (!file.mimetype.match(/^image\/(jpeg|png|webp)$/)) {

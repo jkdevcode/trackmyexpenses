@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { HealthService } from './health.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { access, mkdir } from 'fs/promises';
@@ -17,7 +18,14 @@ describe('HealthService', () => {
     prisma = { $queryRaw: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [HealthService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        HealthService,
+        { provide: PrismaService, useValue: prisma },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue('./uploads/users') },
+        },
+      ],
     }).compile();
 
     service = module.get<HealthService>(HealthService);
