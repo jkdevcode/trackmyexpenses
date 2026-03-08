@@ -7,6 +7,8 @@ import { addToast } from "@heroui/toast";
 
 import { getDashboardData } from "../services/dashboardService";
 
+import { getErrorMessage } from "@/utils/errors";
+
 export const useDashboardData = () => {
   const { t } = useTranslation(["dashboard", "common"]);
   const [filter, setFilter] = useState<DateFilterType>("month");
@@ -21,7 +23,7 @@ export const useDashboardData = () => {
 
     addToast({
       title: t("common:error"),
-      description: t("dashboard:errors.load_failed"),
+      description: getErrorMessage(query.error, t),
       color: "danger",
     });
   }, [query.error, t]);
