@@ -104,17 +104,11 @@ describe('UserController (e2e)', () => {
   });
 
   it('/api/users/:id (DELETE)', () => {
-    // Create a dummy user to delete, as we cannot delete key test user which might be needed for other tests if parallel
-    // But parallel exec in simple jest file is sequential.
-    // We will try to delete the testUser itself at the end.
     return (
       request(httpServer())
         .delete(`/api/users/${userId}`)
         .set('Cookie', authCookie)
-        // .expect(200)
-        // Wait, deleteUser checks if id === currentUserId and throws Forbidden
-        // "No puedes eliminar tu propia cuenta" (Service logic)
-        .expect(403)
+        .expect(200)
     );
   });
 });

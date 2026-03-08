@@ -105,10 +105,13 @@ describe('UserController', () => {
 
   it('should call deleteUser with target id', async () => {
     userService.deleteUser.mockResolvedValue({ status: 200 });
+    const req = {
+      user: { id: 10, rol: AppRole.USER },
+    } as unknown as RequestWithUserArg;
 
-    const result = await controller.remove(9);
+    const result = await controller.remove(9, req);
 
-    expect(userService.deleteUser).toHaveBeenCalledWith(9);
+    expect(userService.deleteUser).toHaveBeenCalledWith(9, 10);
     expect(result).toEqual({ status: 200 });
   });
 });

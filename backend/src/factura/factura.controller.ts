@@ -27,7 +27,6 @@ import type { Request as ExpressRequest } from 'express';
 import {
   MAX_UPLOAD_FILE_SIZE,
   imageFileInterceptorOptions,
-  requiredImageFilePipe,
 } from '../common/upload/upload-options';
 
 interface RequestWithUser extends ExpressRequest {
@@ -93,9 +92,7 @@ export class FacturaController {
 
   @Post('ocr')
   @UseInterceptors(FileInterceptor('image', imageFileInterceptorOptions))
-  async uploadFile(
-    @UploadedFile(requiredImageFilePipe) file: Express.Multer.File,
-  ) {
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('Se requiere una imagen (field: image)');
     }

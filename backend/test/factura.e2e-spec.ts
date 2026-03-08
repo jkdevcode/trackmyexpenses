@@ -54,6 +54,11 @@ describe('FacturaController (e2e)', () => {
   });
 
   it('POST /facturas/ocr (scan) should process image', async () => {
+    const tinyPngBuffer = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wn7T9YAAAAASUVORK5CYII=',
+      'base64',
+    );
+
     facturaOcrService.processImage.mockResolvedValue({
       rawText: 'ARROZ 5.000',
       parsed: { productos: [{ nombreDetected: 'ARROZ', precioTotal: 5000 }] },
@@ -62,7 +67,10 @@ describe('FacturaController (e2e)', () => {
 
     await request(app.getHttpServer())
       .post('/facturas/ocr')
-      .attach('image', Buffer.from('fake-image'), 'factura.png')
+      .attach('image', tinyPngBuffer, {
+        filename: 'factura.png',
+        contentType: 'image/png',
+      })
       .expect(201)
       .expect((res) => {
         expect(res.body.rawText).toBe('ARROZ 5.000');

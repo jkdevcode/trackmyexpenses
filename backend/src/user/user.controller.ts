@@ -37,7 +37,7 @@ interface RequestWithUser extends ExpressRequest {
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get()
   @Roles(AppRole.ADMIN)
@@ -84,7 +84,10 @@ export class UserController {
 
   @Delete(':id')
   @UseGuards(SelfOrAdminGuard)
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.deleteUser(id);
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: RequestWithUser,
+  ) {
+    return this.userService.deleteUser(id, req.user.id);
   }
 }
