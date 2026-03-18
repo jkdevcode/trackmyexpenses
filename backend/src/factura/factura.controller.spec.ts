@@ -12,6 +12,8 @@ describe('FacturaController', () => {
     getStats: jest.Mock;
     findOne: jest.Mock;
     addProducto: jest.Mock;
+    update: jest.Mock;
+    remove: jest.Mock;
   };
   let facturaOcrService: {
     processImage: jest.Mock;
@@ -25,6 +27,8 @@ describe('FacturaController', () => {
       getStats: jest.fn(),
       findOne: jest.fn(),
       addProducto: jest.fn(),
+      update: jest.fn(),
+      remove: jest.fn(),
     };
     facturaOcrService = {
       processImage: jest.fn(),
@@ -117,5 +121,29 @@ describe('FacturaController', () => {
 
     expect(facturaService.findAll).toHaveBeenCalledWith(20, 'month', 1, 20);
     expect(result).toEqual({ status: 200, facturas: [] });
+  });
+
+  it('PUT /facturas/:id should call service.update', async () => {
+    const req = { user: { id: 10 } } as any;
+    const dto = {
+      metodoPago: 'EFECTIVO',
+      items: [{ productoId: 1, precioUnitario: 2000 }],
+    };
+    facturaService.update.mockResolvedValue({ status: 200 });
+
+    const result = await controller.update(5, dto as any, req);
+
+    expect(facturaService.update).toHaveBeenCalledWith(10, 5, dto);
+    expect(result).toEqual({ status: 200 });
+  });
+
+  it('DELETE /facturas/:id should call service.remove', async () => {
+    const req = { user: { id: 3 } } as any;
+    facturaService.remove.mockResolvedValue({ status: 200 });
+
+    const result = await controller.remove(7, req);
+
+    expect(facturaService.remove).toHaveBeenCalledWith(3, 7);
+    expect(result).toEqual({ status: 200 });
   });
 });

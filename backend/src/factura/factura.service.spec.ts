@@ -21,6 +21,7 @@ describe('FacturaService', () => {
     countFacturasByUser: jest.Mock;
     sumTotalPagarByUserAndRange: jest.Mock;
     findFacturaDetailByUser: jest.Mock;
+    findFacturaProductosByFacturaId: jest.Mock;
   };
   let logger: { error: jest.Mock };
   let cache: { get: jest.Mock; set: jest.Mock };
@@ -35,6 +36,7 @@ describe('FacturaService', () => {
       countFacturasByUser: jest.fn(),
       sumTotalPagarByUserAndRange: jest.fn(),
       findFacturaDetailByUser: jest.fn(),
+      findFacturaProductosByFacturaId: jest.fn(),
     };
     logger = { error: jest.fn() };
     cache = { get: jest.fn(), set: jest.fn() };
@@ -330,6 +332,70 @@ describe('FacturaService', () => {
     await expect(
       service.addProducto(1, 50, { productoId: 987, cantidad: 1 } as any),
     ).rejects.toBeInstanceOf(FacturaNotFoundError);
+  });
+
+  it('should update factura and item prices', async () => {
+    repo.findFacturaIdByUser.mockResolvedValue({ id: 88 });
+    const tx = {
+      findFacturaProductosByFacturaId: jest.fn().mockResolvedValue([
+        {
+          id: 1,
+          productoId: 10,
+          cantidad: 2,
+          descuento: 10,
+          precioTotal: 3000,
+        },
+      ]),
+      updateFacturaProductoPrecioTotal: jest.fn(),
+      updateFactura: jest.fn(),
+      findFacturaByIdWithRelations: jest.fn().mockResolvedValue({
+        id: 88,
+        codigoFactura: 'FAC-88',
+      }),
+    };
+    repo.transaction.mockImplementation(async (callback: any) => callback(tx));
+
+    const result = await service.update(5, 88, {
+      metodoPago: 'EFECTIVO',
+      items: [{ productoId: 10, precioUnitario: 2000 }],
+    } as any);
+
+    expect(tx.findFacturaProductosByFacturaId).toHaveBeenCalledWith(88);
+    expect(tx.updateFacturaProductoPrecioTotal).toHaveBeenCalledWith({
+      facturaId: 88,
+      productoId: 10,
+      precioTotal: 3600,
+    });
+    expect(tx.updateFactura).toHaveBeenCalledWith(
+      88,
+      expect.objectContaining({
+        metodoPago: 'EFECTIVO',
+        totalPagar: 3600,
+      }),
+    );
+    expect(result).toEqual({
+      status: 200,
+      message: 'Factura actualizada exitosamente',
+      factura: { id: 88, codigoFactura: 'FAC-88' },
+    });
+  });
+
+  it('should delete factura without removing products', async () => {
+    repo.findFacturaIdByUser.mockResolvedValue({ id: 99 });
+    const tx = {
+      deleteFacturaProductosByFacturaId: jest.fn(),
+      deleteFacturaById: jest.fn(),
+    };
+    repo.transaction.mockImplementation(async (callback: any) => callback(tx));
+
+    const result = await service.remove(7, 99);
+
+    expect(tx.deleteFacturaProductosByFacturaId).toHaveBeenCalledWith(99);
+    expect(tx.deleteFacturaById).toHaveBeenCalledWith(99);
+    expect(result).toEqual({
+      status: 200,
+      message: 'Factura eliminada exitosamente',
+    });
   });
 
   it('should return cached stats on getStats', async () => {

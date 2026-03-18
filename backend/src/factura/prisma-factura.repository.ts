@@ -9,6 +9,8 @@ import {
   FacturaRepository,
   FacturaRepositoryTx,
   FacturaStatsDateRange,
+  UpdateFacturaProductoPrecioTotalInput,
+  UpdateFacturaRecordInput,
 } from './factura.repository.port';
 
 const FACTURA_LIST_SELECT = {
@@ -155,6 +157,19 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
     });
   }
 
+  async findFacturaProductosByFacturaId(facturaId: number) {
+    return await this.tx.facturaProducto.findMany({
+      where: { facturaId },
+      select: {
+        id: true,
+        productoId: true,
+        cantidad: true,
+        descuento: true,
+        precioTotal: true,
+      },
+    });
+  }
+
   async createFactura(data: CreateFacturaRecordInput) {
     return await this.tx.factura.create({
       data: {
@@ -167,6 +182,60 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
         totalPagar: new Prisma.Decimal(data.totalPagar),
       },
       select: { id: true },
+    });
+  }
+
+  async updateFactura(facturaId: number, data: UpdateFacturaRecordInput) {
+    const updateData: Prisma.FacturaUpdateInput = {};
+
+    if (data.metodoPago !== undefined) {
+      updateData.metodoPago = data.metodoPago;
+    }
+    if (data.lugarCompra !== undefined) {
+      updateData.lugarCompra = data.lugarCompra;
+    }
+    if (data.nitProveedor !== undefined) {
+      updateData.nitProveedor = data.nitProveedor;
+    }
+    if (data.fechaHoraCompra !== undefined) {
+      updateData.fechaHoraCompra = data.fechaHoraCompra;
+    }
+    if (data.totalPagar !== undefined) {
+      updateData.totalPagar = new Prisma.Decimal(data.totalPagar);
+    }
+
+    return await this.tx.factura.update({
+      where: { id: facturaId },
+      data: updateData,
+    });
+  }
+
+  async updateFacturaProductoPrecioTotal(
+    data: UpdateFacturaProductoPrecioTotalInput,
+  ) {
+    return await this.tx.facturaProducto.update({
+      where: {
+        facturaId_productoId: {
+          facturaId: data.facturaId,
+          productoId: data.productoId,
+        },
+      },
+      data: {
+        precioTotal: new Prisma.Decimal(data.precioTotal),
+      },
+    });
+  }
+
+  async deleteFacturaProductosByFacturaId(facturaId: number) {
+    const result = await this.tx.facturaProducto.deleteMany({
+      where: { facturaId },
+    });
+    return result.count;
+  }
+
+  async deleteFacturaById(facturaId: number) {
+    await this.tx.factura.delete({
+      where: { id: facturaId },
     });
   }
 

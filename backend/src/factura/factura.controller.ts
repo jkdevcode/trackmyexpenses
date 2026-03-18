@@ -3,6 +3,8 @@ import {
   Controller,
   Post,
   Get,
+  Put,
+  Delete,
   Body,
   UseGuards,
   Request,
@@ -19,6 +21,7 @@ import { CreateFacturaDto } from './dto/create-factura.dto';
 import { AddProductoFacturaDto } from './dto/add-producto.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { UpdateFacturaDto } from './dto/update-factura.dto';
 
 import { GetFacturasQueryDto } from './dto/get-facturas-query.dto';
 import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
@@ -88,6 +91,24 @@ export class FacturaController {
     @Request() req: RequestWithUser,
   ) {
     return this.facturaService.addProducto(req.user.id, id, dto);
+  }
+
+  @Put(':id')
+  @UsePipes(ZodValidationPipe)
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateFacturaDto,
+    @Request() req: RequestWithUser,
+  ) {
+    return this.facturaService.update(req.user.id, id, dto);
+  }
+
+  @Delete(':id')
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: RequestWithUser,
+  ) {
+    return this.facturaService.remove(req.user.id, id);
   }
 
   @Post('ocr')
