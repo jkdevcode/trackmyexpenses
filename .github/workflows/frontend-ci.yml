@@ -3,14 +3,9 @@ name: Frontend CI
 on:
   push:
     branches: [develop, main]
-    paths:
-      - "frontend/**"
-      - ".github/workflows/frontend-ci.yml"
 
   pull_request:
     branches: [develop, main]
-    paths:
-      - "frontend/**"
   workflow_dispatch:
 
 permissions:
@@ -21,8 +16,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-changes:
+    name: Check for frontend changes
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - "frontend/**"
+              - ".github/workflows/frontend-ci.yml"
+
   frontend-ci:
     name: Lint + Build + Playwright E2E
+    needs: check-changes
+    if: needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -73,14 +88,26 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     needs:
+      - check-changes
       - frontend-ci
     steps:
       - name: Validate frontend result
         run: |
+          HAS_CHANGES="${{ needs.check-changes.outputs.frontend }}"
           RESULT="${{ needs.frontend-ci.result }}"
-          echo "frontend-ci: ${RESULT}"
+          
+          echo "Changes detected: ${HAS_CHANGES}"
+          echo "Frontend CI result: ${RESULT}"
+          
+          if [[ "${HAS_CHANGES}" == "false" ]]; then
+            echo "No frontend changes detected. Quality gate skipped (Success)."
+            exit 0
+          fi
+
           if [[ "${RESULT}" == "failure" || "${RESULT}" == "cancelled" ]]; then
-            echo "Frontend CI failed."
+            echo "Frontend CI failed or was cancelled."
             exit 1
           fi
+          
           echo "Frontend quality gate passed."
+

@@ -3,14 +3,9 @@ name: Backend CI
 on:
   push:
     branches: [develop, main]
-    paths:
-      - "backend/**"
-      - ".github/workflows/backend-ci.yml"
 
   pull_request:
     branches: [develop, main]
-    paths:
-      - "backend/**"
   workflow_dispatch:
 
 permissions:
@@ -22,8 +17,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-changes:
+    name: Check for backend changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - "backend/**"
+              - ".github/workflows/backend-ci.yml"
+
   backend-quality:
     name: Lint + Unit Tests + Coverage + E2E
+    needs: check-changes
+    if: needs.check-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     services:
@@ -136,8 +151,13 @@ jobs:
 
   backend-docker-build:
     name: Docker Build (No Push)
-    needs:
+    needs: 
+      - check-changes
       - backend-quality
+    if: |
+      always() && 
+      needs.check-changes.outputs.backend == 'true' && 
+      (needs.backend-quality.result == 'success' || needs.backend-quality.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -161,22 +181,34 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     needs:
+      - check-changes
       - backend-quality
       - backend-docker-build
     steps:
       - name: Validate backend result
         run: |
+          HAS_CHANGES="${{ needs.check-changes.outputs.backend }}"
           QUALITY_RESULT="${{ needs.backend-quality.result }}"
           DOCKER_RESULT="${{ needs.backend-docker-build.result }}"
+
+          echo "Changes detected: ${HAS_CHANGES}"
           echo "backend-quality: ${QUALITY_RESULT}"
           echo "backend-docker-build: ${DOCKER_RESULT}"
 
+          if [[ "${HAS_CHANGES}" == "false" ]]; then
+            echo "No backend changes detected. Quality gate skipped (Success)."
+            exit 0
+          fi
+
           if [[ "${QUALITY_RESULT}" == "failure" || "${QUALITY_RESULT}" == "cancelled" ]]; then
-            echo "Backend quality checks failed."
+            echo "Backend quality checks failed or were cancelled."
             exit 1
           fi
+
           if [[ "${DOCKER_RESULT}" == "failure" || "${DOCKER_RESULT}" == "cancelled" ]]; then
-            echo "Backend Docker build failed."
+            echo "Backend Docker build failed or was cancelled."
             exit 1
           fi
+
           echo "Backend quality gate passed."
+
