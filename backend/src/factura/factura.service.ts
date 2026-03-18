@@ -9,6 +9,7 @@ import type { Cache } from 'cache-manager';
 import { AddProductoFacturaDto } from './dto/add-producto.dto';
 import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
 import { CreateFacturaDto } from './dto/create-factura.dto';
+import { UpdateFacturaDto } from './dto/update-factura.dto';
 import { Logger } from 'nestjs-pino';
 import { PeriodFilter } from './factura.types';
 import { RequestContext } from '../common/context/request-context';
@@ -29,6 +30,7 @@ import {
 } from './factura.repository.port';
 import type { FacturaRepository } from './factura.repository.port';
 import type { MetodoPagoValue } from './factura.repository.port';
+import type { UpdateFacturaRecordInput } from './factura.repository.port';
 
 type FacturaStats = {
   currentPeriodInvoices: number;
@@ -206,6 +208,146 @@ export class FacturaService {
         error,
       });
       throw new InternalServerErrorException('Error al obtener factura');
+    }
+  }
+
+  async update(userId: number, facturaId: number, dto: UpdateFacturaDto) {
+    const factura = await this.repo.findFacturaIdByUser(userId, facturaId);
+
+    if (!factura) {
+      throw new FacturaNotFoundError();
+    }
+
+    const itemsToUpdate = dto.items ?? [];
+
+    if (itemsToUpdate.length > 0) {
+      const seen = new Set<number>();
+      for (const item of itemsToUpdate) {
+        if (seen.has(item.productoId)) {
+          throw new BadRequestException(
+            `Producto duplicado en items: ${item.productoId}`,
+          );
+        }
+        seen.add(item.productoId);
+      }
+    }
+
+    try {
+      const updatedFactura = await this.repo.transaction(async (tx) => {
+        const updateData: UpdateFacturaRecordInput = {};
+
+        if (dto.metodoPago !== undefined) {
+          updateData.metodoPago = dto.metodoPago;
+        }
+        if (dto.lugarCompra !== undefined) {
+          updateData.lugarCompra = dto.lugarCompra;
+        }
+        if (dto.nitProveedor !== undefined) {
+          updateData.nitProveedor = dto.nitProveedor || null;
+        }
+        if (dto.fechaHoraCompra !== undefined) {
+          updateData.fechaHoraCompra = new Date(dto.fechaHoraCompra);
+        }
+
+        const existingItems =
+          await tx.findFacturaProductosByFacturaId(facturaId);
+
+        const updatedPrecioTotals = new Map<number, number>();
+
+        if (itemsToUpdate.length > 0) {
+          const existingByProductoId = new Map(
+            existingItems.map((item) => [item.productoId, item]),
+          );
+
+          for (const item of itemsToUpdate) {
+            const current = existingByProductoId.get(item.productoId);
+            if (!current) {
+              throw new FacturaNotFoundError(
+                `Producto no encontrado en factura: ${item.productoId}`,
+              );
+            }
+
+            const cantidad = Number(current.cantidad);
+            const descuento = current.descuento ? Number(current.descuento) : 0;
+
+            const nuevoPrecioTotal = calculateDiscountedTotal(
+              item.precioUnitario,
+              cantidad,
+              descuento,
+            );
+
+            updatedPrecioTotals.set(item.productoId, nuevoPrecioTotal);
+
+            await tx.updateFacturaProductoPrecioTotal({
+              facturaId,
+              productoId: item.productoId,
+              precioTotal: nuevoPrecioTotal,
+            });
+          }
+
+          const totalPagar = calculateFacturaTotal(
+            existingItems.map((item) => {
+              const updated = updatedPrecioTotals.get(item.productoId);
+              return updated ?? Number(item.precioTotal ?? 0);
+            }),
+          );
+
+          updateData.totalPagar = totalPagar;
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          await tx.updateFactura(facturaId, updateData);
+        }
+
+        return tx.findFacturaByIdWithRelations(facturaId);
+      });
+
+      return {
+        status: 200,
+        message: 'Factura actualizada exitosamente',
+        factura: updatedFactura,
+      };
+    } catch (error: unknown) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof FacturaNotFoundError
+      ) {
+        throw error;
+      }
+
+      this.logger.error({
+        msg: 'Error al actualizar factura',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
+      throw new InternalServerErrorException('Error al actualizar factura');
+    }
+  }
+
+  async remove(userId: number, facturaId: number) {
+    const factura = await this.repo.findFacturaIdByUser(userId, facturaId);
+
+    if (!factura) {
+      throw new FacturaNotFoundError();
+    }
+
+    try {
+      await this.repo.transaction(async (tx) => {
+        await tx.deleteFacturaProductosByFacturaId(facturaId);
+        await tx.deleteFacturaById(facturaId);
+      });
+
+      return {
+        status: 200,
+        message: 'Factura eliminada exitosamente',
+      };
+    } catch (error: unknown) {
+      this.logger.error({
+        msg: 'Error al eliminar factura',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
+      throw new InternalServerErrorException('Error al eliminar factura');
     }
   }
 
