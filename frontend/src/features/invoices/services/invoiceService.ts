@@ -6,6 +6,7 @@ import type {
   InvoicePeriod,
   ProductCatalogItem,
   ScanResponse,
+  UpdateFacturaDto,
 } from "../types";
 
 import axiosClient from "@/lib/axiosClient";
@@ -70,6 +71,16 @@ type CreateInvoiceApiResponse = {
   message: string;
 };
 
+type UpdateInvoiceApiResponse = {
+  status: number;
+  message: string;
+};
+
+type DeleteInvoiceApiResponse = {
+  status: number;
+  message: string;
+};
+
 export const scanInvoiceRequest = async (file: File): Promise<ScanResponse> => {
   const formData = new FormData();
 
@@ -99,6 +110,26 @@ export const createInvoiceRequest = async (payload: CreateFacturaDto) => {
   const response = await axiosClient.post<CreateInvoiceApiResponse>(
     "/facturas",
     payload,
+  );
+
+  return response.data;
+};
+
+export const updateInvoiceRequest = async (
+  invoiceId: number,
+  payload: UpdateFacturaDto,
+) => {
+  const response = await axiosClient.put<UpdateInvoiceApiResponse>(
+    `/facturas/${invoiceId}`,
+    payload,
+  );
+
+  return response.data;
+};
+
+export const deleteInvoiceRequest = async (invoiceId: number) => {
+  const response = await axiosClient.delete<DeleteInvoiceApiResponse>(
+    `/facturas/${invoiceId}`,
   );
 
   return response.data;

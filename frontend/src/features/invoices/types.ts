@@ -62,6 +62,17 @@ export interface CreateFacturaDto {
   }[];
 }
 
+export interface UpdateFacturaDto {
+  fechaHoraCompra?: string;
+  metodoPago: string;
+  lugarCompra: string;
+  nitProveedor?: string;
+  items?: {
+    productoId: number;
+    precioUnitario: number;
+  }[];
+}
+
 export interface ProductCatalogItem {
   id: number;
   nombre: string;
