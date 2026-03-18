@@ -7,6 +7,22 @@
     "manual": "Registro Manual",
     "list": "Facturas"
   },
+  "actions": {
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "filters": {
+    "day": "Día",
+    "week": "Semana",
+    "month": "Mes",
+    "year": "Año"
+  },
+  "validation": {
+    "precioUnitario_invalid": "El precio unitario debe ser mayor a 0."
+  },
+  "empty": "No hay facturas en este periodo",
+  "confirmDelete": "¿Seguro que deseas eliminar esta factura?",
   "list": {
     "title": "Lista de Facturas",
     "error": "No se pudieron cargar las facturas.",
