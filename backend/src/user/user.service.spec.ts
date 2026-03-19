@@ -110,6 +110,7 @@ describe('UserService', () => {
           apellidos?: string;
           correo?: string;
           documento?: string;
+          monedaBase?: string;
         };
       },
     ];
