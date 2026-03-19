@@ -18,6 +18,9 @@ import {
   useProductsQuery,
 } from "../hooks/useInvoiceMutations";
 import { calculateInvoiceItemTotal } from "../utils/invoice-item";
+import { formatCurrency } from "../utils/formatters";
+
+import { CreateProductModal } from "./CreateProductModal";
 
 import { appColor } from "@/theme/theme.config";
 import {
@@ -26,8 +29,6 @@ import {
   normalizeCurrencyCode,
 } from "@/constants/currency";
 import { useSession } from "@/contexts/session-context";
-import { formatCurrency } from "../utils/formatters";
-import { CreateProductModal } from "./CreateProductModal";
 
 const CREATE_PRODUCT_KEY = "__create__";
 
@@ -126,8 +127,28 @@ export const ManualInvoiceForm = () => {
     if (!showConversion) return totalCalculado;
     if (!rateIsValid) return null;
 
-    return Math.round((totalCalculado * parsedRate + Number.EPSILON) * 100) / 100;
+    return (
+      Math.round((totalCalculado * parsedRate + Number.EPSILON) * 100) / 100
+    );
   }, [showConversion, rateIsValid, totalCalculado, parsedRate]);
+
+  const productOptions = useMemo(() => {
+    const options = (productsQuery.data ?? []).map((product) => ({
+      key: String(product.id),
+      label: `${product.nombre}${product.codigo ? ` (${product.codigo})` : ""} - ${formatCurrency(
+        product.precioUnitario,
+        i18n.language,
+        moneda,
+      )}`,
+    }));
+
+    options.push({
+      key: CREATE_PRODUCT_KEY,
+      label: t("manual.items.create_product"),
+    });
+
+    return options;
+  }, [productsQuery.data, t, i18n.language, moneda]);
 
   const handleAddItem = () => {
     const productId = Number(selectedProductId);
@@ -407,33 +428,21 @@ export const ManualInvoiceForm = () => {
               label={t("manual.items.producto")}
               selectedKeys={selectedProductId ? [selectedProductId] : []}
               variant="bordered"
+              items={productOptions}
               onChange={(event) => {
                 const value = event.target.value;
 
                 if (value === CREATE_PRODUCT_KEY) {
                   setIsCreateProductOpen(true);
                   setSelectedProductId("");
+
                   return;
                 }
 
                 setSelectedProductId(value);
               }}
             >
-              {(productsQuery.data ?? []).map((product) => (
-                <SelectItem key={String(product.id)}>
-                  {product.nombre}
-                  {product.codigo ? ` (${product.codigo})` : ""} -
-                  {" "}
-                  {formatCurrency(
-                    product.precioUnitario,
-                    i18n.language,
-                    moneda,
-                  )}
-                </SelectItem>
-              ))}
-              <SelectItem key={CREATE_PRODUCT_KEY}>
-                {t("manual.items.create_product")}
-              </SelectItem>
+              {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}
             </Select>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -512,7 +521,11 @@ export const ManualInvoiceForm = () => {
                             value={String(item.cantidad)}
                             variant="bordered"
                             onValueChange={(value) =>
-                              updateItemField(item.productoId, "cantidad", value)
+                              updateItemField(
+                                item.productoId,
+                                "cantidad",
+                                value,
+                              )
                             }
                           />
                         </td>
