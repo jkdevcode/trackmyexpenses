@@ -22,11 +22,18 @@ import { InvoiceItemsModal } from "./InvoiceItemsModal";
 
 import { appColor } from "@/theme/theme.config";
 import { getInvoiceSchema } from "@/schemas/invoice";
+import {
+  DEFAULT_CURRENCY,
+  SUPPORTED_CURRENCIES,
+  normalizeCurrencyCode,
+} from "@/constants/currency";
+import { useSession } from "@/contexts/session-context";
+import { formatCurrency } from "../utils/formatters";
 
 interface InvoiceFormProps {
   initialData: ParsedInvoice;
   onSave: (
-    data: InvoiceFormValues & { totalPagar: number },
+    data: InvoiceFormValues & { totalPagar: number; tasaCambio?: number },
     products: ProductSuggestion[],
   ) => void;
   onCancel: () => void;
@@ -38,7 +45,11 @@ export interface InvoiceFormValues {
   nitProveedor: string;
   fechaHoraCompra: string;
   metodoPago: string;
+  moneda: string;
 }
+
+const roundCurrency = (value: number) =>
+  Math.round((value + Number.EPSILON) * 100) / 100;
 
 export const InvoiceForm = ({
   initialData,
@@ -46,12 +57,23 @@ export const InvoiceForm = ({
   onCancel,
   saving,
 }: InvoiceFormProps) => {
-  const { t } = useTranslation("invoices");
+  const { t, i18n } = useTranslation(["invoices", "common", "validation"]);
+  const { user } = useSession();
   const { isOpen, onOpen, onClose } = useDisclosure();
+
+  const baseCurrency = normalizeCurrencyCode(
+    user?.monedaBase,
+    DEFAULT_CURRENCY,
+  );
+  const detectedCurrency = normalizeCurrencyCode(
+    initialData.monedaDetectada,
+    baseCurrency,
+  );
 
   const [products, setProducts] = useState<ProductSuggestion[]>(
     initialData.productos || [],
   );
+  const [tasaCambio, setTasaCambio] = useState<string>("");
 
   const totalPagar = useMemo(() => {
     return products.reduce((acc, curr) => acc + (curr.precioTotal || 0), 0);
@@ -61,6 +83,7 @@ export const InvoiceForm = ({
     control,
     handleSubmit,
     register,
+    watch,
     formState: { errors, touchedFields },
   } = useForm<InvoiceFormValues>({
     defaultValues: {
@@ -69,13 +92,37 @@ export const InvoiceForm = ({
       fechaHoraCompra:
         initialData.fecha || new Date().toISOString().split("T")[0],
       metodoPago: "EFECTIVO",
+      moneda: detectedCurrency,
     },
     resolver: yupResolver(getInvoiceSchema(t)),
     mode: "onTouched",
   });
 
+  const selectedCurrency = watch("moneda") || detectedCurrency;
+  const showConversion = selectedCurrency !== baseCurrency;
+  const parsedRate = Number(tasaCambio);
+  const rateIsValid = Number.isFinite(parsedRate) && parsedRate > 0;
+  const effectiveRate = showConversion
+    ? rateIsValid
+      ? parsedRate
+      : null
+    : 1;
+
+  const totalBase = useMemo(() => {
+    if (effectiveRate === null) return null;
+
+    return roundCurrency(totalPagar * effectiveRate);
+  }, [totalPagar, effectiveRate]);
+
   const submitForm = (values: InvoiceFormValues) => {
-    onSave({ ...values, totalPagar }, products);
+    const rateToSend =
+      values.moneda === baseCurrency
+        ? undefined
+        : rateIsValid
+          ? parsedRate
+          : undefined;
+
+    onSave({ ...values, totalPagar, tasaCambio: rateToSend }, products);
   };
 
   return (
@@ -160,17 +207,81 @@ export const InvoiceForm = ({
                 </Select>
               )}
             />
+            <Controller
+              control={control}
+              name="moneda"
+              render={({ field }) => (
+                <Select
+                  isRequired
+                  errorMessage={errors.moneda?.message}
+                  isInvalid={!!touchedFields.moneda && !!errors.moneda}
+                  label={t("form.currency.label")}
+                  placeholder={t("form.currency.placeholder")}
+                  selectedKeys={field.value ? [field.value] : []}
+                  variant="bordered"
+                  onChange={(e) => field.onChange(e.target.value)}
+                >
+                  {SUPPORTED_CURRENCIES.map((code) => (
+                    <SelectItem key={code}>
+                      {t(`common:currency.options.${code}`, code)}
+                    </SelectItem>
+                  ))}
+                </Select>
+              )}
+            />
           </div>
 
-          <div className="border-t border-default-200 pt-4 mt-2">
+          <p className="text-sm text-default-500">
+            {initialData.monedaDetectada
+              ? t("form.currency.detected", {
+                  currency: normalizeCurrencyCode(
+                    initialData.monedaDetectada,
+                    baseCurrency,
+                  ),
+                })
+              : t("form.currency.fallback", { currency: baseCurrency })}
+          </p>
+
+          {showConversion ? (
+            <Input
+              color={appColor}
+              description={t("form.currency.rate_hint")}
+              label={t("form.currency.rate")}
+              min={0.000001}
+              step="0.000001"
+              type="number"
+              value={tasaCambio}
+              variant="bordered"
+              onValueChange={setTasaCambio}
+            />
+          ) : null}
+
+          <div className="border-t border-default-200 pt-4 mt-2 space-y-3">
             <Input
               readOnly
               className="font-bold text-lg"
               color={appColor}
               description={t("form.total_desc")}
               label={t("form.total")}
-              value={`$ ${new Intl.NumberFormat("es-CO").format(totalPagar)}`}
+              value={formatCurrency(totalPagar, i18n.language, selectedCurrency)}
             />
+
+            {showConversion ? (
+              <Input
+                readOnly
+                className="font-semibold"
+                color={appColor}
+                description={t("form.currency.base_desc", {
+                  currency: baseCurrency,
+                })}
+                label={t("form.currency.total_base")}
+                value={
+                  totalBase === null
+                    ? t("form.currency.pending")
+                    : formatCurrency(totalBase, i18n.language, baseCurrency)
+                }
+              />
+            ) : null}
           </div>
         </CardBody>
       </Card>
@@ -182,6 +293,7 @@ export const InvoiceForm = ({
 
         {products.length > 10 ? (
           <InvoiceSummary
+            currencyCode={selectedCurrency}
             totalAmount={totalPagar}
             totalItems={products.length}
             onViewProducts={onOpen}
@@ -206,7 +318,11 @@ export const InvoiceForm = ({
                     {p.cantidad} x {p.nombreDetected}
                   </span>
                   <span>
-                    ${new Intl.NumberFormat("es-CO").format(p.precioTotal)}
+                    {formatCurrency(
+                      p.precioTotal,
+                      i18n.language,
+                      selectedCurrency,
+                    )}
                   </span>
                 </li>
               ))}
@@ -225,6 +341,7 @@ export const InvoiceForm = ({
       </div>
 
       <InvoiceItemsModal
+        currencyCode={selectedCurrency}
         isOpen={isOpen}
         products={products}
         onClose={onClose}

@@ -4,7 +4,7 @@ import type {
   ConfirmFacturaDto,
 } from "@/features/invoices/types";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { addToast } from "@heroui/toast";
 import { useNavigate } from "react-router-dom";
@@ -25,9 +25,32 @@ import { InvoiceUpload } from "./InvoiceUpload";
 import { appColor } from "@/theme/theme.config";
 import { appColorVariants } from "@/theme/app-color-variants";
 import { useConfirmInvoiceMutation } from "@/features/invoices/hooks/useInvoiceMutations";
+import { useSession } from "@/contexts/session-context";
+import {
+  DEFAULT_CURRENCY,
+  normalizeCurrencyCode,
+} from "@/constants/currency";
+import { formatCurrency } from "../utils/formatters";
+
+type PendingData = {
+  formData: {
+    fechaHoraCompra: string;
+    metodoPago: string;
+    lugarCompra: string;
+    nitProveedor?: string;
+    totalPagar: number;
+    moneda: string;
+    tasaCambio?: number;
+  };
+  products: ProductSuggestion[];
+};
+
+const roundCurrency = (value: number) =>
+  Math.round((value + Number.EPSILON) * 100) / 100;
 
 export const OcrInvoiceFlow = () => {
-  const { t } = useTranslation("invoices");
+  const { t, i18n } = useTranslation(["invoices", "common"]);
+  const { user } = useSession();
   const [step, setStep] = useState<"upload" | "edit">("upload");
   const [scanData, setScanData] = useState<ScanResponse | null>(null);
   const confirmInvoiceMutation = useConfirmInvoiceMutation();
@@ -38,16 +61,12 @@ export const OcrInvoiceFlow = () => {
     onOpen: onConfirmOpen,
     onClose: onConfirmClose,
   } = useDisclosure();
-  const [pendingData, setPendingData] = useState<{
-    formData: {
-      fechaHoraCompra: string;
-      metodoPago: string;
-      lugarCompra: string;
-      nitProveedor?: string;
-      totalPagar: number;
-    };
-    products: ProductSuggestion[];
-  } | null>(null);
+  const [pendingData, setPendingData] = useState<PendingData | null>(null);
+
+  const baseCurrency = normalizeCurrencyCode(
+    user?.monedaBase,
+    DEFAULT_CURRENCY,
+  );
 
   const handleScanComplete = (data: ScanResponse) => {
     setScanData(data);
@@ -55,13 +74,7 @@ export const OcrInvoiceFlow = () => {
   };
 
   const handlePreSave = (
-    formData: {
-      fechaHoraCompra: string;
-      metodoPago: string;
-      lugarCompra: string;
-      nitProveedor: string;
-      totalPagar: number;
-    },
+    formData: PendingData["formData"],
     products: ProductSuggestion[],
   ) => {
     setPendingData({ formData, products });
@@ -82,6 +95,8 @@ export const OcrInvoiceFlow = () => {
           lugarCompra: pendingData.formData.lugarCompra.trim(),
           nitProveedor: pendingData.formData.nitProveedor?.trim() || undefined,
           totalPagar: pendingData.formData.totalPagar,
+          moneda: pendingData.formData.moneda,
+          tasaCambio: pendingData.formData.tasaCambio,
         },
         productos: pendingData.products
           .filter((p) => p.nombreDetected && p.nombreDetected.trim() !== "")
@@ -111,6 +126,22 @@ export const OcrInvoiceFlow = () => {
       });
     }
   };
+
+  const totalBase = useMemo(() => {
+    if (!pendingData) return null;
+
+    if (pendingData.formData.moneda === baseCurrency) {
+      return pendingData.formData.totalPagar;
+    }
+
+    if (!pendingData.formData.tasaCambio) {
+      return null;
+    }
+
+    return roundCurrency(
+      pendingData.formData.totalPagar * pendingData.formData.tasaCambio,
+    );
+  }, [pendingData, baseCurrency]);
 
   return (
     <>
@@ -159,12 +190,23 @@ export const OcrInvoiceFlow = () => {
               <div className="flex justify-between text-lg">
                 <span className="font-bold">{t("confirm.total")}:</span>
                 <span className={`font-bold ${appColorVariants.textStrong}`}>
-                  $
-                  {new Intl.NumberFormat("es-CO").format(
+                  {formatCurrency(
                     pendingData?.formData.totalPagar || 0,
+                    i18n.language,
+                    pendingData?.formData.moneda,
                   )}
                 </span>
               </div>
+              {pendingData?.formData.moneda !== baseCurrency ? (
+                <div className="flex justify-between text-sm text-default-600">
+                  <span>{t("confirm.total_base")}:</span>
+                  <span>
+                    {totalBase === null
+                      ? t("confirm.total_base_pending")
+                      : formatCurrency(totalBase, i18n.language, baseCurrency)}
+                  </span>
+                </div>
+              ) : null}
             </div>
           </ModalBody>
           <ModalFooter>

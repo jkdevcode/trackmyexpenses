@@ -23,12 +23,14 @@ import { useTranslation } from "react-i18next";
 
 import { appColor } from "@/theme/theme.config";
 import { DeleteIcon, SearchIcon } from "@/components/ui/icons";
+import { formatCurrency } from "../utils/formatters";
 
 interface InvoiceItemsModalProps {
   isOpen: boolean;
   onClose: () => void;
   products: ProductSuggestion[];
   onProductsChange: (products: ProductSuggestion[]) => void;
+  currencyCode?: string;
 }
 
 export const InvoiceItemsModal = ({
@@ -36,8 +38,9 @@ export const InvoiceItemsModal = ({
   onClose,
   products,
   onProductsChange,
+  currencyCode,
 }: InvoiceItemsModalProps) => {
-  const { t } = useTranslation("invoices");
+  const { t, i18n } = useTranslation(["invoices", "common"]);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
   const [filterValue, setFilterValue] = useState("");
@@ -193,7 +196,7 @@ export const InvoiceItemsModal = ({
                       <Input
                         className="w-28"
                         size="sm"
-                        startContent="$"
+                        startContent={currencyCode ? `${currencyCode} ` : "$"}
                         type="number"
                         value={item.precioUnitario.toString()}
                         variant="underlined"
@@ -208,9 +211,10 @@ export const InvoiceItemsModal = ({
                     </TableCell>
                     <TableCell>
                       <span className="font-semibold">
-                        $
-                        {new Intl.NumberFormat("es-CO").format(
+                        {formatCurrency(
                           item.precioTotal,
+                          i18n.language,
+                          currencyCode,
                         )}
                       </span>
                     </TableCell>
