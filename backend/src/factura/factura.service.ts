@@ -15,11 +15,14 @@ import { PeriodFilter } from './factura.types';
 import { RequestContext } from '../common/context/request-context';
 import {
   assertValidFacturaItems,
+  assertValidCurrencyCode,
   calculateDiscountedTotal,
   calculateFacturaTotal,
+  calculateBaseTotal,
   calculateSpendingTrend,
   FacturaDomainValidationError,
   getPeriodWindow,
+  normalizeCurrencyCode,
   normalizeAndValidateOcrItem,
 } from './factura.domain';
 import { FacturaNotFoundError } from './errors/factura-not-found.error';
@@ -31,6 +34,7 @@ import {
 import type { FacturaRepository } from './factura.repository.port';
 import type { MetodoPagoValue } from './factura.repository.port';
 import type { UpdateFacturaRecordInput } from './factura.repository.port';
+import { ExchangeRateService } from '../infra/exchange-rate/exchange-rate.service';
 
 type FacturaStats = {
   currentPeriodInvoices: number;
@@ -39,11 +43,20 @@ type FacturaStats = {
   totalInvoices: number;
 };
 
+type CurrencyInfo = {
+  moneda: string;
+  monedaBase: string;
+  tasaCambio: number;
+  tasaCambioFuente: string | null;
+  tasaCambioFecha: Date | null;
+};
+
 type CreateFacturaItemInput = {
   productoId: number;
   cantidad: number;
   descuento?: number;
   unidad?: string;
+  precioUnitario?: number;
 };
 
 type CreateFacturaInput = {
@@ -52,6 +65,8 @@ type CreateFacturaInput = {
   nitProveedor?: string;
   fechaHoraCompra?: Date;
   items: CreateFacturaItemInput[];
+  moneda?: string;
+  tasaCambio?: number;
 };
 
 @Injectable()
@@ -60,10 +75,17 @@ export class FacturaService {
     @Inject(FACTURA_REPOSITORY) private readonly repo: FacturaRepository,
     private logger: Logger,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly exchangeRateService: ExchangeRateService,
   ) {}
 
   async create(userId: number, dto: CreateFacturaDto) {
     try {
+      const currencyInfo = await this.resolveCurrencyInfo(
+        userId,
+        dto.moneda,
+        dto.tasaCambio,
+      );
+
       const factura = await this.repo.transaction((tx) =>
         this.createFacturaWithItemsTx(
           tx,
@@ -76,8 +98,11 @@ export class FacturaService {
               ? new Date(dto.fechaHoraCompra)
               : undefined,
             items: dto.items,
+            moneda: dto.moneda,
+            tasaCambio: dto.tasaCambio,
           },
           'FAC',
+          currencyInfo,
         ),
       );
 
@@ -105,9 +130,21 @@ export class FacturaService {
 
   async createFromOcr(userId: number, dto: ConfirmFacturaDto) {
     try {
+      const currencyInfo = await this.resolveCurrencyInfo(
+        userId,
+        dto.factura.moneda,
+        dto.factura.tasaCambio,
+      );
+
       const factura = await this.repo.transaction(async (tx) => {
         const input = await this.buildCreateInputFromOcrTx(tx, dto);
-        return this.createFacturaWithItemsTx(tx, userId, input, 'OCR');
+        return this.createFacturaWithItemsTx(
+          tx,
+          userId,
+          input,
+          'OCR',
+          currencyInfo,
+        );
       });
 
       return {
@@ -212,7 +249,10 @@ export class FacturaService {
   }
 
   async update(userId: number, facturaId: number, dto: UpdateFacturaDto) {
-    const factura = await this.repo.findFacturaIdByUser(userId, facturaId);
+    const factura = await this.repo.findFacturaCurrencyByUser(
+      userId,
+      facturaId,
+    );
 
     if (!factura) {
       throw new FacturaNotFoundError();
@@ -267,20 +307,45 @@ export class FacturaService {
               );
             }
 
-            const cantidad = Number(current.cantidad);
-            const descuento = current.descuento ? Number(current.descuento) : 0;
+            const cantidad =
+              item.cantidad !== undefined
+                ? item.cantidad
+                : Number(current.cantidad);
+            const descuento =
+              item.descuento !== undefined
+                ? item.descuento
+                : current.descuento
+                  ? Number(current.descuento)
+                  : 0;
+            const precioUnitario =
+              item.precioUnitario !== undefined
+                ? item.precioUnitario
+                : Number(current.precioUnitario);
+
+            const precioUnitarioFinal = Number.isFinite(precioUnitario)
+              ? precioUnitario
+              : Number(current.precioTotal) / Math.max(cantidad, 1);
+
+            if (!Number.isFinite(precioUnitarioFinal)) {
+              throw new BadRequestException(
+                `precioUnitario invalido para producto ${item.productoId}`,
+              );
+            }
 
             const nuevoPrecioTotal = calculateDiscountedTotal(
-              item.precioUnitario,
+              precioUnitarioFinal,
               cantidad,
               descuento,
             );
 
             updatedPrecioTotals.set(item.productoId, nuevoPrecioTotal);
 
-            await tx.updateFacturaProductoPrecioTotal({
+            await tx.updateFacturaProductoSnapshot({
               facturaId,
               productoId: item.productoId,
+              cantidad,
+              descuento,
+              precioUnitario: precioUnitarioFinal,
               precioTotal: nuevoPrecioTotal,
             });
           }
@@ -293,6 +358,31 @@ export class FacturaService {
           );
 
           updateData.totalPagar = totalPagar;
+          const monedaBase = normalizeCurrencyCode(factura.monedaBase ?? 'COP');
+          const moneda = normalizeCurrencyCode(factura.moneda ?? monedaBase);
+          const tasaCambioRaw = Number(factura.tasaCambio);
+          const tasaCambio =
+            Number.isFinite(tasaCambioRaw) && tasaCambioRaw > 0
+              ? tasaCambioRaw
+              : moneda === monedaBase
+                ? 1
+                : Number.NaN;
+
+          if (!Number.isFinite(tasaCambio) || tasaCambio <= 0) {
+            throw new BadRequestException(
+              'Factura sin tasaCambio valida para actualizar totales',
+            );
+          }
+
+          updateData.moneda = factura.moneda ?? moneda;
+          updateData.monedaBase = factura.monedaBase ?? monedaBase;
+          updateData.tasaCambio = factura.tasaCambio
+            ? Number(factura.tasaCambio)
+            : tasaCambio;
+          updateData.totalPagarBase = calculateBaseTotal(
+            totalPagar,
+            tasaCambio,
+          );
         }
 
         if (Object.keys(updateData).length > 0) {
@@ -387,7 +477,10 @@ export class FacturaService {
     facturaId: number,
     dto: AddProductoFacturaDto,
   ) {
-    const factura = await this.repo.findFacturaIdByUser(userId, facturaId);
+    const factura = await this.repo.findFacturaCurrencyByUser(
+      userId,
+      facturaId,
+    );
 
     if (!factura) {
       throw new FacturaNotFoundError();
@@ -399,7 +492,8 @@ export class FacturaService {
       throw new FacturaNotFoundError('Producto no encontrado');
     }
 
-    const precioUnitario = Number(producto.precioUnitario);
+    const precioUnitario =
+      dto.precioUnitario ?? Number(producto.precioUnitario);
     const descuento = dto.descuento || 0;
     const precioTotal = calculateDiscountedTotal(
       precioUnitario,
@@ -408,19 +502,69 @@ export class FacturaService {
       false,
     );
 
+    const monedaBase = normalizeCurrencyCode(factura.monedaBase ?? 'COP');
+    const moneda = normalizeCurrencyCode(factura.moneda ?? monedaBase);
+    const tasaCambioRaw = Number(factura.tasaCambio);
+    const tasaCambio =
+      Number.isFinite(tasaCambioRaw) && tasaCambioRaw > 0
+        ? tasaCambioRaw
+        : moneda === monedaBase
+          ? 1
+          : Number.NaN;
+
+    if (!Number.isFinite(tasaCambio) || tasaCambio <= 0) {
+      throw new BadRequestException(
+        'Factura sin tasaCambio valida para actualizar totales',
+      );
+    }
+
+    const precioTotalBase = calculateBaseTotal(precioTotal, tasaCambio);
+    const existingTotalBase = Number(factura.totalPagarBase);
+    const existingTotalRaw = Number(factura.totalPagar);
+    const existingTotal = Number.isFinite(existingTotalRaw)
+      ? existingTotalRaw
+      : 0;
+    const shouldBackfillBase =
+      !Number.isFinite(existingTotalBase) || existingTotalBase <= 0;
+
     try {
       const result = await this.repo.transaction(async (tx) => {
+        const backfillData: UpdateFacturaRecordInput = {};
+        if (!factura.moneda) {
+          backfillData.moneda = moneda;
+        }
+        if (!factura.monedaBase) {
+          backfillData.monedaBase = monedaBase;
+        }
+        if (!factura.tasaCambio) {
+          backfillData.tasaCambio = tasaCambio;
+        }
+        if (shouldBackfillBase) {
+          backfillData.totalPagarBase = calculateBaseTotal(
+            existingTotal,
+            tasaCambio,
+          );
+        }
+
+        if (Object.keys(backfillData).length > 0) {
+          await tx.updateFactura(facturaId, backfillData);
+        }
+
         const fp = await tx.createFacturaProducto({
           facturaId,
           productoId: dto.productoId,
           cantidad: dto.cantidad,
           descuento,
+          precioUnitario,
           precioTotal,
+          productoNombre: producto.nombre,
+          productoCodigo: producto.codigo,
         });
 
         const updatedFactura = await tx.updateFacturaTotalAndGetDetails(
           facturaId,
           precioTotal,
+          precioTotalBase,
         );
 
         return { fp, updatedFactura };
@@ -452,6 +596,7 @@ export class FacturaService {
     userId: number,
     input: CreateFacturaInput,
     codePrefix: 'FAC' | 'OCR',
+    currencyInfo: CurrencyInfo,
   ) {
     try {
       assertValidFacturaItems(input.items);
@@ -481,7 +626,8 @@ export class FacturaService {
 
     const detalles = input.items.map((item) => {
       const product = productById.get(item.productoId)!;
-      const precioUnitario = Number(product.precioUnitario);
+      const precioUnitario =
+        item.precioUnitario ?? Number(product.precioUnitario);
       const descuento = item.descuento ?? 0;
       const precioTotal = calculateDiscountedTotal(
         precioUnitario,
@@ -492,12 +638,19 @@ export class FacturaService {
       return {
         ...item,
         descuento,
+        precioUnitario,
         precioTotal,
+        productoNombre: product.nombre,
+        productoCodigo: product.codigo,
       };
     });
 
     const totalPagar = calculateFacturaTotal(
       detalles.map((item) => item.precioTotal),
+    );
+    const totalPagarBase = calculateBaseTotal(
+      totalPagar,
+      currencyInfo.tasaCambio,
     );
 
     const factura = await tx.createFactura({
@@ -508,6 +661,12 @@ export class FacturaService {
       nitProveedor: input.nitProveedor,
       fechaHoraCompra: input.fechaHoraCompra ?? new Date(),
       totalPagar,
+      moneda: currencyInfo.moneda,
+      monedaBase: currencyInfo.monedaBase,
+      tasaCambio: currencyInfo.tasaCambio,
+      tasaCambioFecha: currencyInfo.tasaCambioFecha,
+      tasaCambioFuente: currencyInfo.tasaCambioFuente,
+      totalPagarBase,
     });
 
     await Promise.all(
@@ -518,7 +677,10 @@ export class FacturaService {
           cantidad: item.cantidad,
           unidad: item.unidad,
           descuento: item.descuento,
+          precioUnitario: item.precioUnitario,
           precioTotal: item.precioTotal,
+          productoNombre: item.productoNombre,
+          productoCodigo: item.productoCodigo,
         }),
       ),
     );
@@ -562,11 +724,16 @@ export class FacturaService {
         });
       }
 
+      const precioUnitario = Number.isFinite(normalized.precioUnitario)
+        ? normalized.precioUnitario
+        : undefined;
+
       items.push({
         productoId: producto.id,
         cantidad: normalized.cantidad,
         descuento: normalized.descuento,
         unidad: normalized.unidad,
+        precioUnitario,
       });
     }
 
@@ -576,6 +743,8 @@ export class FacturaService {
       nitProveedor: dto.factura.nitProveedor,
       fechaHoraCompra: new Date(dto.factura.fechaHoraCompra),
       items,
+      moneda: dto.factura.moneda,
+      tasaCambio: dto.factura.tasaCambio,
     };
   }
 
@@ -607,6 +776,77 @@ export class FacturaService {
       spendingTrend: calculateSpendingTrend(totalSpending, prevTotalSpending),
       totalInvoices,
     };
+  }
+
+  private async resolveCurrencyInfo(
+    userId: number,
+    monedaInput?: string,
+    tasaCambioInput?: number,
+  ): Promise<CurrencyInfo> {
+    const userMonedaBase = await this.repo.findUsuarioMonedaBase(userId);
+    const monedaBase = normalizeCurrencyCode(userMonedaBase ?? 'COP');
+    const moneda = normalizeCurrencyCode(monedaInput ?? monedaBase);
+
+    try {
+      assertValidCurrencyCode(monedaBase);
+      assertValidCurrencyCode(moneda);
+    } catch (error: unknown) {
+      if (error instanceof FacturaDomainValidationError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
+
+    if (moneda === monedaBase) {
+      if (tasaCambioInput && Math.abs(tasaCambioInput - 1) > 0.000001) {
+        throw new BadRequestException(
+          'tasaCambio debe ser 1 cuando la moneda coincide con monedaBase',
+        );
+      }
+
+      return {
+        moneda,
+        monedaBase,
+        tasaCambio: 1,
+        tasaCambioFuente: null,
+        tasaCambioFecha: null,
+      };
+    }
+
+    if (tasaCambioInput !== undefined) {
+      if (!Number.isFinite(tasaCambioInput) || tasaCambioInput <= 0) {
+        throw new BadRequestException('tasaCambio invalida');
+      }
+
+      return {
+        moneda,
+        monedaBase,
+        tasaCambio: tasaCambioInput,
+        tasaCambioFuente: 'MANUAL',
+        tasaCambioFecha: new Date(),
+      };
+    }
+
+    try {
+      const rate = await this.exchangeRateService.getRate(moneda, monedaBase);
+      return {
+        moneda,
+        monedaBase,
+        tasaCambio: rate.rate,
+        tasaCambioFuente: rate.source,
+        tasaCambioFecha: rate.fetchedAt,
+      };
+    } catch (error: unknown) {
+      this.logger.error({
+        msg: 'No se pudo obtener tasa de cambio',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
+
+      throw new BadRequestException(
+        'No se pudo obtener tasa de cambio. Proporcione tasaCambio manual',
+      );
+    }
   }
 
   private generateFacturaCode(prefix: 'FAC' | 'OCR'): string {

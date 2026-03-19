@@ -15,6 +15,10 @@ export type FacturaListItem = {
   nitProveedor: string | null;
   fechaHoraCompra: Date;
   totalPagar: unknown;
+  moneda: string | null;
+  monedaBase: string | null;
+  tasaCambio: unknown;
+  totalPagarBase: unknown;
   usuarioId: number;
 };
 
@@ -31,6 +35,12 @@ export type CreateFacturaRecordInput = {
   nitProveedor?: string;
   fechaHoraCompra: Date;
   totalPagar: number;
+  moneda?: string | null;
+  monedaBase?: string | null;
+  tasaCambio?: number | null;
+  tasaCambioFecha?: Date | null;
+  tasaCambioFuente?: string | null;
+  totalPagarBase?: number | null;
 };
 
 export type CreateFacturaProductoInput = {
@@ -39,7 +49,10 @@ export type CreateFacturaProductoInput = {
   cantidad: number;
   unidad?: string;
   descuento: number;
+  precioUnitario: number;
   precioTotal: number;
+  productoNombre: string;
+  productoCodigo: string;
 };
 
 export type CreateProductoInput = {
@@ -54,6 +67,12 @@ export type UpdateFacturaRecordInput = {
   nitProveedor?: string | null;
   fechaHoraCompra?: Date;
   totalPagar?: number;
+  moneda?: string | null;
+  monedaBase?: string | null;
+  tasaCambio?: number | null;
+  tasaCambioFecha?: Date | null;
+  tasaCambioFuente?: string | null;
+  totalPagarBase?: number | null;
 };
 
 export type FacturaProductoRecord = {
@@ -61,19 +80,28 @@ export type FacturaProductoRecord = {
   productoId: number;
   cantidad: number;
   descuento: unknown;
+  precioUnitario: unknown;
   precioTotal: unknown;
 };
 
-export type UpdateFacturaProductoPrecioTotalInput = {
+export type UpdateFacturaProductoSnapshotInput = {
   facturaId: number;
   productoId: number;
+  cantidad: number;
+  descuento: number;
+  precioUnitario: number;
   precioTotal: number;
 };
 
 export interface FacturaRepositoryTx {
-  findProductosByIds(
-    productIds: number[],
-  ): Promise<Array<{ id: number; precioUnitario: unknown }>>;
+  findProductosByIds(productIds: number[]): Promise<
+    Array<{
+      id: number;
+      precioUnitario: unknown;
+      nombre: string;
+      codigo: string;
+    }>
+  >;
   findFacturaProductosByFacturaId(
     facturaId: number,
   ): Promise<FacturaProductoRecord[]>;
@@ -84,7 +112,10 @@ export interface FacturaRepositoryTx {
     productoId: number;
     cantidad: number;
     descuento: unknown;
+    precioUnitario: unknown;
     precioTotal: unknown;
+    productoNombre: string | null;
+    productoCodigo: string | null;
   }>;
   findFacturaByIdWithRelations(facturaId: number): Promise<unknown>;
   findProductoByNombre(nombre: string): Promise<{ id: number } | null>;
@@ -92,13 +123,14 @@ export interface FacturaRepositoryTx {
   updateFacturaTotalAndGetDetails(
     facturaId: number,
     increment: number,
+    incrementBase: number,
   ): Promise<unknown>;
   updateFactura(
     facturaId: number,
     data: UpdateFacturaRecordInput,
   ): Promise<unknown>;
-  updateFacturaProductoPrecioTotal(
-    data: UpdateFacturaProductoPrecioTotalInput,
+  updateFacturaProductoSnapshot(
+    data: UpdateFacturaProductoSnapshotInput,
   ): Promise<unknown>;
   deleteFacturaProductosByFacturaId(facturaId: number): Promise<number>;
   deleteFacturaById(facturaId: number): Promise<void>;
@@ -124,9 +156,24 @@ export interface FacturaRepository {
     userId: number,
     facturaId: number,
   ): Promise<{ id: number } | null>;
-  findProductoById(
-    productoId: number,
-  ): Promise<{ id: number; precioUnitario: unknown } | null>;
+  findFacturaCurrencyByUser(
+    userId: number,
+    facturaId: number,
+  ): Promise<{
+    id: number;
+    totalPagar: unknown;
+    totalPagarBase: unknown;
+    moneda: string | null;
+    monedaBase: string | null;
+    tasaCambio: unknown;
+  } | null>;
+  findProductoById(productoId: number): Promise<{
+    id: number;
+    precioUnitario: unknown;
+    nombre: string;
+    codigo: string;
+  } | null>;
+  findUsuarioMonedaBase(userId: number): Promise<string | null>;
   countFacturasByUser(userId: number): Promise<number>;
   sumTotalPagarByUserAndRange(
     userId: number,
