@@ -10,6 +10,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   confirmInvoiceRequest,
   createInvoiceRequest,
+  createProductRequest,
   deleteInvoiceRequest,
   getProductsRequest,
   scanInvoiceRequest,
@@ -51,4 +52,13 @@ export const useProductsQuery = () =>
   useQuery<ProductCatalogItem[]>({
     queryKey: ["productos"],
     queryFn: getProductsRequest,
+  });
+
+export const useCreateProductMutation = () =>
+  useMutation({
+    mutationFn: (payload: {
+      codigo: string;
+      nombre: string;
+      precioUnitario: number;
+    }) => createProductRequest(payload),
   });
