@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { PeriodFilter } from './factura.types';
 
 export type FacturaItemInput = {
@@ -5,6 +6,7 @@ export type FacturaItemInput = {
   cantidad: number;
   descuento?: number;
   unidad?: string;
+  precioUnitario?: number;
 };
 
 export type OcrProductoInput = {
@@ -53,6 +55,15 @@ export function assertValidFacturaItems(items: FacturaItemInput[]): void {
     ) {
       throw new FacturaDomainValidationError(
         'descuento invalido en items (debe estar entre 0 y 100)',
+      );
+    }
+
+    if (
+      item.precioUnitario !== undefined &&
+      (!Number.isFinite(item.precioUnitario) || item.precioUnitario <= 0)
+    ) {
+      throw new FacturaDomainValidationError(
+        'precioUnitario invalido en items',
       );
     }
 
@@ -111,19 +122,51 @@ export function calculateDiscountedTotal(
   descuento = 0,
   roundResult = true,
 ): number {
-  const subtotal = precioUnitario * cantidad;
-  const descuentoAplicado = subtotal * (descuento / 100);
-  const total = subtotal - descuentoAplicado;
-  return roundResult ? roundCurrency(total) : total;
+  const subtotal = new Prisma.Decimal(precioUnitario).mul(cantidad);
+  const descuentoAplicado = subtotal.mul(
+    new Prisma.Decimal(descuento).div(100),
+  );
+  const total = subtotal.minus(descuentoAplicado);
+  const totalNumber = total.toNumber();
+  return roundResult ? roundCurrency(totalNumber) : totalNumber;
 }
 
 export function calculateFacturaTotal(detalleTotales: number[]): number {
-  const total = detalleTotales.reduce((acc, value) => acc + value, 0);
-  return roundCurrency(total);
+  let total = new Prisma.Decimal(0);
+  for (const value of detalleTotales) {
+    if (!Number.isFinite(value)) {
+      return Number.NaN;
+    }
+    total = total.plus(new Prisma.Decimal(value));
+  }
+  return roundCurrency(total.toNumber());
 }
 
 export function roundCurrency(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
+  return new Prisma.Decimal(value)
+    .toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
+    .toNumber();
+}
+
+export function calculateBaseTotal(
+  totalPagar: number,
+  tasaCambio: number,
+): number {
+  return roundCurrency(
+    new Prisma.Decimal(totalPagar).mul(tasaCambio).toNumber(),
+  );
+}
+
+export function normalizeCurrencyCode(code: string): string {
+  return code.trim().toUpperCase();
+}
+
+export function assertValidCurrencyCode(code: string): void {
+  if (!/^[A-Z]{3}$/.test(code)) {
+    throw new FacturaDomainValidationError(
+      'moneda invalida, debe ser ISO 4217 (3 letras)',
+    );
+  }
 }
 
 export function getPeriodWindow(
