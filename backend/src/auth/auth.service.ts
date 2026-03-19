@@ -22,6 +22,7 @@ type LoginResult = {
       correo: string;
       foto: string | null;
       fechaIngreso: Date;
+      monedaBase: string;
     };
   };
 };
@@ -118,6 +119,7 @@ export class AuthService {
           correo: true,
           foto: true,
           fechaIngreso: true,
+          monedaBase: true,
           contrasena: true,
         },
       });
@@ -146,6 +148,7 @@ export class AuthService {
             correo: user.correo,
             foto: user.foto,
             fechaIngreso: user.fechaIngreso,
+            monedaBase: user.monedaBase,
           },
         },
       };

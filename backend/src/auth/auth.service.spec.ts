@@ -114,6 +114,7 @@ describe('AuthService', () => {
       correo: 'ana@test.com',
       foto: null,
       fechaIngreso: new Date('2026-01-01T00:00:00.000Z'),
+      monedaBase: 'COP',
       contrasena: 'hashed-db',
     };
     prisma.usuario.findUnique.mockResolvedValue(dbUser);
@@ -135,6 +136,7 @@ describe('AuthService', () => {
         correo: true,
         foto: true,
         fechaIngreso: true,
+        monedaBase: true,
         contrasena: true,
       },
     });
@@ -162,6 +164,7 @@ describe('AuthService', () => {
       correo: 'a@a.com',
       foto: null,
       fechaIngreso: new Date(),
+      monedaBase: 'COP',
       contrasena: 'hashed',
     });
     (bcrypt.compare as jest.Mock).mockResolvedValue(false);

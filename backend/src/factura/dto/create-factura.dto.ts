@@ -25,6 +25,15 @@ const createFacturaSchema = z.object({
     'TRANSFERENCIA',
     'OTRO',
   ]),
+  moneda: z
+    .string()
+    .trim()
+    .length(3, { message: 'moneda debe tener 3 letras' })
+    .optional(),
+  tasaCambio: z.coerce
+    .number()
+    .positive({ message: 'tasaCambio debe ser mayor a 0' })
+    .optional(),
   lugarCompra: z.string().min(1),
   nitProveedor: z.string().optional(),
   fechaHoraCompra: z

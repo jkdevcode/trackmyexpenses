@@ -19,6 +19,11 @@ const updateUserSchema = z
       .string()
       .min(5, { message: 'El documento debe tener al menos 5 caracteres' })
       .optional(),
+    monedaBase: z
+      .string()
+      .trim()
+      .length(3, { message: 'monedaBase debe tener 3 letras' })
+      .optional(),
     foto: z
       .string()
       .url({ message: 'La foto debe ser una URL válida' })

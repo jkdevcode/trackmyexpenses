@@ -6,9 +6,20 @@ const updateFacturaItemSchema = z.object({
     .number()
     .int({ message: 'productoId debe ser un entero' })
     .positive({ message: 'productoId debe ser mayor a 0' }),
+  cantidad: z
+    .number()
+    .int({ message: 'cantidad debe ser un entero' })
+    .positive({ message: 'cantidad debe ser mayor a 0' })
+    .optional(),
+  descuento: z
+    .number()
+    .min(0, { message: 'descuento no puede ser negativo' })
+    .max(100, { message: 'descuento no puede ser mayor a 100' })
+    .optional(),
   precioUnitario: z
     .number()
-    .positive({ message: 'precioUnitario debe ser mayor a 0' }),
+    .positive({ message: 'precioUnitario debe ser mayor a 0' })
+    .optional(),
 });
 
 const updateFacturaSchema = z.object({

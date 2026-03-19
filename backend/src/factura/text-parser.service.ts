@@ -67,10 +67,13 @@ export class TextParserService {
     }
 
     const enrichedProducts = await this.enrichProducts(parsedData.productos);
+    const monedaDetectada =
+      parsedData.monedaDetectada ?? TextParserHelper.detectCurrency(rawText);
     return {
       parsed: {
         ...parsedData,
         productos: enrichedProducts,
+        monedaDetectada: monedaDetectada ?? undefined,
       },
       usedFallbackParser,
     };
@@ -240,6 +243,28 @@ class TextParserHelper {
     }
 
     return { cantidad: 1, unidad: 'u' };
+  }
+
+  static detectCurrency(text: string): string | null {
+    const upper = text.toUpperCase();
+
+    if (upper.includes('USD') || upper.includes('US$')) {
+      return 'USD';
+    }
+    if (upper.includes('EUR')) {
+      return 'EUR';
+    }
+    if (upper.includes('COP') || upper.includes('COL')) {
+      return 'COP';
+    }
+    if (upper.includes('MXN')) {
+      return 'MXN';
+    }
+    if (upper.includes('CLP')) {
+      return 'CLP';
+    }
+
+    return null;
   }
 
   static fallbackParse(text: string): unknown[] {

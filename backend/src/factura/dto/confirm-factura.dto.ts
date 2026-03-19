@@ -22,6 +22,15 @@ const facturaConfirmadaSchema = z.object({
         'OTRO',
       ])
       .default('EFECTIVO'),
+    moneda: z
+      .string()
+      .trim()
+      .length(3, { message: 'moneda debe tener 3 letras' })
+      .optional(),
+    tasaCambio: z.coerce
+      .number()
+      .positive({ message: 'tasaCambio debe ser mayor a 0' })
+      .optional(),
     lugarCompra: z.string().min(1),
     nitProveedor: z.string().optional(),
     totalPagar: z.string().or(z.number()).optional(),

@@ -9,13 +9,16 @@ describe('PrismaFacturaRepository', () => {
   beforeEach(() => {
     prisma = {
       $transaction: jest.fn(),
+      $queryRaw: jest.fn(),
       factura: {
         findMany: jest.fn(),
         count: jest.fn(),
         findFirst: jest.fn(),
-        aggregate: jest.fn(),
       },
       producto: {
+        findUnique: jest.fn(),
+      },
+      usuario: {
         findUnique: jest.fn(),
       },
     };
@@ -56,9 +59,9 @@ describe('PrismaFacturaRepository', () => {
   });
 
   it('should convert aggregate totalPagar to number', async () => {
-    prisma.factura.aggregate.mockResolvedValue({
-      _sum: { totalPagar: new Prisma.Decimal('12345.67') },
-    });
+    prisma.$queryRaw.mockResolvedValue([
+      { total: new Prisma.Decimal('12345.67') },
+    ]);
 
     const result = await repository.sumTotalPagarByUserAndRange(1, {
       startDate: new Date('2026-01-01T00:00:00.000Z'),
@@ -73,7 +76,9 @@ describe('PrismaFacturaRepository', () => {
       producto: {
         findMany: jest
           .fn()
-          .mockResolvedValue([{ id: 1, precioUnitario: 1000 }]),
+          .mockResolvedValue([
+            { id: 1, precioUnitario: 1000, nombre: 'AZUCAR', codigo: 'P-1' },
+          ]),
         findFirst: jest.fn(),
         create: jest.fn(),
       },
@@ -94,7 +99,9 @@ describe('PrismaFacturaRepository', () => {
     });
 
     expect(prisma.$transaction).toHaveBeenCalled();
-    expect(result).toEqual([{ id: 1, precioUnitario: 1000 }]);
+    expect(result).toEqual([
+      { id: 1, precioUnitario: 1000, nombre: 'AZUCAR', codigo: 'P-1' },
+    ]);
   });
 
   it('should map Prisma unique constraint error to DomainConflictError in createFacturaProducto', async () => {
@@ -128,7 +135,10 @@ describe('PrismaFacturaRepository', () => {
           productoId: 1,
           cantidad: 1,
           descuento: 0,
+          precioUnitario: 1000,
           precioTotal: 1000,
+          productoNombre: 'AZUCAR',
+          productoCodigo: 'P-1',
         }),
       ),
     ).rejects.toBeInstanceOf(DomainConflictError);
