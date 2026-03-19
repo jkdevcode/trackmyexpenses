@@ -24,10 +24,7 @@ import {
 } from "../utils/invoice-item";
 
 import { appColor } from "@/theme/theme.config";
-import {
-  DEFAULT_CURRENCY,
-  normalizeCurrencyCode,
-} from "@/constants/currency";
+import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 
 const resolveCurrency = (value?: string | null) =>
   normalizeCurrencyCode(value, DEFAULT_CURRENCY);
@@ -165,12 +162,14 @@ export const InvoiceEditModal = ({
           next.precioUnitario = value;
         } else {
           const parsed = Number(value);
+
           if (Number.isFinite(parsed)) {
             next[field] = parsed;
           }
         }
 
         const parsedPrice = Number(next.precioUnitario);
+
         if (Number.isFinite(parsedPrice) && parsedPrice > 0) {
           next.precioTotal = calculateInvoiceItemTotal(
             parsedPrice,
@@ -353,7 +352,7 @@ export const InvoiceEditModal = ({
                         <div>
                           <p className="text-sm font-semibold">{item.nombre}</p>
                           <p className="text-xs text-default-500">
-                            {t("detail.table.cantidad")}: {item.cantidad} ·{" "}
+                            {t("detail.table.cantidad")}: {item.cantidad} ï¿½{" "}
                             {t("detail.table.descuento")}: {item.descuento}%
                           </p>
                         </div>
@@ -412,7 +411,7 @@ export const InvoiceEditModal = ({
                 </div>
                 <div className="flex justify-end">
                   <p className="text-sm font-semibold">
-                    {t("detail.total")}: {" "}
+                    {t("detail.total")}:{" "}
                     {formatCurrency(itemsTotal, i18n.language, currency)}
                   </p>
                 </div>

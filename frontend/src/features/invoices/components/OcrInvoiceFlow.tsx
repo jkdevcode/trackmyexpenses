@@ -19,6 +19,8 @@ import {
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 
+import { formatCurrency } from "../utils/formatters";
+
 import { InvoiceForm } from "./InvoiceForm";
 import { InvoiceUpload } from "./InvoiceUpload";
 
@@ -26,11 +28,7 @@ import { appColor } from "@/theme/theme.config";
 import { appColorVariants } from "@/theme/app-color-variants";
 import { useConfirmInvoiceMutation } from "@/features/invoices/hooks/useInvoiceMutations";
 import { useSession } from "@/contexts/session-context";
-import {
-  DEFAULT_CURRENCY,
-  normalizeCurrencyCode,
-} from "@/constants/currency";
-import { formatCurrency } from "../utils/formatters";
+import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 
 type PendingData = {
   formData: {

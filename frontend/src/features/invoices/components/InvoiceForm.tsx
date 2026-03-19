@@ -17,6 +17,8 @@ import {
 } from "@internationalized/date";
 import { useTranslation } from "react-i18next";
 
+import { formatCurrency } from "../utils/formatters";
+
 import { InvoiceSummary } from "./InvoiceSummary";
 import { InvoiceItemsModal } from "./InvoiceItemsModal";
 
@@ -28,7 +30,6 @@ import {
   normalizeCurrencyCode,
 } from "@/constants/currency";
 import { useSession } from "@/contexts/session-context";
-import { formatCurrency } from "../utils/formatters";
 
 interface InvoiceFormProps {
   initialData: ParsedInvoice;
@@ -102,11 +103,7 @@ export const InvoiceForm = ({
   const showConversion = selectedCurrency !== baseCurrency;
   const parsedRate = Number(tasaCambio);
   const rateIsValid = Number.isFinite(parsedRate) && parsedRate > 0;
-  const effectiveRate = showConversion
-    ? rateIsValid
-      ? parsedRate
-      : null
-    : 1;
+  const effectiveRate = showConversion ? (rateIsValid ? parsedRate : null) : 1;
 
   const totalBase = useMemo(() => {
     if (effectiveRate === null) return null;
@@ -263,7 +260,11 @@ export const InvoiceForm = ({
               color={appColor}
               description={t("form.total_desc")}
               label={t("form.total")}
-              value={formatCurrency(totalPagar, i18n.language, selectedCurrency)}
+              value={formatCurrency(
+                totalPagar,
+                i18n.language,
+                selectedCurrency,
+              )}
             />
 
             {showConversion ? (
