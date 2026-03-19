@@ -11,13 +11,26 @@ import { Select, SelectItem } from "@heroui/select";
 import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
 import { addToast } from "@heroui/toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   useCreateInvoiceMutation,
   useProductsQuery,
 } from "../hooks/useInvoiceMutations";
+import { calculateInvoiceItemTotal } from "../utils/invoice-item";
+import { formatCurrency } from "../utils/formatters";
+
+import { CreateProductModal } from "./CreateProductModal";
 
 import { appColor } from "@/theme/theme.config";
+import {
+  DEFAULT_CURRENCY,
+  SUPPORTED_CURRENCIES,
+  normalizeCurrencyCode,
+} from "@/constants/currency";
+import { useSession } from "@/contexts/session-context";
+
+const CREATE_PRODUCT_KEY = "__create__";
 
 type PaymentMethod =
   | "EFECTIVO"
@@ -50,9 +63,11 @@ type ManualInvoiceItem = {
 };
 
 export const ManualInvoiceForm = () => {
-  const { t } = useTranslation("invoices");
+  const { t, i18n } = useTranslation(["invoices", "common", "validation"]);
+  const { user } = useSession();
   const createInvoiceMutation = useCreateInvoiceMutation();
   const productsQuery = useProductsQuery();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [form, setForm] = useState<ManualInvoiceFormState>(initialState);
   const [formError, setFormError] = useState<string>("");
@@ -60,6 +75,14 @@ export const ManualInvoiceForm = () => {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [itemCantidad, setItemCantidad] = useState<string>("1");
   const [itemDescuento, setItemDescuento] = useState<string>("");
+  const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
+
+  const baseCurrency = normalizeCurrencyCode(
+    user?.monedaBase,
+    DEFAULT_CURRENCY,
+  );
+  const [moneda, setMoneda] = useState<string>(baseCurrency);
+  const [tasaCambio, setTasaCambio] = useState<string>("");
 
   const updateField = <K extends keyof ManualInvoiceFormState>(
     key: K,
@@ -75,6 +98,20 @@ export const ManualInvoiceForm = () => {
       return t("manual.validation.items_required");
     }
 
+    const invalidItem = items.find(
+      (item) =>
+        !Number.isFinite(item.cantidad) ||
+        item.cantidad <= 0 ||
+        (item.descuento !== undefined &&
+          (!Number.isFinite(item.descuento) ||
+            item.descuento < 0 ||
+            item.descuento > 100)),
+    );
+
+    if (invalidItem) {
+      return t("manual.validation.item_invalid");
+    }
+
     return null;
   };
 
@@ -83,8 +120,35 @@ export const ManualInvoiceForm = () => {
     [items],
   );
 
-  const roundCurrency = (value: number) =>
-    Math.round((value + Number.EPSILON) * 100) / 100;
+  const showConversion = moneda !== baseCurrency;
+  const parsedRate = Number(tasaCambio);
+  const rateIsValid = Number.isFinite(parsedRate) && parsedRate > 0;
+  const totalBase = useMemo(() => {
+    if (!showConversion) return totalCalculado;
+    if (!rateIsValid) return null;
+
+    return (
+      Math.round((totalCalculado * parsedRate + Number.EPSILON) * 100) / 100
+    );
+  }, [showConversion, rateIsValid, totalCalculado, parsedRate]);
+
+  const productOptions = useMemo(() => {
+    const options = (productsQuery.data ?? []).map((product) => ({
+      key: String(product.id),
+      label: `${product.nombre}${product.codigo ? ` (${product.codigo})` : ""} - ${formatCurrency(
+        product.precioUnitario,
+        i18n.language,
+        moneda,
+      )}`,
+    }));
+
+    options.push({
+      key: CREATE_PRODUCT_KEY,
+      label: t("manual.items.create_product"),
+    });
+
+    return options;
+  }, [productsQuery.data, t, i18n.language, moneda]);
 
   const handleAddItem = () => {
     const productId = Number(selectedProductId);
@@ -138,9 +202,10 @@ export const ManualInvoiceForm = () => {
       return;
     }
 
-    const subtotalBase = selectedProduct.precioUnitario * cantidad;
-    const subtotal = roundCurrency(
-      subtotalBase - subtotalBase * ((descuento ?? 0) / 100),
+    const subtotal = calculateInvoiceItemTotal(
+      selectedProduct.precioUnitario,
+      cantidad,
+      descuento ?? 0,
     );
 
     const newItem: ManualInvoiceItem = {
@@ -157,6 +222,33 @@ export const ManualInvoiceForm = () => {
     setItemCantidad("1");
     setItemDescuento("");
     setFormError("");
+  };
+
+  const updateItemField = (
+    productoId: number,
+    field: "cantidad" | "descuento",
+    value: string,
+  ) => {
+    const parsed = Number(value);
+
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.productoId !== productoId) return item;
+
+        const next = {
+          ...item,
+          [field]: Number.isFinite(parsed) ? parsed : item[field],
+        } as ManualInvoiceItem;
+
+        next.subtotal = calculateInvoiceItemTotal(
+          next.precioUnitario,
+          next.cantidad,
+          next.descuento ?? 0,
+        );
+
+        return next;
+      }),
+    );
   };
 
   const handleRemoveItem = (productoId: number) => {
@@ -180,6 +272,13 @@ export const ManualInvoiceForm = () => {
       return;
     }
 
+    const rateToSend =
+      moneda === baseCurrency
+        ? undefined
+        : rateIsValid
+          ? parsedRate
+          : undefined;
+
     const payload: CreateFacturaDto = {
       fechaHoraCompra: form.fecha
         ? new Date(form.fecha).toISOString()
@@ -187,6 +286,8 @@ export const ManualInvoiceForm = () => {
       metodoPago: form.metodoPago,
       lugarCompra: form.lugarCompra.trim(),
       nitProveedor: form.nitProveedor.trim() || undefined,
+      moneda,
+      tasaCambio: rateToSend,
       items: items.map((item) => ({
         productoId: item.productoId,
         cantidad: item.cantidad,
@@ -213,6 +314,23 @@ export const ManualInvoiceForm = () => {
         color: "danger",
       });
     }
+  };
+
+  const handleProductCreated = (product: ProductCatalogItem) => {
+    queryClient.setQueryData<ProductCatalogItem[]>(["productos"], (prev) => {
+      const existing = prev ?? [];
+
+      if (existing.some((item) => item.id === product.id)) {
+        return existing;
+      }
+
+      return [...existing, product].sort((a, b) =>
+        a.nombre.localeCompare(b.nombre),
+      );
+    });
+
+    setSelectedProductId(String(product.id));
+    setIsCreateProductOpen(false);
   };
 
   return (
@@ -254,6 +372,36 @@ export const ManualInvoiceForm = () => {
             <SelectItem key="OTRO">{t("common.other", "Otro")}</SelectItem>
           </Select>
 
+          <Select
+            color={appColor}
+            isRequired
+            label={t("manual.currency.label")}
+            placeholder={t("manual.currency.placeholder")}
+            selectedKeys={moneda ? [moneda] : []}
+            variant="bordered"
+            onChange={(event) => setMoneda(event.target.value)}
+          >
+            {SUPPORTED_CURRENCIES.map((code) => (
+              <SelectItem key={code}>
+                {t(`common:currency.options.${code}`, code)}
+              </SelectItem>
+            ))}
+          </Select>
+
+          {showConversion ? (
+            <Input
+              color={appColor}
+              description={t("manual.currency.rate_hint")}
+              label={t("manual.currency.rate")}
+              min={0.000001}
+              step="0.000001"
+              type="number"
+              value={tasaCambio}
+              variant="bordered"
+              onValueChange={setTasaCambio}
+            />
+          ) : null}
+
           <Input
             color={appColor}
             isRequired
@@ -280,16 +428,21 @@ export const ManualInvoiceForm = () => {
               label={t("manual.items.producto")}
               selectedKeys={selectedProductId ? [selectedProductId] : []}
               variant="bordered"
-              onChange={(event) => setSelectedProductId(event.target.value)}
+              items={productOptions}
+              onChange={(event) => {
+                const value = event.target.value;
+
+                if (value === CREATE_PRODUCT_KEY) {
+                  setIsCreateProductOpen(true);
+                  setSelectedProductId("");
+
+                  return;
+                }
+
+                setSelectedProductId(value);
+              }}
             >
-              {(productsQuery.data ?? []).map((product) => (
-                <SelectItem key={String(product.id)}>
-                  {product.nombre} - $
-                  {new Intl.NumberFormat("es-CO").format(
-                    product.precioUnitario,
-                  )}
-                </SelectItem>
-              ))}
+              {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}
             </Select>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -359,17 +512,49 @@ export const ManualInvoiceForm = () => {
                         className="border-b border-default-100"
                       >
                         <td className="py-2 pr-2">{item.nombre}</td>
-                        <td className="py-2 pr-2">{item.cantidad}</td>
                         <td className="py-2 pr-2">
-                          $
-                          {new Intl.NumberFormat("es-CO").format(
+                          <Input
+                            className="max-w-[120px]"
+                            min={1}
+                            size="sm"
+                            type="number"
+                            value={String(item.cantidad)}
+                            variant="bordered"
+                            onValueChange={(value) =>
+                              updateItemField(
+                                item.productoId,
+                                "cantidad",
+                                value,
+                              )
+                            }
+                          />
+                        </td>
+                        <td className="py-2 pr-2">
+                          {formatCurrency(
                             item.precioUnitario,
+                            i18n.language,
+                            moneda,
                           )}
                         </td>
-                        <td className="py-2 pr-2">{item.descuento ?? 0}%</td>
                         <td className="py-2 pr-2">
-                          $
-                          {new Intl.NumberFormat("es-CO").format(item.subtotal)}
+                          <Input
+                            className="max-w-[120px]"
+                            min={0}
+                            size="sm"
+                            type="number"
+                            value={String(item.descuento ?? 0)}
+                            variant="bordered"
+                            onValueChange={(value) =>
+                              updateItemField(
+                                item.productoId,
+                                "descuento",
+                                value,
+                              )
+                            }
+                          />
+                        </td>
+                        <td className="py-2 pr-2">
+                          {formatCurrency(item.subtotal, i18n.language, moneda)}
                         </td>
                         <td className="py-2">
                           <Button
@@ -389,13 +574,28 @@ export const ManualInvoiceForm = () => {
               </div>
             )}
 
-            <Input
-              color={appColor}
-              isReadOnly
-              label={t("manual.total")}
-              value={`$ ${new Intl.NumberFormat("es-CO").format(totalCalculado)}`}
-              variant="bordered"
-            />
+            <div className="grid grid-cols-1 gap-3">
+              <Input
+                color={appColor}
+                isReadOnly
+                label={t("manual.total")}
+                value={formatCurrency(totalCalculado, i18n.language, moneda)}
+                variant="bordered"
+              />
+              {showConversion ? (
+                <Input
+                  color={appColor}
+                  isReadOnly
+                  label={t("manual.currency.total_base")}
+                  value={
+                    totalBase === null
+                      ? t("manual.currency.pending")
+                      : formatCurrency(totalBase, i18n.language, baseCurrency)
+                  }
+                  variant="bordered"
+                />
+              ) : null}
+            </div>
           </div>
 
           {formError ? (
@@ -411,6 +611,12 @@ export const ManualInvoiceForm = () => {
           </Button>
         </form>
       </CardBody>
+
+      <CreateProductModal
+        isOpen={isCreateProductOpen}
+        onClose={() => setIsCreateProductOpen(false)}
+        onCreated={handleProductCreated}
+      />
     </Card>
   );
 };

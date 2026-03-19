@@ -1,9 +1,15 @@
-﻿import type { InvoiceDetailItem } from "../types";
+import type { InvoiceDetailItem } from "../types";
 
 const roundCurrency = (value: number) =>
   Math.round((value + Number.EPSILON) * 100) / 100;
 
 export const getInvoiceItemUnitPrice = (item: InvoiceDetailItem): number => {
+  const direct = Number(item.precioUnitario ?? item.producto?.precioUnitario);
+
+  if (Number.isFinite(direct) && direct > 0) {
+    return roundCurrency(direct);
+  }
+
   const cantidad = Number(item.cantidad ?? 0);
   const descuento = Number(item.descuento ?? 0);
   const divisor = 1 - descuento / 100;
@@ -12,7 +18,7 @@ export const getInvoiceItemUnitPrice = (item: InvoiceDetailItem): number => {
     return roundCurrency(item.precioTotal / cantidad / divisor);
   }
 
-  return Number(item.producto?.precioUnitario ?? 0);
+  return 0;
 };
 
 export const calculateInvoiceItemTotal = (

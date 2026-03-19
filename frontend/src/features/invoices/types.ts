@@ -20,6 +20,7 @@ export interface ParsedInvoice {
     nit?: string;
   };
   fecha?: string | null;
+  monedaDetectada?: string | null;
   productos: ProductSuggestion[];
   totalDetectado?: number | null;
   notes?: string[];
@@ -39,6 +40,8 @@ export interface ConfirmFacturaDto {
     lugarCompra: string;
     nitProveedor?: string;
     totalPagar?: number;
+    moneda?: string;
+    tasaCambio?: number;
   };
   productos: {
     nombreDetectado: string;
@@ -55,6 +58,8 @@ export interface CreateFacturaDto {
   metodoPago: string;
   lugarCompra: string;
   nitProveedor?: string;
+  moneda?: string;
+  tasaCambio?: number;
   items: {
     productoId: number;
     cantidad: number;
@@ -69,12 +74,15 @@ export interface UpdateFacturaDto {
   nitProveedor?: string;
   items?: {
     productoId: number;
-    precioUnitario: number;
+    cantidad?: number;
+    descuento?: number;
+    precioUnitario?: number;
   }[];
 }
 
 export interface ProductCatalogItem {
   id: number;
+  codigo?: string;
   nombre: string;
   precioUnitario: number;
 }
@@ -88,17 +96,26 @@ export interface InvoiceSummaryItem {
   lugarCompra: string;
   metodoPago: string;
   totalPagar: number;
+  moneda?: string | null;
+  monedaBase?: string | null;
+  totalPagarBase?: number | null;
 }
 
 export interface InvoiceDetailItem {
+  id?: number;
+  productoId?: number;
   cantidad: number;
   unidad?: string | null;
   descuento?: number | null;
+  precioUnitario?: number | null;
   precioTotal: number;
-  producto: {
+  productoNombre?: string | null;
+  productoCodigo?: string | null;
+  producto?: {
     id: number;
     nombre: string;
     precioUnitario: number;
+    codigo?: string | null;
   };
 }
 
@@ -110,6 +127,12 @@ export interface InvoiceDetail {
   nitProveedor?: string | null;
   fechaHoraCompra: string;
   totalPagar: number;
+  moneda?: string | null;
+  monedaBase?: string | null;
+  tasaCambio?: number | null;
+  tasaCambioFecha?: string | null;
+  tasaCambioFuente?: string | null;
+  totalPagarBase?: number | null;
   usuario: {
     id: number;
     nombres: string;

@@ -7,12 +7,14 @@ export interface UpdateProfilePayload {
     apellidos: string;
     correo: string;
     documento: string;
+    monedaBase?: string;
   };
   currentUser: {
     nombres?: string;
     apellidos?: string;
     correo?: string;
     documento?: string;
+    monedaBase?: string;
   };
   foto?: File | null;
 }
@@ -31,6 +33,11 @@ export const updateProfileRequest = async (payload: UpdateProfilePayload) => {
   }
   if (payload.names.documento !== payload.currentUser.documento) {
     formData.append("documento", payload.names.documento);
+  }
+  if (payload.names.monedaBase !== payload.currentUser.monedaBase) {
+    if (payload.names.monedaBase) {
+      formData.append("monedaBase", payload.names.monedaBase);
+    }
   }
   if (payload.foto) {
     formData.append("foto", payload.foto);

@@ -4,19 +4,22 @@ import { useTranslation } from "react-i18next";
 
 import { appColor } from "@/theme/theme.config";
 import { appColorVariants } from "@/theme/app-color-variants";
+import { formatCurrency } from "../utils/formatters";
 
 interface InvoiceSummaryProps {
   totalItems: number;
   totalAmount: number;
+  currencyCode?: string;
   onViewProducts: () => void;
 }
 
 export const InvoiceSummary = ({
   totalItems,
   totalAmount,
+  currencyCode,
   onViewProducts,
 }: InvoiceSummaryProps) => {
-  const { t } = useTranslation("invoices");
+  const { t, i18n } = useTranslation("invoices");
 
   return (
     <Card className="bg-default-50 border border-default-200">
@@ -41,7 +44,7 @@ export const InvoiceSummary = ({
             <span
               className={`text-xl font-bold ${appColorVariants.textStrong}`}
             >
-              ${new Intl.NumberFormat("es-CO").format(totalAmount)}
+              {formatCurrency(totalAmount, i18n.language, currencyCode)}
             </span>
           </div>
 

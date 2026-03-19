@@ -42,6 +42,10 @@ export const getRegisterSchema = (t: TFunction) => {
       .matches(/^\d+$/, t("validation:numeric_only"))
       .min(6, t("validation:document_min"))
       .max(10, t("validation:document_max")),
+    monedaBase: yup
+      .string()
+      .required(t("validation:required"))
+      .length(3, t("validation:currency_invalid")),
     password: yup
       .string()
       .min(8, t("validation:password_min"))

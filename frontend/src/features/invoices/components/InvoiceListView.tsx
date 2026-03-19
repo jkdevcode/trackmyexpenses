@@ -27,6 +27,13 @@ export const InvoiceListView = () => {
   );
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const skeletonKeys = [
+    "skeleton-1",
+    "skeleton-2",
+    "skeleton-3",
+    "skeleton-4",
+    "skeleton-5",
+  ];
 
   const invoicesQuery = useInvoicesQuery(period);
   const deleteMutation = useDeleteInvoiceMutation();
@@ -110,9 +117,9 @@ export const InvoiceListView = () => {
 
       {invoicesQuery.isLoading ? (
         <div className="space-y-3">
-          {[...Array(5)].map((_, index) => (
+          {skeletonKeys.map((key) => (
             <div
-              key={`skeleton-${index}`}
+              key={key}
               className="h-16 rounded-large bg-default-100 animate-pulse"
             />
           ))}

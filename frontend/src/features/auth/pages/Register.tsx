@@ -18,6 +18,7 @@ import { appColor } from "@/theme/theme.config";
 import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/ui/icons";
 import { getRegisterSchema } from "@/schemas/auth";
 import { CameraIcon } from "@/components/ui/CameraIcon";
+import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from "@/constants/currency";
 
 interface RegisterFormValues {
   nombre: string;
@@ -27,12 +28,13 @@ interface RegisterFormValues {
   direccion: string;
   tipo_documento: string;
   documento_identidad: string;
+  monedaBase: string;
   password: string;
   confirmPassword: string;
 }
 
 const RegisterPage = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(["auth", "common", "validation"]);
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const registerMutation = useRegisterMutation();
@@ -90,6 +92,7 @@ const RegisterPage = () => {
       direccion: "",
       tipo_documento: "",
       documento_identidad: "",
+      monedaBase: DEFAULT_CURRENCY,
       password: "",
       confirmPassword: "",
     },
@@ -195,7 +198,7 @@ const RegisterPage = () => {
             />
 
             {/* Telefono */}
-            <Input
+            {/*  <Input
               color={appColor}
               errorMessage={errors.telefono?.message}
               isInvalid={!!touchedFields.telefono && !!errors.telefono}
@@ -204,10 +207,10 @@ const RegisterPage = () => {
               type="tel"
               variant="bordered"
               {...register("telefono")}
-            />
+            /> */}
 
             {/* Direccion */}
-            <Input
+            {/* <Input
               color={appColor}
               errorMessage={errors.direccion?.message}
               isInvalid={!!touchedFields.direccion && !!errors.direccion}
@@ -215,7 +218,7 @@ const RegisterPage = () => {
               placeholder={t("auth:fields.address.placeholder")}
               variant="bordered"
               {...register("direccion")}
-            />
+            /> */}
 
             {/* Tipo Documento */}
             <Controller
@@ -255,6 +258,31 @@ const RegisterPage = () => {
               placeholder={t("auth:fields.document_id.placeholder")}
               variant="bordered"
               {...register("documento_identidad")}
+            />
+
+            {/* Moneda Base */}
+            <Controller
+              control={control}
+              name="monedaBase"
+              render={({ field }) => (
+                <Select
+                  color={appColor}
+                  errorMessage={errors.monedaBase?.message}
+                  isInvalid={!!touchedFields.monedaBase && !!errors.monedaBase}
+                  label={t("auth:fields.currency.label")}
+                  placeholder={t("auth:fields.currency.placeholder")}
+                  selectedKeys={field.value ? [field.value] : []}
+                  variant="bordered"
+                  onBlur={field.onBlur}
+                  onChange={(e) => field.onChange(e.target.value)}
+                >
+                  {SUPPORTED_CURRENCIES.map((code) => (
+                    <SelectItem key={code}>
+                      {t(`common:currency.options.${code}`, code)}
+                    </SelectItem>
+                  ))}
+                </Select>
+              )}
             />
 
             {/* Password */}

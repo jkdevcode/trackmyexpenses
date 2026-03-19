@@ -25,6 +25,7 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
           apellidos: "User",
           correo: "test@example.com",
           foto: null,
+          monedaBase: "COP",
         },
       }),
     });
@@ -43,6 +44,7 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
             nit: "900000111",
           },
           fecha: "2026-02-18",
+          monedaDetectada: "USD",
           productos: [
             {
               nombreDetected: "Milk",
@@ -110,7 +112,7 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
 
   await expect(
     page.getByRole("heading", {
-      name: /Invoice Review|Revision de Factura|Revision|Revisión/i,
+      name: /Invoice Review|Revision de Factura|Revision|Revision/i,
     }),
   ).toBeVisible();
 
@@ -127,6 +129,7 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
 
   await expect.poll(() => confirmPayload).not.toBeNull();
   expect(confirmPayload.factura.lugarCompra).toBe("Store XYZ");
+  expect(confirmPayload.factura.moneda).toBe("USD");
   expect(confirmPayload.productos).toHaveLength(2);
 
   await expect(page).toHaveURL(/\/dashboard$/);
