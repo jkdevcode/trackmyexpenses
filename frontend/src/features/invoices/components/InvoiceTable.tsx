@@ -19,10 +19,7 @@ import {
 import { formatCurrency, formatDate } from "../utils/formatters";
 
 import { appColor } from "@/theme/theme.config";
-import {
-  DEFAULT_CURRENCY,
-  normalizeCurrencyCode,
-} from "@/constants/currency";
+import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 
 const resolveCurrency = (value?: string | null) =>
   normalizeCurrencyCode(value, DEFAULT_CURRENCY);
@@ -54,7 +51,9 @@ export const InvoiceTable = ({
       </TableHeader>
       <TableBody items={invoices}>
         {(invoice: InvoiceSummaryItem) => {
-          const currency = resolveCurrency(invoice.moneda ?? invoice.monedaBase);
+          const currency = resolveCurrency(
+            invoice.moneda ?? invoice.monedaBase,
+          );
           const baseCurrency = resolveCurrency(invoice.monedaBase ?? currency);
           const showBase = currency !== baseCurrency;
           const baseTotal =
@@ -74,7 +73,11 @@ export const InvoiceTable = ({
               <TableCell className="font-semibold">
                 <div className="flex flex-col">
                   <span>
-                    {formatCurrency(invoice.totalPagar, i18n.language, currency)}
+                    {formatCurrency(
+                      invoice.totalPagar,
+                      i18n.language,
+                      currency,
+                    )}
                   </span>
                   {showBase ? (
                     <span className="text-xs text-default-500">

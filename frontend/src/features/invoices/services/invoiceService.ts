@@ -274,9 +274,7 @@ export const getInvoiceDetailRequest = async (
             id: Number(item.producto.id ?? 0),
             nombre: String(item.producto.nombre ?? ""),
             precioUnitario: Number(item.producto.precioUnitario ?? 0),
-            codigo: item.producto.codigo
-              ? String(item.producto.codigo)
-              : null,
+            codigo: item.producto.codigo ? String(item.producto.codigo) : null,
           }
         : undefined,
     })),

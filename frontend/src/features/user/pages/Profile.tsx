@@ -253,7 +253,9 @@ const ProfilePage = () => {
                     className="md:col-span-2"
                     color={appColor}
                     errorMessage={errors.monedaBase?.message}
-                    isInvalid={!!touchedFields.monedaBase && !!errors.monedaBase}
+                    isInvalid={
+                      !!touchedFields.monedaBase && !!errors.monedaBase
+                    }
                     label={t("profile:currency.label")}
                     placeholder={t("profile:currency.placeholder")}
                     selectedKeys={field.value ? [field.value] : []}

@@ -21,9 +21,10 @@ import { Input } from "@heroui/input";
 import { Pagination } from "@heroui/pagination";
 import { useTranslation } from "react-i18next";
 
+import { formatCurrency } from "../utils/formatters";
+
 import { appColor } from "@/theme/theme.config";
 import { DeleteIcon, SearchIcon } from "@/components/ui/icons";
-import { formatCurrency } from "../utils/formatters";
 
 interface InvoiceItemsModalProps {
   isOpen: boolean;
