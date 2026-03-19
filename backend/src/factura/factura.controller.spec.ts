@@ -62,9 +62,10 @@ describe('FacturaController', () => {
       usedFallbackParser: true,
     });
 
-    const result = await controller.uploadFile(file);
+    const req = { user: { id: 1 } } as any;
+    const result = await controller.uploadFile(file, req);
 
-    expect(facturaOcrService.processImage).toHaveBeenCalledWith(file);
+    expect(facturaOcrService.processImage).toHaveBeenCalledWith(file, 1);
     expect(result).toEqual({
       rawText: 'OCR TEXT',
       parsed: { productos: [] },
@@ -74,16 +75,19 @@ describe('FacturaController', () => {
 
   it('POST /facturas/ocr should validate required file', async () => {
     await expect(
-      controller.uploadFile(undefined as any),
+      controller.uploadFile(undefined as any, {} as any),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('POST /facturas/ocr should reject invalid mimetype', async () => {
     await expect(
-      controller.uploadFile({
-        buffer: Buffer.from('text'),
-        mimetype: 'text/plain',
-      } as Express.Multer.File),
+      controller.uploadFile(
+        {
+          buffer: Buffer.from('text'),
+          mimetype: 'text/plain',
+        } as Express.Multer.File,
+        {} as any,
+      ),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
