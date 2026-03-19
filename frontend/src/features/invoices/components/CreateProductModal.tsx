@@ -63,6 +63,7 @@ export const CreateProductModal = ({
       const message = t("manual.create_product.validation_required");
 
       setError(message);
+
       return;
     }
 
@@ -70,6 +71,7 @@ export const CreateProductModal = ({
       const message = t("manual.create_product.validation_price");
 
       setError(message);
+
       return;
     }
 

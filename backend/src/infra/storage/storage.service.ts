@@ -8,7 +8,11 @@ export class StorageService {
     @Inject(STORAGE_ADAPTER) private readonly adapter: IStorageAdapter,
   ) {}
 
-  async upload(buffer: Buffer, filename?: string): Promise<string> {
-    return this.adapter.upload(buffer, filename);
+  async upload(
+    buffer: Buffer,
+    filename?: string,
+    folder?: string,
+  ): Promise<string> {
+    return this.adapter.upload(buffer, filename, folder);
   }
 }

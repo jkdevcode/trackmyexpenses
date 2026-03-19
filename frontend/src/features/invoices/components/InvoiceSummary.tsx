@@ -2,9 +2,10 @@ import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 
+import { formatCurrency } from "../utils/formatters";
+
 import { appColor } from "@/theme/theme.config";
 import { appColorVariants } from "@/theme/app-color-variants";
-import { formatCurrency } from "../utils/formatters";
 
 interface InvoiceSummaryProps {
   totalItems: number;

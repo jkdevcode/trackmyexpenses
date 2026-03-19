@@ -91,7 +91,7 @@ import { validateEnv } from './config/env.validation';
       },
     }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'uploads'),
+      rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',
       exclude: ['/api/(.*)'],
     }),

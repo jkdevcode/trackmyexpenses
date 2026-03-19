@@ -30,9 +30,9 @@ describe('StorageService', () => {
     adapter.upload.mockResolvedValue('/uploads/users/test.png');
     const buffer = Buffer.from('img');
 
-    const result = await service.upload(buffer, 'test.png');
+    const result = await service.upload(buffer, 'test.png', 'users');
 
-    expect(adapter.upload).toHaveBeenCalledWith(buffer, 'test.png');
+    expect(adapter.upload).toHaveBeenCalledWith(buffer, 'test.png', 'users');
     expect(result).toBe('/uploads/users/test.png');
   });
 

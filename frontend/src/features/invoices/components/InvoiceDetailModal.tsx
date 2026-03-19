@@ -25,10 +25,7 @@ import { getInvoiceItemUnitPrice } from "../utils/invoice-item";
 
 import { appColor } from "@/theme/theme.config";
 import { appColorVariants } from "@/theme/app-color-variants";
-import {
-  DEFAULT_CURRENCY,
-  normalizeCurrencyCode,
-} from "@/constants/currency";
+import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 
 const resolveCurrency = (value?: string | null) =>
   normalizeCurrencyCode(value, DEFAULT_CURRENCY);
@@ -99,12 +96,16 @@ export const InvoiceDetailModal = ({
                   {currency}
                 </p>
                 <p>
-                  <span className="font-semibold">{t("detail.monedaBase")}:</span>{" "}
+                  <span className="font-semibold">
+                    {t("detail.monedaBase")}:
+                  </span>{" "}
                   {baseCurrency}
                 </p>
                 {detail.tasaCambio ? (
                   <p>
-                    <span className="font-semibold">{t("detail.tasaCambio")}:</span>{" "}
+                    <span className="font-semibold">
+                      {t("detail.tasaCambio")}:
+                    </span>{" "}
                     {detail.tasaCambio}
                   </p>
                 ) : null}
@@ -120,7 +121,8 @@ export const InvoiceDetailModal = ({
                 </TableHeader>
                 <TableBody items={detail.productos}>
                   {(item: InvoiceDetailItem) => {
-                    const key = item.id ??
+                    const key =
+                      item.id ??
                       item.productoId ??
                       `${item.productoNombre}-${item.cantidad}-${item.precioTotal}`;
                     const productName =
@@ -165,7 +167,7 @@ export const InvoiceDetailModal = ({
               </p>
               {showBase ? (
                 <p className="text-sm text-default-500">
-                  {t("detail.total_base")}: {" "}
+                  {t("detail.total_base")}:{" "}
                   {formatCurrency(baseTotal ?? 0, i18n.language, baseCurrency)}
                 </p>
               ) : null}

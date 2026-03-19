@@ -67,8 +67,8 @@ export class AuthService {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         const extMatch = fotoOriginalName?.match(/\.[^./\\]+$/);
         const ext = extMatch?.[0] ?? '';
-        const filename = `users/user-${uniqueSuffix}${ext}`;
-        fotoPath = await this.storage.upload(fotoBuffer, filename);
+        const filename = `user-${uniqueSuffix}${ext}`;
+        fotoPath = await this.storage.upload(fotoBuffer, filename, 'users');
       }
 
       const newUser = await this.prisma.usuario.create({

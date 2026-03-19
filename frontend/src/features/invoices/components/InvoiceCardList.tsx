@@ -8,10 +8,7 @@ import { formatCurrency, formatDate } from "../utils/formatters";
 
 import { appColor } from "@/theme/theme.config";
 import { appColorVariants } from "@/theme/app-color-variants";
-import {
-  DEFAULT_CURRENCY,
-  normalizeCurrencyCode,
-} from "@/constants/currency";
+import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 
 const resolveCurrency = (value?: string | null) =>
   normalizeCurrencyCode(value, DEFAULT_CURRENCY);
@@ -38,7 +35,8 @@ export const InvoiceCardList = ({
         const baseCurrency = resolveCurrency(invoice.monedaBase ?? currency);
         const showBase = currency !== baseCurrency;
         const baseTotal =
-          invoice.totalPagarBase !== null && invoice.totalPagarBase !== undefined
+          invoice.totalPagarBase !== null &&
+          invoice.totalPagarBase !== undefined
             ? invoice.totalPagarBase
             : invoice.totalPagar;
 
@@ -53,8 +51,14 @@ export const InvoiceCardList = ({
                   <p className="font-semibold">{invoice.codigoFactura}</p>
                 </div>
                 <div className="text-right">
-                  <p className={`text-lg font-bold ${appColorVariants.textStrong}`}>
-                    {formatCurrency(invoice.totalPagar, i18n.language, currency)}
+                  <p
+                    className={`text-lg font-bold ${appColorVariants.textStrong}`}
+                  >
+                    {formatCurrency(
+                      invoice.totalPagar,
+                      i18n.language,
+                      currency,
+                    )}
                   </p>
                   {showBase ? (
                     <p className="text-xs text-default-500">
