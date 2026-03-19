@@ -9,7 +9,7 @@ import {
   FacturaRepository,
   FacturaRepositoryTx,
   FacturaStatsDateRange,
-  UpdateFacturaProductoPrecioTotalInput,
+  UpdateFacturaProductoSnapshotInput,
   UpdateFacturaRecordInput,
 } from './factura.repository.port';
 
@@ -21,6 +21,10 @@ const FACTURA_LIST_SELECT = {
   nitProveedor: true,
   fechaHoraCompra: true,
   totalPagar: true,
+  moneda: true,
+  monedaBase: true,
+  tasaCambio: true,
+  totalPagarBase: true,
   usuarioId: true,
 } as const;
 
@@ -82,7 +86,20 @@ export class PrismaFacturaRepository implements FacturaRepository {
         id: facturaId,
         usuarioId: userId,
       },
-      include: {
+      select: {
+        id: true,
+        codigoFactura: true,
+        metodoPago: true,
+        lugarCompra: true,
+        nitProveedor: true,
+        fechaHoraCompra: true,
+        totalPagar: true,
+        moneda: true,
+        monedaBase: true,
+        tasaCambio: true,
+        tasaCambioFecha: true,
+        tasaCambioFuente: true,
+        totalPagarBase: true,
         usuario: {
           select: {
             id: true,
@@ -91,12 +108,22 @@ export class PrismaFacturaRepository implements FacturaRepository {
           },
         },
         productos: {
-          include: {
+          select: {
+            id: true,
+            productoId: true,
+            cantidad: true,
+            unidad: true,
+            descuento: true,
+            precioUnitario: true,
+            precioTotal: true,
+            productoNombre: true,
+            productoCodigo: true,
             producto: {
               select: {
                 id: true,
                 nombre: true,
                 precioUnitario: true,
+                codigo: true,
               },
             },
           },
@@ -115,11 +142,36 @@ export class PrismaFacturaRepository implements FacturaRepository {
     });
   }
 
+  async findFacturaCurrencyByUser(userId: number, facturaId: number) {
+    return await this.prisma.factura.findFirst({
+      where: {
+        id: facturaId,
+        usuarioId: userId,
+      },
+      select: {
+        id: true,
+        totalPagar: true,
+        totalPagarBase: true,
+        moneda: true,
+        monedaBase: true,
+        tasaCambio: true,
+      },
+    });
+  }
+
   async findProductoById(productoId: number) {
     return await this.prisma.producto.findUnique({
       where: { id: productoId },
-      select: { id: true, precioUnitario: true },
+      select: { id: true, precioUnitario: true, nombre: true, codigo: true },
     });
+  }
+
+  async findUsuarioMonedaBase(userId: number) {
+    const user = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: { monedaBase: true },
+    });
+    return user?.monedaBase ?? null;
   }
 
   async countFacturasByUser(userId: number) {
@@ -130,20 +182,17 @@ export class PrismaFacturaRepository implements FacturaRepository {
     userId: number,
     range: FacturaStatsDateRange,
   ) {
-    const aggregate = await this.prisma.factura.aggregate({
-      where: {
-        usuarioId: userId,
-        fechaHoraCompra: {
-          gte: range.startDate,
-          lte: range.endDate,
-        },
-      },
-      _sum: {
-        totalPagar: true,
-      },
-    });
+    const result = await this.prisma.$queryRaw<
+      Array<{ total: Prisma.Decimal | null }>
+    >`
+      SELECT COALESCE(SUM(COALESCE(totalPagarBase, totalPagar)), 0) AS total
+      FROM Factura
+      WHERE usuarioId = ${userId}
+        AND fechaHoraCompra >= ${range.startDate}
+        AND fechaHoraCompra <= ${range.endDate}
+    `;
 
-    return Number(aggregate._sum.totalPagar) || 0;
+    return Number(result[0]?.total ?? 0);
   }
 }
 
@@ -153,7 +202,7 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
   async findProductosByIds(productIds: number[]) {
     return await this.tx.producto.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, precioUnitario: true },
+      select: { id: true, precioUnitario: true, nombre: true, codigo: true },
     });
   }
 
@@ -165,6 +214,7 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
         productoId: true,
         cantidad: true,
         descuento: true,
+        precioUnitario: true,
         precioTotal: true,
       },
     });
@@ -180,6 +230,18 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
         nitProveedor: data.nitProveedor,
         fechaHoraCompra: data.fechaHoraCompra,
         totalPagar: new Prisma.Decimal(data.totalPagar),
+        moneda: data.moneda ?? null,
+        monedaBase: data.monedaBase ?? null,
+        tasaCambio:
+          data.tasaCambio === undefined || data.tasaCambio === null
+            ? null
+            : new Prisma.Decimal(data.tasaCambio),
+        tasaCambioFecha: data.tasaCambioFecha ?? null,
+        tasaCambioFuente: data.tasaCambioFuente ?? null,
+        totalPagarBase:
+          data.totalPagarBase === undefined || data.totalPagarBase === null
+            ? null
+            : new Prisma.Decimal(data.totalPagarBase),
       },
       select: { id: true },
     });
@@ -203,6 +265,28 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
     if (data.totalPagar !== undefined) {
       updateData.totalPagar = new Prisma.Decimal(data.totalPagar);
     }
+    if (data.moneda !== undefined) {
+      updateData.moneda = data.moneda;
+    }
+    if (data.monedaBase !== undefined) {
+      updateData.monedaBase = data.monedaBase;
+    }
+    if (data.tasaCambio !== undefined) {
+      updateData.tasaCambio =
+        data.tasaCambio === null ? null : new Prisma.Decimal(data.tasaCambio);
+    }
+    if (data.tasaCambioFecha !== undefined) {
+      updateData.tasaCambioFecha = data.tasaCambioFecha;
+    }
+    if (data.tasaCambioFuente !== undefined) {
+      updateData.tasaCambioFuente = data.tasaCambioFuente;
+    }
+    if (data.totalPagarBase !== undefined) {
+      updateData.totalPagarBase =
+        data.totalPagarBase === null
+          ? null
+          : new Prisma.Decimal(data.totalPagarBase);
+    }
 
     return await this.tx.factura.update({
       where: { id: facturaId },
@@ -210,8 +294,8 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
     });
   }
 
-  async updateFacturaProductoPrecioTotal(
-    data: UpdateFacturaProductoPrecioTotalInput,
+  async updateFacturaProductoSnapshot(
+    data: UpdateFacturaProductoSnapshotInput,
   ) {
     return await this.tx.facturaProducto.update({
       where: {
@@ -221,6 +305,9 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
         },
       },
       data: {
+        cantidad: data.cantidad,
+        descuento: new Prisma.Decimal(data.descuento),
+        precioUnitario: new Prisma.Decimal(data.precioUnitario),
         precioTotal: new Prisma.Decimal(data.precioTotal),
       },
     });
@@ -248,7 +335,10 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
           cantidad: data.cantidad,
           unidad: data.unidad,
           descuento: new Prisma.Decimal(data.descuento),
+          precioUnitario: new Prisma.Decimal(data.precioUnitario),
           precioTotal: new Prisma.Decimal(data.precioTotal),
+          productoNombre: data.productoNombre,
+          productoCodigo: data.productoCodigo,
         },
         select: {
           id: true,
@@ -256,7 +346,10 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
           productoId: true,
           cantidad: true,
           descuento: true,
+          precioUnitario: true,
           precioTotal: true,
+          productoNombre: true,
+          productoCodigo: true,
         },
       });
     } catch (error: unknown) {
@@ -273,7 +366,20 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
   async findFacturaByIdWithRelations(facturaId: number) {
     return await this.tx.factura.findUniqueOrThrow({
       where: { id: facturaId },
-      include: {
+      select: {
+        id: true,
+        codigoFactura: true,
+        metodoPago: true,
+        lugarCompra: true,
+        nitProveedor: true,
+        fechaHoraCompra: true,
+        totalPagar: true,
+        moneda: true,
+        monedaBase: true,
+        tasaCambio: true,
+        tasaCambioFecha: true,
+        tasaCambioFuente: true,
+        totalPagarBase: true,
         usuario: {
           select: {
             id: true,
@@ -282,10 +388,20 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
           },
         },
         productos: {
-          include: {
+          select: {
+            id: true,
+            productoId: true,
+            cantidad: true,
+            unidad: true,
+            descuento: true,
+            precioUnitario: true,
+            precioTotal: true,
+            productoNombre: true,
+            productoCodigo: true,
             producto: {
               select: {
                 id: true,
+                codigo: true,
                 nombre: true,
                 precioUnitario: true,
               },
@@ -314,23 +430,37 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
     });
   }
 
-  async updateFacturaTotalAndGetDetails(facturaId: number, increment: number) {
+  async updateFacturaTotalAndGetDetails(
+    facturaId: number,
+    increment: number,
+    incrementBase: number,
+  ) {
     return await this.tx.factura.update({
       where: { id: facturaId },
       data: {
         totalPagar: { increment },
+        totalPagarBase: { increment: incrementBase },
       },
       select: {
         id: true,
         codigoFactura: true,
         totalPagar: true,
+        moneda: true,
+        monedaBase: true,
+        tasaCambio: true,
+        tasaCambioFecha: true,
+        tasaCambioFuente: true,
+        totalPagarBase: true,
         productos: {
           select: {
             id: true,
             productoId: true,
             cantidad: true,
             descuento: true,
+            precioUnitario: true,
             precioTotal: true,
+            productoNombre: true,
+            productoCodigo: true,
             producto: {
               select: {
                 id: true,
