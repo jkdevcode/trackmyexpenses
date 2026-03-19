@@ -8,6 +8,8 @@ export class ImageProcessorService {
       .resize(2000, null, { withoutEnlargement: true })
       .grayscale()
       .normalize()
+      .sharpen({ sigma: 1 })
+      .threshold(128)
       .toBuffer();
   }
 }

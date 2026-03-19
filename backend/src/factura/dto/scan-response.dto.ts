@@ -31,6 +31,8 @@ const parsedSchema = z.object({
   productos: z.array(productSuggestionSchema),
   totalDetectado: z.number().nullable().optional(),
   notes: z.array(z.string()).optional(),
+  source: z.string().optional(),
+  lowConfidence: z.boolean().optional(),
 });
 
 const scanResponseSchema = z.object({

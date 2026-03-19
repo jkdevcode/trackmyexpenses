@@ -113,7 +113,10 @@ export class FacturaController {
 
   @Post('ocr')
   @UseInterceptors(FileInterceptor('image', imageFileInterceptorOptions))
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: RequestWithUser,
+  ) {
     if (!file) {
       throw new BadRequestException('Se requiere una imagen (field: image)');
     }
@@ -128,7 +131,7 @@ export class FacturaController {
       );
     }
 
-    return this.facturaOcrService.processImage(file);
+    return this.facturaOcrService.processImage(file, req.user.id);
   }
 
   @Post('ocr/confirmar')
