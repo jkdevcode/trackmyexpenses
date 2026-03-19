@@ -12,6 +12,7 @@ export interface SessionUser {
   apellidos: string;
   correo: string;
   foto: string | null;
+  monedaBase: string;
 }
 
 export interface LoginResponse {
@@ -37,6 +38,7 @@ export interface RegisterPayload {
   apellido: string;
   email: string;
   password: string;
+  monedaBase?: string;
   foto?: File | null;
 }
 
@@ -59,6 +61,10 @@ export const registerRequest = async (
   formData.append("apellidos", payload.apellido);
   formData.append("correo", payload.email);
   formData.append("contrasena", payload.password);
+
+  if (payload.monedaBase) {
+    formData.append("monedaBase", payload.monedaBase);
+  }
 
   if (payload.foto) {
     formData.append("foto", payload.foto);
