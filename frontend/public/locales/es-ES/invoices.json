@@ -22,14 +22,14 @@
     "precioUnitario_invalid": "El precio unitario debe ser mayor a 0."
   },
   "empty": "No hay facturas en este periodo",
-  "confirmDelete": "¿Seguro que deseas eliminar esta factura?",
+  "confirmDelete": "¿Estás seguro de que deseas eliminar esta factura?",
   "list": {
     "title": "Lista de Facturas",
     "error": "No se pudieron cargar las facturas.",
     "empty": "No hay facturas en este periodo",
     "period": {
       "label": "Periodo",
-      "day": "Dia",
+      "day": "Día",
       "week": "Semana",
       "month": "Mes",
       "year": "Año"
@@ -38,17 +38,17 @@
       "view_detail": "Ver detalle"
     },
     "mobile": {
-      "codigo": "Codigo"
+      "codigo": "Código"
     },
     "table": {
       "aria": "Tabla de facturas",
       "columns": {
-        "codigo": "Codigo",
+        "codigo": "Código",
         "fecha": "Fecha",
         "lugar": "Lugar",
-        "metodo": "Metodo",
+        "metodo": "Método",
         "total": "Total",
-        "accion": "Accion"
+        "accion": "Acción"
       }
     },
     "payment": {
@@ -64,12 +64,18 @@
     "error": "No se pudo cargar el detalle.",
     "close": "Cerrar",
     "total": "Total",
+    "total_base": "Total base",
     "codigo": "Codigo",
     "fecha": "Fecha",
     "metodo": "Metodo",
     "lugar": "Lugar",
     "nit": "NIT",
     "usuario": "Usuario",
+    "moneda": "Moneda",
+    "monedaBase": "Moneda base",
+    "tasaCambio": "Tasa de cambio",
+    "edit_warning_title": "Cambios historicos",
+    "edit_warning": "Estas modificando datos historicos",
     "items_aria": "Items de la factura",
     "table": {
       "producto": "Producto",
@@ -88,6 +94,14 @@
     "submit": "Crear factura",
     "success": "Factura creada exitosamente.",
     "error": "No se pudo crear la factura manual.",
+    "currency": {
+      "label": "Moneda",
+      "placeholder": "Selecciona",
+      "rate": "Tasa de cambio",
+      "rate_hint": "Se usa para calcular el total base",
+      "total_base": "Total en moneda base",
+      "pending": "Agrega una tasa para ver conversion"
+    },
     "items": {
       "add_title": "Agregar Producto",
       "producto": "Producto",
@@ -97,6 +111,7 @@
       "list_title": "Items agregados",
       "empty": "No hay productos agregados.",
       "remove": "Eliminar",
+      "create_product": "+ Crear producto",
       "columns": {
         "nombre": "Nombre",
         "cantidad": "Cantidad",
@@ -106,6 +121,18 @@
         "acciones": "Acciones"
       }
     },
+    "create_product": {
+      "title": "Crear producto",
+      "codigo": "Codigo",
+      "nombre": "Nombre",
+      "precio": "Precio unitario",
+      "submit": "Crear",
+      "cancel": "Cancelar",
+      "success": "Producto creado exitosamente",
+      "error": "No se pudo crear el producto",
+      "validation_required": "Codigo y nombre son obligatorios",
+      "validation_price": "El precio unitario debe ser mayor a 0"
+    },
     "validation": {
       "fecha_required": "La fecha es obligatoria.",
       "lugar_required": "El lugar de compra es obligatorio.",
@@ -114,7 +141,8 @@
       "product_not_found": "El producto seleccionado no existe.",
       "item_duplicate": "Ese producto ya fue agregado.",
       "cantidad_invalid": "La cantidad debe ser mayor a 0.",
-      "descuento_invalid": "El descuento debe estar entre 0 y 100."
+      "descuento_invalid": "El descuento debe estar entre 0 y 100.",
+      "item_invalid": "Todos los items deben tener cantidad y descuento validos."
     }
   },
   "upload": {
@@ -125,7 +153,7 @@
     "success": "Imagen procesada correctamente",
     "error": "Error al procesar la imagen",
     "invalid_type": "Solo se permiten archivos PDF o imagen",
-    "invalid_size": "El archivo supera el límite máximo de 5MB"
+    "invalid_size": "El archivo supera el limite maximo de 5MB"
   },
   "form": {
     "title": "Revisión de Factura",
@@ -135,12 +163,23 @@
     "date": "Fecha",
     "payment_method": "Método de Pago",
     "total": "Total a Pagar (Auto-calculado)",
-    "total_desc": "Calculado basándose en la lista de productos.",
+    "total_desc": "Calculado basandose en la lista de productos.",
     "products_title": "Detalle de Productos",
     "items": "Items",
     "edit": "Ampliar / Editar",
     "cancel": "Cancelar",
-    "save": "Guardar Factura"
+    "save": "Guardar Factura",
+    "currency": {
+      "label": "Moneda",
+      "placeholder": "Selecciona",
+      "detected": "Moneda detectada: {{currency}}",
+      "fallback": "No se detecto moneda. Usando {{currency}}",
+      "rate": "Tasa de cambio",
+      "rate_hint": "Se usa para calcular el total base",
+      "total_base": "Total en moneda base",
+      "base_desc": "Basado en {{currency}}",
+      "pending": "Agrega una tasa para ver conversion"
+    }
   },
   "summary": {
     "products_detected": "Productos detectados",
@@ -166,6 +205,8 @@
     "message": "¿Estás seguro de que deseas registrar esta factura?",
     "products": "Productos",
     "total": "Total a Pagar",
+    "total_base": "Total base",
+    "total_base_pending": "Conversion pendiente",
     "cancel": "Cancelar",
     "confirm": "Confirmar y Guardar"
   },

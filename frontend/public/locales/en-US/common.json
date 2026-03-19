@@ -32,5 +32,15 @@
   },
   "auth": {
     "logout": "Logout"
+  },
+  "currency": {
+    "label": "Currency",
+    "base_label": "Base currency",
+    "options": {
+      "COP": "COP - Colombian peso",
+      "USD": "USD - US dollar",
+      "EUR": "EUR - Euro",
+      "MXN": "MXN - Mexican peso"
+    }
   }
 }

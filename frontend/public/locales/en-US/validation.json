@@ -9,6 +9,7 @@
   "numeric_only": "Must be numeric",
   "document_min": "Minimum 6 digits",
   "document_max": "Maximum 10 digits",
+  "currency_invalid": "Currency must be a 3-letter code",
   "generic": "An error occurred. Please try again later.",
   "email_exists": "Email is already registered",
   "document_exists": "Document is already registered",
