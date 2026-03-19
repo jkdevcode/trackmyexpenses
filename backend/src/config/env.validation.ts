@@ -34,6 +34,12 @@ const envSchema = z
       .min(1)
       .default('mysql://root:@localhost:3306/invoicely'),
     GEMINI_API_KEY: z.string().optional(),
+    EXCHANGE_RATE_API_KEY: z.string().optional(),
+    EXCHANGE_RATE_API_URL: z
+      .string()
+      .url()
+      .optional()
+      .default('https://v6.exchangerate-api.com/v6'),
     JWT_SECRET: z.string().min(8).default('change-me-in-production'),
     JWT_EXPIRES_IN: z.string().default('7d'),
     THROTTLE_LIMIT: toNumber(120),

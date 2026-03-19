@@ -8,6 +8,7 @@ import { ImageProcessorService } from './image-processor.service';
 import { TextParserService } from './text-parser.service';
 import { FACTURA_REPOSITORY } from './factura.repository.port';
 import { PrismaFacturaRepository } from './prisma-factura.repository';
+import { ExchangeRateService } from '../infra/exchange-rate/exchange-rate.service';
 
 @Module({
   imports: [PrismaModule, ConfigModule],
@@ -21,6 +22,7 @@ import { PrismaFacturaRepository } from './prisma-factura.repository';
     FacturaOcrService,
     ImageProcessorService,
     TextParserService,
+    ExchangeRateService,
   ],
 })
 export class FacturaModule {}
