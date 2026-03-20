@@ -174,11 +174,14 @@
       "placeholder": "Select",
       "detected": "Detected currency: {{currency}}",
       "fallback": "No currency detected. Using {{currency}}",
+      "conversion_info": "This invoice is in {{moneda}}, but your base currency is {{monedaBase}}",
       "rate": "Exchange rate",
       "rate_hint": "Used to calculate base totals",
       "total_base": "Total in base currency",
       "base_desc": "Based on {{currency}}",
-      "pending": "Add a rate to see conversion"
+      "pending": "Add a rate to see conversion",
+      "missing_rate": "Cannot calculate total without an exchange rate",
+      "rate_required": "You must enter an exchange rate"
     }
   },
   "summary": {

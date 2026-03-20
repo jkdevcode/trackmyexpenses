@@ -20,6 +20,11 @@ export interface ParsedInvoice {
     nit?: string;
   };
   fecha?: string | null;
+  moneda?: string | null;
+  monedaBase?: string | null;
+  tasaCambio?: number | null;
+  totalPagar?: number | null;
+  totalPagarBase?: number | null;
   monedaDetectada?: string | null;
   productos: ProductSuggestion[];
   totalDetectado?: number | null;
