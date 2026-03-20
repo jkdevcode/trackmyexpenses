@@ -174,11 +174,14 @@
       "placeholder": "Selecciona",
       "detected": "Moneda detectada: {{currency}}",
       "fallback": "No se detecto moneda. Usando {{currency}}",
+      "conversion_info": "Esta factura esta en {{moneda}}, pero tu moneda base es {{monedaBase}}",
       "rate": "Tasa de cambio",
       "rate_hint": "Se usa para calcular el total base",
       "total_base": "Total en moneda base",
       "base_desc": "Basado en {{currency}}",
-      "pending": "Agrega una tasa para ver conversion"
+      "pending": "Agrega una tasa para ver conversion",
+      "missing_rate": "No se puede calcular el total sin tasa de cambio",
+      "rate_required": "Debes ingresar una tasa de cambio"
     }
   },
   "summary": {
