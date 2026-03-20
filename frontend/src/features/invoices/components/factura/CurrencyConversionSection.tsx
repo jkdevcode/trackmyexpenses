@@ -30,14 +30,18 @@ export const CurrencyConversionSection = ({
   const normalizedMoneda = moneda?.trim().toUpperCase();
   const normalizedBase = monedaBase?.trim().toUpperCase();
 
-  if (!normalizedMoneda || !normalizedBase || normalizedMoneda === normalizedBase) {
+  if (
+    !normalizedMoneda ||
+    !normalizedBase ||
+    normalizedMoneda === normalizedBase
+  ) {
     return null;
   }
 
-  const rateIsValid =
-    Number.isFinite(tasaCambio) && (tasaCambio ?? 0) > 0;
+  const rateIsValid = Number.isFinite(tasaCambio) && (tasaCambio ?? 0) > 0;
   const totalBase = useMemo(() => {
     if (!rateIsValid) return null;
+
     return roundCurrency(total * (tasaCambio ?? 0));
   }, [rateIsValid, total, tasaCambio]);
 
@@ -52,8 +56,10 @@ export const CurrencyConversionSection = ({
   const handleRateChange = (value: string) => {
     setInputValue(value);
     const parsed = Number(value);
+
     if (!Number.isFinite(parsed) || parsed <= 0) {
       onChangeTasa(Number.NaN);
+
       return;
     }
     onChangeTasa(parsed);
@@ -92,7 +98,9 @@ export const CurrencyConversionSection = ({
             <p className="text-sm text-default-500">
               {t("form.currency.total_base")}
             </p>
-            <p className={`text-lg font-semibold ${appColorVariants.textStrong}`}>
+            <p
+              className={`text-lg font-semibold ${appColorVariants.textStrong}`}
+            >
               ≈ {formatCurrency(totalBase, i18n.language, normalizedBase)}
             </p>
           </div>
