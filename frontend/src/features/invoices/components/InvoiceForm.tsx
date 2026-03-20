@@ -76,6 +76,7 @@ export const InvoiceForm = ({
   );
   const [tasaCambio, setTasaCambio] = useState<number | undefined>(() => {
     const rate = Number(initialData.tasaCambio);
+
     return Number.isFinite(rate) && rate > 0 ? rate : undefined;
   });
 
@@ -109,7 +110,7 @@ export const InvoiceForm = ({
   const exchangeRateQuery = useQuery({
     queryKey: ["exchange-rate", baseCurrency],
     queryFn: async () => {
-      const response = await fetch(
+      const response = await window.fetch(
         `https://api.exchangerate-api.com/v4/latest/${baseCurrency}`,
       );
 
@@ -130,10 +131,12 @@ export const InvoiceForm = ({
     if (!exchangeRateQuery.data?.rates) return;
 
     const apiRate = Number(exchangeRateQuery.data.rates[selectedCurrency]);
+
     if (!Number.isFinite(apiRate) || apiRate <= 0) return;
 
     // Backend expects base-per-invoice rate, so invert API rate.
     const normalizedRate = 1 / apiRate;
+
     if (Number.isFinite(normalizedRate) && normalizedRate > 0) {
       setTasaCambio(normalizedRate);
     }
@@ -142,6 +145,7 @@ export const InvoiceForm = ({
   const handleRateChange = (value: number) => {
     if (!Number.isFinite(value) || value <= 0) {
       setTasaCambio(undefined);
+
       return;
     }
     setTasaCambio(value);
@@ -154,6 +158,7 @@ export const InvoiceForm = ({
         description: t("form.currency.rate_required"),
         color: "danger",
       });
+
       return;
     }
 
