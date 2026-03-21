@@ -43,6 +43,8 @@ model Factura {
   tasaCambioFecha   DateTime?
   tasaCambioFuente  String?
   totalPagarBase    Decimal?    @db.Decimal(18,2)
+  imagenUrl         String?
+  ocrSource         String?
   usuarioId         Int
   usuario           Usuario     @relation(fields: [usuarioId], references: [id])
   productos         FacturaProducto[]

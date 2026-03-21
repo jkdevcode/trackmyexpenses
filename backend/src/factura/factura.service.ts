@@ -9,6 +9,7 @@ import type { Cache } from 'cache-manager';
 import { AddProductoFacturaDto } from './dto/add-producto.dto';
 import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
 import { CreateFacturaDto } from './dto/create-factura.dto';
+import { CreateOcrFacturaDto } from './dto/create-ocr-factura.dto';
 import { UpdateFacturaDto } from './dto/update-factura.dto';
 import { Logger } from 'nestjs-pino';
 import { PeriodFilter } from './factura.types';
@@ -35,6 +36,7 @@ import type { FacturaRepository } from './factura.repository.port';
 import type { MetodoPagoValue } from './factura.repository.port';
 import type { UpdateFacturaRecordInput } from './factura.repository.port';
 import { ExchangeRateService } from '../infra/exchange-rate/exchange-rate.service';
+import { StorageService } from '../infra/storage/storage.service';
 
 type FacturaStats = {
   currentPeriodInvoices: number;
@@ -67,6 +69,8 @@ type CreateFacturaInput = {
   items: CreateFacturaItemInput[];
   moneda?: string;
   tasaCambio?: number;
+  imagenUrl?: string;
+  ocrSource?: string;
 };
 
 @Injectable()
@@ -76,10 +80,34 @@ export class FacturaService {
     private logger: Logger,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly exchangeRateService: ExchangeRateService,
+    private readonly storage: StorageService,
   ) {}
 
-  async create(userId: number, dto: CreateFacturaDto) {
+  async create(
+    userId: number,
+    dto: CreateFacturaDto,
+    file?: Express.Multer.File,
+  ) {
     try {
+      let imagenUrl: string | undefined;
+
+      if (file) {
+        try {
+          const fileName = `factura-${Date.now()}-${userId}.jpg`;
+          imagenUrl = await this.storage.upload(
+            file.buffer,
+            fileName,
+            'invoices',
+          );
+        } catch (error: unknown) {
+          this.logger.error({
+            msg: 'Error al guardar imagen de factura',
+            requestId: RequestContext.getRequestId(),
+            error,
+          });
+        }
+      }
+
       const currencyInfo = await this.resolveCurrencyInfo(
         userId,
         dto.moneda,
@@ -100,6 +128,8 @@ export class FacturaService {
             items: dto.items,
             moneda: dto.moneda,
             tasaCambio: dto.tasaCambio,
+            imagenUrl,
+            ocrSource: dto.ocrSource,
           },
           'FAC',
           currencyInfo,
@@ -166,6 +196,117 @@ export class FacturaService {
         error,
       });
       throw new InternalServerErrorException('Error al confirmar factura');
+    }
+  }
+
+  async createWithOcrAndFile(
+    userId: number,
+    dto: CreateOcrFacturaDto,
+    file?: Express.Multer.File,
+  ) {
+    try {
+      let imagenUrl: string | undefined;
+
+      if (file) {
+        try {
+          const fileName = `factura-ocr-${Date.now()}-${userId}.jpg`;
+          imagenUrl = await this.storage.upload(
+            file.buffer,
+            fileName,
+            'invoices',
+          );
+        } catch (error: unknown) {
+          this.logger.error({
+            msg: 'Error al guardar imagen de factura OCR',
+            requestId: RequestContext.getRequestId(),
+            error,
+          });
+        }
+      }
+
+      const currencyInfo = await this.resolveCurrencyInfo(
+        userId,
+        dto.moneda,
+        dto.tasaCambio,
+      );
+
+      // Map flat DTO to nested ConfirmFacturaDto structure for reuse
+      // 1. Strict business validation of items
+      const validatedItems = (dto.items as any[]).map((item, index) => {
+        if (!item.nombreDetectado || typeof item.nombreDetectado !== 'string') {
+          console.error(`Invalid OCR item at index ${index}: missing nombreDetectado`, item);
+          throw new BadRequestException(`El item en la posicion ${index} no tiene un nombre valido`);
+        }
+        
+        const precio = Number(item.precioUnitario);
+        if (isNaN(precio) || precio < 0) {
+          console.error(`Invalid OCR item at index ${index}: invalid precioUnitario`, item);
+          throw new BadRequestException(`El item "${item.nombreDetectado}" tiene un precio invalido`);
+        }
+
+        const cantidad = Number(item.cantidadDetectada);
+        if (isNaN(cantidad) || cantidad <= 0) {
+          console.error(`Invalid OCR item at index ${index}: invalid cantidadDetectada`, item);
+          throw new BadRequestException(`El item "${item.nombreDetectado}" tiene una cantidad invalida`);
+        }
+
+        return {
+          nombreDetectado: item.nombreDetectado,
+          precioUnitario: precio,
+          cantidadDetectada: cantidad,
+          unidadDetectada: item.unidadDetectada || 'u',
+          descuentoDetectado: Number(item.descuentoDetectado || 0),
+        };
+      });
+
+      const confirmDto: ConfirmFacturaDto = {
+        factura: {
+          fechaHoraCompra: dto.fechaHoraCompra,
+          metodoPago: dto.metodoPago || 'EFECTIVO',
+          lugarCompra: dto.lugarCompra,
+          nitProveedor: dto.nitProveedor,
+          moneda: dto.moneda,
+          tasaCambio: dto.tasaCambio,
+          totalPagar: dto.totalPagar,
+        },
+        productos: validatedItems,
+      };
+
+      const factura = await this.repo.transaction(async (tx) => {
+        const input = await this.buildCreateInputFromOcrTx(tx, confirmDto);
+        input.imagenUrl = imagenUrl;
+        input.ocrSource = dto.ocrSource;
+
+        return this.createFacturaWithItemsTx(
+          tx,
+          userId,
+          input,
+          'OCR',
+          currencyInfo,
+        );
+      });
+
+      return {
+        status: 201,
+        message: 'Factura OCR registrada exitosamente con imagen',
+        factura,
+      };
+    } catch (error: unknown) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof FacturaNotFoundError
+      ) {
+        throw error;
+      }
+
+      this.logger.error({
+        msg: 'Error al registrar factura OCR con imagen',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
+      throw new InternalServerErrorException(
+        'Error al procesar el registro de factura OCR',
+      );
     }
   }
 
@@ -667,6 +808,8 @@ export class FacturaService {
       tasaCambioFecha: currencyInfo.tasaCambioFecha,
       tasaCambioFuente: currencyInfo.tasaCambioFuente,
       totalPagarBase,
+      imagenUrl: input.imagenUrl,
+      ocrSource: input.ocrSource,
     });
 
     await Promise.all(
