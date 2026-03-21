@@ -44,11 +44,11 @@ const envSchema = z
     JWT_EXPIRES_IN: z.string().default('7d'),
     THROTTLE_LIMIT: toNumber(120),
     THROTTLE_TTL: toNumber(60),
-    CACHE_TTL_MS: toNumber(600000),
+    CACHE_TTL_MS: z.string().optional(),
     CORS_ORIGIN: z.string().default('http://localhost:5173'),
     LOG_LEVEL: z.string().default('debug'),
     REDIS_URL: z.string().optional(),
-    UPLOADS_DIR: z.string().default('./uploads/users'),
+    UPLOADS_DIR: z.string().default('./uploads'),
     CSRF_ORIGIN_CHECK_ENABLED: toBoolean(false),
   })
   .superRefine((env, ctx) => {

@@ -47,7 +47,7 @@ export class HealthService {
     detail?: string;
   }> {
     const configuredUploadsDir =
-      this.configService.get<string>('UPLOADS_DIR') ?? './uploads/users';
+      this.configService.get<string>('UPLOADS_DIR') ?? './uploads';
     const uploadsDir = join(process.cwd(), configuredUploadsDir);
 
     try {

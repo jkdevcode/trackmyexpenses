@@ -100,7 +100,7 @@ export class UserService {
         const extMatch = originalName?.match(/\.[^./\\]+$/);
         const fileExt = extMatch?.[0] ?? '';
         const fileName = `${randomUUID()}${fileExt}`;
-        data.foto = await this.storage.upload(fileBuffer, fileName);
+        data.foto = await this.storage.upload(fileBuffer, fileName, 'users');
       } catch {
         throw new InternalServerErrorException('Error al guardar la imagen');
       }

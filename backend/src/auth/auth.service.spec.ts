@@ -78,7 +78,8 @@ describe('AuthService', () => {
     });
     expect(storage.upload).toHaveBeenCalledWith(
       expect.any(Buffer),
-      expect.stringContaining('users/user-'),
+      expect.stringContaining('user-'),
+      'users',
     );
     expect(bcrypt.hash).toHaveBeenCalledWith(dto.contrasena, 10);
     expect(prisma.usuario.create).toHaveBeenCalled();
