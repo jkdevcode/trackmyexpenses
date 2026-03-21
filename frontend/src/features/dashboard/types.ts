@@ -22,4 +22,7 @@ export interface Invoice {
   itemCount: number;
   status: "processed" | "pending" | "error";
   rawDate?: Date;
+  moneda?: string | null;
+  monedaBase?: string | null;
+  totalPagarBase?: number | null;
 }

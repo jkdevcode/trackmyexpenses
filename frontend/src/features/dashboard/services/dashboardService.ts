@@ -12,6 +12,9 @@ type ApiDashboardInvoiceDto = {
   fechaHoraCompra: string;
   lugarCompra?: string | null;
   totalPagar: number | string;
+  moneda?: string | null;
+  monedaBase?: string | null;
+  totalPagarBase?: number | string | null;
 };
 
 type DashboardFacturasResponse = {
@@ -54,6 +57,12 @@ export const getDashboardData = async (
     itemCount: 0,
     status: "processed",
     rawDate: new Date(String(f.fechaHoraCompra)),
+    moneda: f.moneda ? String(f.moneda) : null,
+    monedaBase: f.monedaBase ? String(f.monedaBase) : null,
+    totalPagarBase:
+      f.totalPagarBase !== undefined && f.totalPagarBase !== null
+        ? Number(f.totalPagarBase)
+        : null,
   }));
 
   invoices.sort(

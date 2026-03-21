@@ -1,6 +1,6 @@
 import type { ParsedInvoice, ProductSuggestion } from "../types";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Input } from "@heroui/input";
@@ -8,6 +8,7 @@ import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { useDisclosure } from "@heroui/modal";
 import { Select, SelectItem } from "@heroui/select";
+import { addToast } from "@heroui/toast";
 import { DatePicker } from "@heroui/date-picker";
 import {
   parseDate,
@@ -16,11 +17,13 @@ import {
   type DateValue,
 } from "@internationalized/date";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 
 import { formatCurrency } from "../utils/formatters";
 
 import { InvoiceSummary } from "./InvoiceSummary";
 import { InvoiceItemsModal } from "./InvoiceItemsModal";
+import { CurrencyConversionSection } from "./factura/CurrencyConversionSection";
 
 import { appColor } from "@/theme/theme.config";
 import { getInvoiceSchema } from "@/schemas/invoice";
@@ -49,9 +52,6 @@ export interface InvoiceFormValues {
   moneda: string;
 }
 
-const roundCurrency = (value: number) =>
-  Math.round((value + Number.EPSILON) * 100) / 100;
-
 export const InvoiceForm = ({
   initialData,
   onSave,
@@ -67,14 +67,18 @@ export const InvoiceForm = ({
     DEFAULT_CURRENCY,
   );
   const detectedCurrency = normalizeCurrencyCode(
-    initialData.monedaDetectada,
+    initialData.moneda ?? initialData.monedaDetectada,
     baseCurrency,
   );
 
   const [products, setProducts] = useState<ProductSuggestion[]>(
     initialData.productos || [],
   );
-  const [tasaCambio, setTasaCambio] = useState<string>("");
+  const [tasaCambio, setTasaCambio] = useState<number | undefined>(() => {
+    const rate = Number(initialData.tasaCambio);
+
+    return Number.isFinite(rate) && rate > 0 ? rate : undefined;
+  });
 
   const totalPagar = useMemo(() => {
     return products.reduce((acc, curr) => acc + (curr.precioTotal || 0), 0);
@@ -101,23 +105,64 @@ export const InvoiceForm = ({
 
   const selectedCurrency = watch("moneda") || detectedCurrency;
   const showConversion = selectedCurrency !== baseCurrency;
-  const parsedRate = Number(tasaCambio);
-  const rateIsValid = Number.isFinite(parsedRate) && parsedRate > 0;
-  const effectiveRate = showConversion ? (rateIsValid ? parsedRate : null) : 1;
+  const rateIsValid = Number.isFinite(tasaCambio) && (tasaCambio ?? 0) > 0;
 
-  const totalBase = useMemo(() => {
-    if (effectiveRate === null) return null;
+  const exchangeRateQuery = useQuery({
+    queryKey: ["exchange-rate", baseCurrency],
+    queryFn: async () => {
+      const response = await window.fetch(
+        `https://api.exchangerate-api.com/v4/latest/${baseCurrency}`,
+      );
 
-    return roundCurrency(totalPagar * effectiveRate);
-  }, [totalPagar, effectiveRate]);
+      if (!response.ok) {
+        throw new Error("Failed to fetch exchange rates");
+      }
+
+      return (await response.json()) as {
+        rates?: Record<string, number>;
+      };
+    },
+    enabled: showConversion && !rateIsValid,
+    staleTime: 1000 * 60 * 30,
+  });
+
+  useEffect(() => {
+    if (!showConversion || rateIsValid) return;
+    if (!exchangeRateQuery.data?.rates) return;
+
+    const apiRate = Number(exchangeRateQuery.data.rates[selectedCurrency]);
+
+    if (!Number.isFinite(apiRate) || apiRate <= 0) return;
+
+    // Backend expects base-per-invoice rate, so invert API rate.
+    const normalizedRate = 1 / apiRate;
+
+    if (Number.isFinite(normalizedRate) && normalizedRate > 0) {
+      setTasaCambio(normalizedRate);
+    }
+  }, [exchangeRateQuery.data, rateIsValid, selectedCurrency, showConversion]);
+
+  const handleRateChange = (value: number) => {
+    if (!Number.isFinite(value) || value <= 0) {
+      setTasaCambio(undefined);
+
+      return;
+    }
+    setTasaCambio(value);
+  };
 
   const submitForm = (values: InvoiceFormValues) => {
-    const rateToSend =
-      values.moneda === baseCurrency
-        ? undefined
-        : rateIsValid
-          ? parsedRate
-          : undefined;
+    if (showConversion && !rateIsValid) {
+      addToast({
+        title: t("toast.error"),
+        description: t("form.currency.rate_required"),
+        color: "danger",
+      });
+
+      return;
+    }
+
+    const rateToSend = values.moneda === baseCurrency ? undefined : tasaCambio;
 
     onSave({ ...values, totalPagar, tasaCambio: rateToSend }, products);
   };
@@ -239,19 +284,13 @@ export const InvoiceForm = ({
               : t("form.currency.fallback", { currency: baseCurrency })}
           </p>
 
-          {showConversion ? (
-            <Input
-              color={appColor}
-              description={t("form.currency.rate_hint")}
-              label={t("form.currency.rate")}
-              min={0.000001}
-              step="0.000001"
-              type="number"
-              value={tasaCambio}
-              variant="bordered"
-              onValueChange={setTasaCambio}
-            />
-          ) : null}
+          <CurrencyConversionSection
+            moneda={selectedCurrency}
+            monedaBase={baseCurrency}
+            total={totalPagar}
+            tasaCambio={tasaCambio}
+            onChangeTasa={handleRateChange}
+          />
 
           <div className="border-t border-default-200 pt-4 mt-2 space-y-3">
             <Input
@@ -266,23 +305,6 @@ export const InvoiceForm = ({
                 selectedCurrency,
               )}
             />
-
-            {showConversion ? (
-              <Input
-                readOnly
-                className="font-semibold"
-                color={appColor}
-                description={t("form.currency.base_desc", {
-                  currency: baseCurrency,
-                })}
-                label={t("form.currency.total_base")}
-                value={
-                  totalBase === null
-                    ? t("form.currency.pending")
-                    : formatCurrency(totalBase, i18n.language, baseCurrency)
-                }
-              />
-            ) : null}
           </div>
         </CardBody>
       </Card>

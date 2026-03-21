@@ -45,6 +45,7 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
           },
           fecha: "2026-02-18",
           monedaDetectada: "USD",
+          tasaCambio: 4500,
           productos: [
             {
               nombreDetected: "Milk",
@@ -65,6 +66,22 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
       }),
     });
   });
+
+  await page.route(
+    "https://api.exchangerate-api.com/v4/latest/COP",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          rates: {
+            USD: 0.00025,
+            COP: 1,
+          },
+        }),
+      });
+    },
+  );
 
   await page.route("**/facturas/ocr/confirmar", async (route) => {
     confirmPayload = route.request().postDataJSON();
