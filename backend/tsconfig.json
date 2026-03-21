@@ -23,9 +23,7 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": [
-    "src/**/*",
-    "test/**/*",
-    "check-db.ts"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
