@@ -1,9 +1,11 @@
 import type {
   ConfirmFacturaDto,
   CreateFacturaDto,
+  CreateInvoiceWithFileDto,
   InvoiceDetail,
   InvoiceSummaryItem,
   InvoicePeriod,
+  OcrSource,
   ProductCatalogItem,
   ScanResponse,
   UpdateFacturaDto,
@@ -44,6 +46,8 @@ type ApiFacturaDetailDto = {
   tasaCambioFecha?: string | null;
   tasaCambioFuente?: string | null;
   totalPagarBase?: number | string | null;
+  imagenUrl?: string | null;
+  ocrSource?: OcrSource | null;
   usuario?: {
     id: number | string;
     nombres: string;
@@ -74,11 +78,6 @@ type InvoicesApiResponse = {
 
 type InvoiceDetailApiResponse = {
   factura?: ApiFacturaDetailDto;
-};
-
-type ConfirmInvoiceApiResponse = {
-  status: number;
-  message: string;
 };
 
 type CreateInvoiceApiResponse = {
@@ -118,10 +117,64 @@ export const scanInvoiceRequest = async (file: File): Promise<ScanResponse> => {
   return response.data;
 };
 
+/**
+ * @deprecated The old OCR confirm endpoint (POST /facturas/ocr/confirmar) has been
+ * removed. Use createInvoiceWithFileRequest for OCR-confirmed invoices.
+ */
 export const confirmInvoiceRequest = async (payload: ConfirmFacturaDto) => {
-  const response = await axiosClient.post<ConfirmInvoiceApiResponse>(
+  const response = await axiosClient.post<{ status: number; message: string }>(
     "/facturas/ocr/confirmar",
     payload,
+  );
+
+  return response.data;
+};
+
+/**
+ * Creates a new invoice via multipart/form-data.
+ * Used for OCR-confirmed invoices: sends the original image file + ocrSource
+ * alongside the factura data so the backend can store the image URL.
+ *
+ * Items are sent as a single JSON-serialized string:
+ *   formData.append('items', JSON.stringify(items))
+ */
+export const createInvoiceWithFileRequest = async (
+  dto: CreateInvoiceWithFileDto,
+): Promise<{ status: number; message: string }> => {
+  const formData = new FormData();
+
+  // --- factura scalar fields ---
+  formData.append("fechaHoraCompra", dto.factura.fechaHoraCompra);
+  formData.append("metodoPago", dto.factura.metodoPago);
+  formData.append("lugarCompra", dto.factura.lugarCompra);
+  if (dto.factura.nitProveedor) {
+    formData.append("nitProveedor", dto.factura.nitProveedor);
+  }
+  if (dto.factura.totalPagar !== undefined) {
+    formData.append("totalPagar", String(dto.factura.totalPagar));
+  }
+  if (dto.factura.moneda) {
+    formData.append("moneda", dto.factura.moneda);
+  }
+  if (dto.factura.tasaCambio !== undefined) {
+    formData.append("tasaCambio", String(dto.factura.tasaCambio));
+  }
+
+  // --- items as JSON array (backend parses with JSON.parse) ---
+  formData.append("items", JSON.stringify(dto.productos));
+
+  // --- ocrSource ---
+  if (dto.ocrSource) {
+    formData.append("ocrSource", dto.ocrSource);
+  }
+
+  // --- image file ---
+  formData.append("file", dto.file);
+
+  const response = await axiosClient.post<{ status: number; message: string }>(
+    "/facturas/ocr/create",
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } },
   );
 
   return response.data;
@@ -250,6 +303,8 @@ export const getInvoiceDetailRequest = async (
       nombres: String(raw?.usuario?.nombres ?? ""),
       apellidos: String(raw?.usuario?.apellidos ?? ""),
     },
+    imagenUrl: raw?.imagenUrl ? String(raw.imagenUrl) : null,
+    ocrSource: raw?.ocrSource ?? undefined,
     productos: (raw?.productos ?? []).map((item) => ({
       id: item?.id !== undefined ? Number(item.id) : undefined,
       productoId:

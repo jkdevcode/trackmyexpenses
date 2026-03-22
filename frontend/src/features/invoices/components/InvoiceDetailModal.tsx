@@ -1,4 +1,4 @@
-import type { InvoiceDetailItem } from "../types";
+import type { InvoiceDetailItem, OcrSource } from "../types";
 
 import { useTranslation } from "react-i18next";
 import { Button } from "@heroui/button";
@@ -8,6 +8,7 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  useDisclosure,
 } from "@heroui/modal";
 import { Spinner } from "@heroui/spinner";
 import {
@@ -23,12 +24,16 @@ import { useInvoiceDetailQuery } from "../hooks/useInvoicesQuery";
 import { formatCurrency, formatDate } from "../utils/formatters";
 import { getInvoiceItemUnitPrice } from "../utils/invoice-item";
 
+import { OcrSourceBadge } from "./OcrSourceBadge";
+
 import { appColor } from "@/theme/theme.config";
 import { appColorVariants } from "@/theme/app-color-variants";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 
 const resolveCurrency = (value?: string | null) =>
   normalizeCurrencyCode(value, DEFAULT_CURRENCY);
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 type InvoiceDetailModalProps = {
   invoiceId: number | null;
@@ -43,6 +48,11 @@ export const InvoiceDetailModal = ({
 }: InvoiceDetailModalProps) => {
   const { t, i18n } = useTranslation("invoices");
   const detailQuery = useInvoiceDetailQuery(invoiceId, isOpen);
+  const {
+    isOpen: isImageOpen,
+    onOpen: onImageOpen,
+    onClose: onImageClose,
+  } = useDisclosure();
 
   const detail = detailQuery.data;
   const currency = resolveCurrency(detail?.moneda ?? detail?.monedaBase);
@@ -91,6 +101,12 @@ export const InvoiceDetailModal = ({
                   <span className="font-semibold">{t("detail.nit")}:</span>{" "}
                   {detail.nitProveedor || "-"}
                 </p>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">
+                    {t("detail.ocr_source")}:
+                  </span>{" "}
+                  <OcrSourceBadge source={detail.ocrSource as OcrSource} />
+                </div>
                 <p>
                   <span className="font-semibold">{t("detail.moneda")}:</span>{" "}
                   {currency}
@@ -156,9 +172,16 @@ export const InvoiceDetailModal = ({
           ) : null}
         </ModalBody>
         <ModalFooter className="justify-between">
-          <Button variant="light" onPress={onClose}>
-            {t("detail.close")}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="light" onPress={onClose}>
+              {t("detail.close")}
+            </Button>
+            {detail?.imagenUrl && (
+              <Button color={appColor} variant="flat" onPress={onImageOpen}>
+                {t("detail.view_image")}
+              </Button>
+            )}
+          </div>
           {detail ? (
             <div className="flex flex-col items-end">
               <p className={`text-xl font-bold ${appColorVariants.textStrong}`}>
@@ -175,6 +198,28 @@ export const InvoiceDetailModal = ({
           ) : null}
         </ModalFooter>
       </ModalContent>
+      {detail?.imagenUrl && (
+        <Modal
+          backdrop="blur"
+          isOpen={isImageOpen}
+          size="5xl"
+          onClose={onImageClose}
+        >
+          <ModalContent>
+            <ModalHeader>{t("detail.view_image")}</ModalHeader>
+            <ModalBody className="p-1 overflow-auto max-h-[80vh] flex justify-center items-center bg-black/5">
+              <img
+                alt="Invoice"
+                className="max-w-full h-auto rounded-lg shadow-lg"
+                src={`${API_BASE_URL}${detail.imagenUrl}`}
+              />
+            </ModalBody>
+            <ModalFooter>
+              <Button onPress={onImageClose}>{t("detail.close")}</Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
     </Modal>
   );
 };

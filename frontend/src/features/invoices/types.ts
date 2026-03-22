@@ -14,6 +14,8 @@ export interface ProductSuggestion {
   };
 }
 
+export type OcrSource = "ai" | "ai-image" | "ocr" | "fallback";
+
 export interface ParsedInvoice {
   empresa?: {
     nombre?: string;
@@ -29,6 +31,7 @@ export interface ParsedInvoice {
   productos: ProductSuggestion[];
   totalDetectado?: number | null;
   notes?: string[];
+  source?: OcrSource;
 }
 
 export interface ScanResponse {
@@ -38,6 +41,7 @@ export interface ScanResponse {
   usedFallbackParser: boolean;
 }
 
+/** @deprecated Use CreateInvoiceWithFileDto + createInvoiceWithFileRequest instead */
 export interface ConfirmFacturaDto {
   factura: {
     fechaHoraCompra: string;
@@ -56,6 +60,27 @@ export interface ConfirmFacturaDto {
     pesoDetectado?: number;
     descuentoDetectado?: number;
   }[];
+}
+
+export interface CreateInvoiceWithFileDto {
+  factura: {
+    fechaHoraCompra: string;
+    metodoPago: string;
+    lugarCompra: string;
+    nitProveedor?: string;
+    totalPagar?: number;
+    moneda?: string;
+    tasaCambio?: number;
+  };
+  productos: {
+    nombreDetectado: string;
+    precioUnitario: number;
+    cantidadDetectada: number;
+    unidadDetectada?: string;
+    descuentoDetectado?: number;
+  }[];
+  ocrSource?: OcrSource;
+  file: File;
 }
 
 export interface CreateFacturaDto {
@@ -138,6 +163,8 @@ export interface InvoiceDetail {
   tasaCambioFecha?: string | null;
   tasaCambioFuente?: string | null;
   totalPagarBase?: number | null;
+  imagenUrl?: string | null;
+  ocrSource?: OcrSource;
   usuario: {
     id: number;
     nombres: string;

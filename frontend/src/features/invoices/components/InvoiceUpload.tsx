@@ -9,7 +9,7 @@ import { InvoiceUploadButton } from "./InvoiceUploadButton";
 import { InvoiceUploadDropzone } from "./InvoiceUploadDropzone";
 
 interface InvoiceUploadProps {
-  onScanComplete: (data: ScanResponse) => void;
+  onScanComplete: (data: ScanResponse, file: File) => void;
 }
 
 export const InvoiceUpload = ({ onScanComplete }: InvoiceUploadProps) => {
