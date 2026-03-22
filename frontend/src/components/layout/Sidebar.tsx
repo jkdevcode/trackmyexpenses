@@ -33,9 +33,7 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
 
   const navigate = useNavigate();
 
-  const avatarUrl = user?.foto
-    ? `${ASSETS_URL}${user.foto}`
-    : "/default-avatar.png";
+  const avatarUrl = user?.foto ? `${ASSETS_URL}${user.foto}` : undefined;
 
   const menuItems = [
     {
@@ -144,6 +142,7 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
               color={appColor}
               size={isCollapsed ? "sm" : "md"}
               src={avatarUrl}
+              showFallback
             />
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">
