@@ -25,6 +25,8 @@ const FACTURA_LIST_SELECT = {
   monedaBase: true,
   tasaCambio: true,
   totalPagarBase: true,
+  imagenUrl: true,
+  ocrSource: true,
   usuarioId: true,
 } as const;
 
@@ -100,6 +102,8 @@ export class PrismaFacturaRepository implements FacturaRepository {
         tasaCambioFecha: true,
         tasaCambioFuente: true,
         totalPagarBase: true,
+        imagenUrl: true,
+        ocrSource: true,
         usuario: {
           select: {
             id: true,
@@ -242,6 +246,8 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
           data.totalPagarBase === undefined || data.totalPagarBase === null
             ? null
             : new Prisma.Decimal(data.totalPagarBase),
+        imagenUrl: data.imagenUrl ?? null,
+        ocrSource: data.ocrSource ?? null,
       },
       select: { id: true },
     });
@@ -380,6 +386,8 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
         tasaCambioFecha: true,
         tasaCambioFuente: true,
         totalPagarBase: true,
+        imagenUrl: true,
+        ocrSource: true,
         usuario: {
           select: {
             id: true,
@@ -451,6 +459,8 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
         tasaCambioFecha: true,
         tasaCambioFuente: true,
         totalPagarBase: true,
+        imagenUrl: true,
+        ocrSource: true,
         productos: {
           select: {
             id: true,

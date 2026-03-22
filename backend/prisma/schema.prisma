@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id                Int       @id @default(autoincrement())
+  tipoDocumento     String
+  documento         String    @unique
+  nombres           String
+  apellidos         String
+  correo            String    @unique
+  contrasena        String
+  rol               Rol       @default(USER)
+  foto              String?   // opcional
+  monedaBase        String    @default("COP") @db.Char(3)
+  fechaIngreso      DateTime  @default(now())
+  fechaUltimaEdicion DateTime?
+  facturas          Factura[]
+
+  @@index([documento])
+  @@index([correo])
+}
+
+model Factura {
+  id                Int         @id @default(autoincrement())
+  codigoFactura     String      @unique
+  metodoPago        MetodoPago
+  lugarCompra       String
+  nitProveedor      String?
+  fechaHoraCompra   DateTime    @default(now())
+  totalPagar        Decimal     @db.Decimal(10,2)
+  moneda            String?     @db.Char(3)
+  monedaBase        String?     @db.Char(3)
+  tasaCambio        Decimal?    @db.Decimal(18,6)
+  tasaCambioFecha   DateTime?
+  tasaCambioFuente  String?
+  totalPagarBase    Decimal?    @db.Decimal(18,2)
+  imagenUrl         String?
+  ocrSource         String?
+  usuarioId         Int
+  usuario           Usuario     @relation(fields: [usuarioId], references: [id])
+  productos         FacturaProducto[]
+
+  @@index([fechaHoraCompra])
+}
+
+model Producto {
+  id           Int               @id @default(autoincrement())
+  codigo       String            @unique
+  nombre       String
+  precioUnitario Decimal          @db.Decimal(10,2)
+  facturas     FacturaProducto[]
+}
+
+model FacturaProducto {
+  id             Int       @id @default(autoincrement())
+  facturaId      Int
+  productoId     Int
+  cantidad       Int
+  unidad         String?
+  descuento      Decimal?  @db.Decimal(5,2) // porcentaje, ej: 10.00
+  precioUnitario Decimal?  @db.Decimal(10,2)
+  precioTotal    Decimal   @db.Decimal(10,2)
+  productoNombre String?
+  productoCodigo String?
+
+  factura        Factura   @relation(fields: [facturaId], references: [id])
+  producto       Producto  @relation(fields: [productoId], references: [id])
+
+  @@unique([facturaId, productoId])
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TARJETA_CREDITO
+  TARJETA_DEBITO
+  TRANSFERENCIA
+  OTRO
+}
+
+enum Rol {
+  USER
+  ADMIN
+}

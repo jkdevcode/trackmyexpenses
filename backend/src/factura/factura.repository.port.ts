@@ -19,6 +19,8 @@ export type FacturaListItem = {
   monedaBase: string | null;
   tasaCambio: unknown;
   totalPagarBase: unknown;
+  imagenUrl?: string | null;
+  ocrSource?: string | null;
   usuarioId: number;
 };
 
@@ -41,6 +43,8 @@ export type CreateFacturaRecordInput = {
   tasaCambioFecha?: Date | null;
   tasaCambioFuente?: string | null;
   totalPagarBase?: number | null;
+  imagenUrl?: string | null;
+  ocrSource?: string | null;
 };
 
 export type CreateFacturaProductoInput = {

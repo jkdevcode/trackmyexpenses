@@ -45,6 +45,8 @@ const createFacturaSchema = z.object({
   items: z
     .array(facturaItemSchema)
     .min(1, { message: 'Debe haber al menos un item' }),
+  imagenUrl: z.string().optional(),
+  ocrSource: z.enum(['ai', 'ai-image', 'ocr', 'fallback']).optional(),
 });
 
 export class CreateFacturaDto extends createZodDto(createFacturaSchema) {}
