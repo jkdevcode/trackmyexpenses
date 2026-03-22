@@ -83,7 +83,9 @@
       "precioUnitario": "Unit price",
       "descuento": "Discount",
       "precioTotal": "Total price"
-    }
+    },
+    "view_image": "View invoice",
+    "ocr_source": "OCR Source"
   },
   "manual": {
     "fecha": "Date",
@@ -153,7 +155,21 @@
     "success": "Image processed successfully",
     "error": "Error processing image",
     "invalid_type": "Only PDF or image files are allowed",
-    "invalid_size": "The file exceeds the 5MB maximum size"
+    "invalid_size": "The file exceeds the 5MB maximum size",
+    "missing_file_on_confirm": "File reference lost. Please upload the invoice again."
+  },
+  "ocr": {
+    "source": {
+      "label": "OCR Quality",
+      "ai": "High precision",
+      "ai_tooltip": "Processed directly with AI",
+      "ocr": "Medium precision",
+      "ocr_tooltip": "Processed with OCR + AI",
+      "fallback": "Review data",
+      "fallback_tooltip": "Processed with basic rules (may fail)"
+    },
+    "fallback_warning": "Detected data may be incorrect. Review before saving.",
+    "error_message": "Could not process the invoice. Try another image."
   },
   "form": {
     "title": "Invoice Review",

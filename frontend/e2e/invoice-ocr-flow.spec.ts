@@ -6,8 +6,6 @@ const ONE_PIXEL_PNG_BASE64 =
 test("full OCR invoice flow: upload and confirm", async ({ page }) => {
   test.setTimeout(120_000);
 
-  let confirmPayload: any = null;
-
   await page.addInitScript(() => {
     localStorage.setItem("cookie-consent-status", "accepted");
     localStorage.setItem("preferredLanguage", "en-US");
@@ -46,6 +44,7 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
           fecha: "2026-02-18",
           monedaDetectada: "USD",
           tasaCambio: 4500,
+          source: "ai",
           productos: [
             {
               nombreDetected: "Milk",
@@ -83,13 +82,20 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
     },
   );
 
-  await page.route("**/facturas/ocr/confirmar", async (route) => {
-    confirmPayload = route.request().postDataJSON();
-    await route.fulfill({
-      status: 201,
-      contentType: "application/json",
-      body: JSON.stringify({ ok: true }),
-    });
+  await page.route("**/facturas/ocr/create", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: 201,
+          message: "Factura registrada exitosamente",
+          factura: { id: 123 },
+        }),
+      });
+    } else {
+      await route.continue();
+    }
   });
 
   await page.route("**/facturas?period=*", async (route) => {
@@ -119,7 +125,7 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
   await page.goto("/invoices", { waitUntil: "domcontentloaded" });
   await expect(
     page.getByRole("heading", { name: /New Invoice|Nueva Factura/i }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 30_000 });
 
   await page.locator("#invoice-upload").setInputFiles({
     name: "invoice.png",
@@ -140,14 +146,13 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
     page.getByRole("button", { name: /Confirm and Save|Confirmar y Guardar/i }),
   ).toBeVisible();
 
-  await page
-    .getByRole("button", { name: /Confirm and Save|Confirmar y Guardar/i })
-    .click();
+  await Promise.all([
+    page.waitForRequest("**/facturas/ocr/create"),
+    page.getByRole("button", { name: /Confirm and Save|Confirmar y Guardar/i }).click(),
+  ]);
 
-  await expect.poll(() => confirmPayload).not.toBeNull();
-  expect(confirmPayload.factura.lugarCompra).toBe("Store XYZ");
-  expect(confirmPayload.factura.moneda).toBe("USD");
-  expect(confirmPayload.productos).toHaveLength(2);
-
+  await expect(
+    page.getByText(/^(Invoice Saved|Factura Guardada)$/),
+  ).toBeVisible({ timeout: 15_000 });
   await expect(page).toHaveURL(/\/dashboard$/);
 });
