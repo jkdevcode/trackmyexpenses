@@ -36,9 +36,7 @@ export const MobileNavbar = () => {
 
   const ASSETS_URL = import.meta.env.VITE_ASSETS_URL;
 
-  const avatarUrl = user?.foto
-    ? `${ASSETS_URL}${user.foto}`
-    : "/default-avatar.png";
+  const avatarUrl = user?.foto ? `${ASSETS_URL}${user.foto}` : undefined;
 
   const menuItems = [
     {
@@ -98,6 +96,7 @@ export const MobileNavbar = () => {
           role="button"
           size="sm"
           src={avatarUrl}
+          showFallback
           tabIndex={0}
           onClick={() => navigate("/profile")}
           onKeyDown={(e) => {
@@ -181,6 +180,7 @@ export const MobileNavbar = () => {
                 className="w-12 h-12 group-hover:scale-105 transition-transform"
                 color={appColor}
                 src={avatarUrl}
+                showFallback
               />
               <div className="flex flex-col">
                 <span className={`font-bold text-lg ${appColorVariants.text}`}>
