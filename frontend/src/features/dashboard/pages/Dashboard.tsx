@@ -30,12 +30,12 @@ const Dashboard = () => {
       </section>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Chart Section - Takes 2 cols on large screens */}
         <LazyMotion features={domAnimation}>
           <m.section
             animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-1"
+            className="xl:col-span-1"
             initial={{ opacity: 0, x: -20 }}
             transition={{ delay: 0.2 }}
           >
@@ -45,7 +45,7 @@ const Dashboard = () => {
           {/* Recent Invoices Table - Takes 1 col on large screens */}
           <m.section
             animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-1 bg-content1 rounded-2xl shadow-sm border border-default-100 p-6"
+            className="xl:col-span-1 bg-content1 rounded-2xl shadow-sm border border-default-100 p-6"
             initial={{ opacity: 0, x: 20 }}
             transition={{ delay: 0.3 }}
           >
@@ -55,7 +55,7 @@ const Dashboard = () => {
           {/* Average Ticket Chart - Full Width Bottom */}
           <m.section
             animate={{ opacity: 1, y: 0 }}
-            className="lg:col-span-2"
+            className="xl:col-span-2"
             initial={{ opacity: 0, y: 20 }}
             transition={{ delay: 0.4 }}
           >

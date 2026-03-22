@@ -12,6 +12,7 @@ import {
 } from "@heroui/table";
 import { Pagination } from "@heroui/pagination";
 import { Chip } from "@heroui/chip";
+import { Tooltip } from "@heroui/tooltip";
 import { useTranslation } from "react-i18next";
 
 import { formatCurrency, formatDate } from "../../invoices/utils/formatters";
@@ -94,8 +95,8 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
           ) : null
         }
         classNames={{
-          th: `bg-default-100/50 ${appColorVariants.text} font-bold`,
-          td: "py-3 border-b border-default-100 last:border-0",
+          th: `bg-default-100/50 ${appColorVariants.text} font-bold px-2`,
+          td: "py-3 px-2 border-b border-default-100 last:border-0",
         }}
         isStriped={false}
       >
@@ -106,7 +107,9 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
               className={
                 column.key === "status" || column.key === "date"
                   ? "hidden sm:table-cell"
-                  : ""
+                  : column.key === "provider"
+                    ? "min-w-0"
+                    : ""
               }
             >
               {column.label}
@@ -125,14 +128,16 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
                 switch (columnKey) {
                   case "provider":
                     return (
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span
-                            className="font-medium text-foreground text-sm truncate max-w-xs xl:max-w-44 2xl:max-w-64"
-                            title={item.provider}
+                      <TableCell className="min-w-0">
+                        <div className="flex flex-col min-w-0">
+                          <Tooltip
+                            content={item.provider}
+                            placement="top-start"
                           >
-                            {item.provider}
-                          </span>
+                            <span className="font-medium text-foreground text-sm line-clamp-2 break-words cursor-help">
+                              {item.provider}
+                            </span>
+                          </Tooltip>
                           <div className="flex sm:hidden gap-2 text-xs text-default-400">
                             <span>{formatDate(item.date, i18n.language)}</span>
                             <span>•</span>
