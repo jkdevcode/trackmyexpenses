@@ -19,6 +19,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { FacturaService } from './factura.service';
 import { CreateFacturaDto } from './dto/create-factura.dto';
 import { AddProductoFacturaDto } from './dto/add-producto.dto';
+import { CreateOcrFacturaDto } from './dto/create-ocr-factura.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { UpdateFacturaDto } from './dto/update-factura.dto';
@@ -47,9 +48,24 @@ export class FacturaController {
   ) {}
 
   @Post()
+  @UseInterceptors(FileInterceptor('file', imageFileInterceptorOptions))
   @UsePipes(ZodValidationPipe)
-  async create(@Request() req: RequestWithUser, @Body() dto: CreateFacturaDto) {
-    return this.facturaService.create(req.user.id, dto);
+  async create(
+    @Request() req: RequestWithUser,
+    @Body() dto: CreateFacturaDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    if (file) {
+      if (file.size > MAX_UPLOAD_FILE_SIZE) {
+        throw new BadRequestException('El archivo supera el limite de 5MB');
+      }
+
+      if (!file.mimetype.match(/^image\/(jpeg|png)$/)) {
+        throw new BadRequestException('Solo se permiten imagenes (JPEG, PNG)');
+      }
+    }
+
+    return this.facturaService.create(req.user.id, dto, file);
   }
 
   @Get()
@@ -141,5 +157,65 @@ export class FacturaController {
     @Body() dto: ConfirmFacturaDto,
   ) {
     return this.facturaOcrService.confirmarFactura(req.user.id, dto);
+  }
+
+  @Post('ocr/create')
+  @UseInterceptors(FileInterceptor('file', imageFileInterceptorOptions))
+  async createWithOcr(
+    @Request() req: RequestWithUser,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: any,
+  ) {
+    // 1. Log pre-parsing type for debugging
+    console.log('OCR items type (raw):', typeof body.items);
+
+    // 2. Manual parsing of items
+    let parsedItems: any[] = [];
+
+    if (!body.items) {
+      throw new BadRequestException('El campo items es obligatorio');
+    }
+
+    if (typeof body.items === 'string') {
+      try {
+        parsedItems = JSON.parse(body.items);
+      } catch (error) {
+        throw new BadRequestException('JSON invalido en items');
+      }
+    } else if (Array.isArray(body.items)) {
+      parsedItems = body.items;
+    } else {
+      throw new BadRequestException('items debe ser un array o un JSON string');
+    }
+
+    // 3. Log post-parsing type for debugging
+    console.log('OCR items type (parsed):', typeof parsedItems);
+
+    if (!Array.isArray(parsedItems) || parsedItems.length === 0) {
+      throw new BadRequestException('Debe haber al menos un item (array no vacio)');
+    }
+
+    // 4. Validate file
+    if (file) {
+      if (file.size > MAX_UPLOAD_FILE_SIZE) {
+        throw new BadRequestException('El archivo supera el limite de 5MB');
+      }
+
+      if (!file.mimetype.match(/^image\/(jpeg|png|webp)$/)) {
+        throw new BadRequestException(
+          'Solo se permiten imagenes (JPEG, PNG, WEBP)',
+        );
+      }
+    }
+
+    // 5. Build clean payload with numeric conversions and forward to service
+    const cleanPayload = {
+      ...body,
+      items: parsedItems,
+      totalPagar: body.totalPagar ? Number(body.totalPagar) : undefined,
+      tasaCambio: body.tasaCambio ? Number(body.tasaCambio) : undefined,
+    };
+
+    return this.facturaService.createWithOcrAndFile(req.user.id, cleanPayload, file);
   }
 }

@@ -116,6 +116,48 @@ describe('FacturaController', () => {
     expect(result).toEqual({ status: 201 });
   });
 
+  it('POST /facturas should call service.create with optional file', async () => {
+    const req = { user: { id: 4 } } as any;
+    const dto = {
+      metodoPago: 'EFECTIVO',
+      lugarCompra: 'TIENDA',
+      items: [{ productoId: 1, cantidad: 1 }],
+    };
+    const file = {
+      buffer: Buffer.from('image-data'),
+      mimetype: 'image/jpeg',
+      size: 1024,
+      originalname: 'factura.jpg',
+    } as Express.Multer.File;
+    facturaService.create.mockResolvedValue({ status: 201 });
+
+    const result = await controller.create(req, dto as any, file);
+
+    expect(facturaService.create).toHaveBeenCalledWith(4, dto, file);
+    expect(result).toEqual({ status: 201 });
+  });
+
+  it('POST /facturas should reject invalid mimetype', async () => {
+    const req = { user: { id: 4 } } as any;
+    const dto = {
+      metodoPago: 'EFECTIVO',
+      lugarCompra: 'TIENDA',
+      items: [{ productoId: 1, cantidad: 1 }],
+    };
+
+    await expect(
+      controller.create(
+        req,
+        dto as any,
+        {
+          buffer: Buffer.from('text'),
+          mimetype: 'image/webp',
+          size: 1024,
+        } as Express.Multer.File,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('GET /facturas should call service.findAll with user and query params', async () => {
     const req = { user: { id: 20 } } as any;
     const query = { period: 'month', page: 1, limit: 20 };
