@@ -83,7 +83,9 @@
       "precioUnitario": "Precio unitario",
       "descuento": "Descuento",
       "precioTotal": "Precio total"
-    }
+    },
+    "view_image": "Ver factura",
+    "ocr_source": "Fuente OCR"
   },
   "manual": {
     "fecha": "Fecha",
@@ -153,7 +155,21 @@
     "success": "Imagen procesada correctamente",
     "error": "Error al procesar la imagen",
     "invalid_type": "Solo se permiten archivos PDF o imagen",
-    "invalid_size": "El archivo supera el limite maximo de 5MB"
+    "invalid_size": "El archivo supera el limite maximo de 5MB",
+    "missing_file_on_confirm": "Se ha perdido la referencia al archivo. Por favor, sube la factura de nuevo."
+  },
+  "ocr": {
+    "source": {
+      "label": "Calidad OCR",
+      "ai": "Alta precisión",
+      "ai_tooltip": "Procesado directamente con IA",
+      "ocr": "Precisión media",
+      "ocr_tooltip": "Procesado con OCR + IA",
+      "fallback": "Revisar datos",
+      "fallback_tooltip": "Procesado con reglas básicas (puede fallar)"
+    },
+    "fallback_warning": "Los datos detectados pueden ser incorrectos. Revisa antes de guardar.",
+    "error_message": "No se pudo procesar la factura. Intenta con otra imagen."
   },
   "form": {
     "title": "Revisión de Factura",

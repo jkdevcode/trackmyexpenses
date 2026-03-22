@@ -1,7 +1,8 @@
 import type {
   ScanResponse,
   ProductSuggestion,
-  ConfirmFacturaDto,
+  CreateInvoiceWithFileDto,
+  OcrSource,
 } from "@/features/invoices/types";
 
 import { useMemo, useState } from "react";
@@ -16,17 +17,19 @@ import {
   ModalFooter,
   useDisclosure,
 } from "@heroui/modal";
+import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 
 import { formatCurrency } from "../utils/formatters";
 
-import { InvoiceForm } from "./InvoiceForm";
+import { InvoiceForm, type InvoiceFormValues } from "./InvoiceForm";
 import { InvoiceUpload } from "./InvoiceUpload";
+import { OcrSourceBadge } from "./OcrSourceBadge";
 
 import { appColor } from "@/theme/theme.config";
 import { appColorVariants } from "@/theme/app-color-variants";
-import { useConfirmInvoiceMutation } from "@/features/invoices/hooks/useInvoiceMutations";
+import { useCreateInvoiceWithFileMutation } from "@/features/invoices/hooks/useInvoiceMutations";
 import { useSession } from "@/contexts/session-context";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 
@@ -51,7 +54,8 @@ export const OcrInvoiceFlow = () => {
   const { user } = useSession();
   const [step, setStep] = useState<"upload" | "edit">("upload");
   const [scanData, setScanData] = useState<ScanResponse | null>(null);
-  const confirmInvoiceMutation = useConfirmInvoiceMutation();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const createInvoiceMutation = useCreateInvoiceWithFileMutation();
   const navigate = useNavigate();
 
   const {
@@ -66,13 +70,14 @@ export const OcrInvoiceFlow = () => {
     DEFAULT_CURRENCY,
   );
 
-  const handleScanComplete = (data: ScanResponse) => {
+  const handleScanComplete = (data: ScanResponse, file: File) => {
     setScanData(data);
+    setSelectedFile(file);
     setStep("edit");
   };
 
   const handlePreSave = (
-    formData: PendingData["formData"],
+    formData: InvoiceFormValues & { totalPagar: number; tasaCambio?: number },
     products: ProductSuggestion[],
   ) => {
     setPendingData({ formData, products });
@@ -84,7 +89,17 @@ export const OcrInvoiceFlow = () => {
     onConfirmClose();
 
     try {
-      const payload: ConfirmFacturaDto = {
+      if (!selectedFile) {
+        addToast({
+          title: t("toast.error"),
+          description: t("upload.missing_file_on_confirm"),
+          color: "danger",
+        });
+
+        return;
+      }
+
+      const payload: CreateInvoiceWithFileDto = {
         factura: {
           fechaHoraCompra: new Date(
             pendingData.formData.fechaHoraCompra,
@@ -105,9 +120,11 @@ export const OcrInvoiceFlow = () => {
             unidadDetectada: p.unidad || "u",
             descuentoDetectado: 0,
           })),
+        ocrSource: scanData?.parsed?.source as OcrSource,
+        file: selectedFile,
       };
 
-      await confirmInvoiceMutation.mutateAsync(payload);
+      await createInvoiceMutation.mutateAsync(payload);
 
       addToast({
         title: t("toast.save_success_title"),
@@ -162,10 +179,45 @@ export const OcrInvoiceFlow = () => {
               animate={{ opacity: 1, x: 0 }}
               initial={{ opacity: 0, x: 20 }}
             >
+              <div className="max-w-4xl mx-auto mb-4 space-y-4">
+                <div className="flex items-center justify-between bg-content1 p-4 rounded-xl border border-default-200 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-default-600">
+                      {t("ocr.source.label")}:
+                    </span>
+                    <OcrSourceBadge
+                      source={scanData.parsed.source as OcrSource}
+                    />
+                  </div>
+                </div>
+
+                {scanData.parsed.source === "fallback" && (
+                  <Card className="border-none bg-warning-50 text-warning-700">
+                    <CardBody className="py-2 px-3 text-sm flex-row items-center gap-2">
+                      <span className="font-bold">⚠️</span>
+                      {t("ocr.fallback_warning")}
+                    </CardBody>
+                  </Card>
+                )}
+
+                {(scanData.parsed.source as string) === "error" && (
+                  <Card className="border-none bg-danger-50 text-danger-700">
+                    <CardBody className="py-2 px-3 text-sm flex-row items-center gap-2">
+                      <span className="font-bold">❌</span>
+                      {t("ocr.error_message")}
+                    </CardBody>
+                  </Card>
+                )}
+              </div>
+
               <InvoiceForm
                 initialData={scanData.parsed}
-                saving={confirmInvoiceMutation.isPending}
-                onCancel={() => setStep("upload")}
+                saving={createInvoiceMutation.isPending}
+                onCancel={() => {
+                  setStep("upload");
+                  setSelectedFile(null);
+                  setScanData(null);
+                }}
                 onSave={handlePreSave}
               />
             </m.div>
@@ -213,7 +265,7 @@ export const OcrInvoiceFlow = () => {
             </Button>
             <Button
               color={appColor}
-              isLoading={confirmInvoiceMutation.isPending}
+              isLoading={createInvoiceMutation.isPending}
               onPress={handleConfirmSave}
             >
               {t("confirm.confirm")}
