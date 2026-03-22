@@ -30,11 +30,11 @@ export const getRegisterSchema = (t: TFunction) => {
       .string()
       .email(t("validation:email_invalid"))
       .required(t("validation:required")),
-    direccion: yup.string().required(t("validation:required")),
+    /*  direccion: yup.string().required(t("validation:required")),
     telefono: yup
       .string()
       .matches(/^[0-9]{10}$/, t("validation:phone_invalid"))
-      .required(t("validation:required")),
+      .required(t("validation:required")), */
     tipo_documento: yup.string().required(t("validation:required")),
     documento_identidad: yup
       .string()
