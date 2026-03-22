@@ -48,6 +48,7 @@ export class AuthService {
         apellidos,
         correo,
         contrasena,
+        monedaBase,
       } = dto;
 
       const exists = await this.prisma.usuario.findFirst({
@@ -81,6 +82,7 @@ export class AuthService {
           contrasena: hashedPassword,
           foto: fotoPath,
           fechaIngreso: new Date(),
+          monedaBase,
         },
       });
 

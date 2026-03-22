@@ -9,6 +9,11 @@ const registerUserSchema = z
     apellidos: z.string().min(2, 'Mínimo 2 caracteres'),
     correo: z.string().email('Email inválido'),
     contrasena: z.string().min(8, 'Mínimo 8 caracteres'),
+    monedaBase: z
+      .string()
+      .trim()
+      .length(3, { message: 'monedaBase debe tener 3 letras' })
+      .optional(),
     // .or(z.literal('')) es útil para campos opcionales en formularios
     // Foto is handled by FileInterceptor, not Zod Body validation
   })
