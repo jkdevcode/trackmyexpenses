@@ -232,22 +232,37 @@ export class FacturaService {
 
       // Map flat DTO to nested ConfirmFacturaDto structure for reuse
       // 1. Strict business validation of items
-      const validatedItems = (dto.items as any[]).map((item, index) => {
+      const validatedItems = dto.items.map((item, index) => {
         if (!item.nombreDetectado || typeof item.nombreDetectado !== 'string') {
-          console.error(`Invalid OCR item at index ${index}: missing nombreDetectado`, item);
-          throw new BadRequestException(`El item en la posicion ${index} no tiene un nombre valido`);
+          console.error(
+            `Invalid OCR item at index ${index}: missing nombreDetectado`,
+            item,
+          );
+          throw new BadRequestException(
+            `El item en la posicion ${index} no tiene un nombre valido`,
+          );
         }
-        
+
         const precio = Number(item.precioUnitario);
         if (isNaN(precio) || precio < 0) {
-          console.error(`Invalid OCR item at index ${index}: invalid precioUnitario`, item);
-          throw new BadRequestException(`El item "${item.nombreDetectado}" tiene un precio invalido`);
+          console.error(
+            `Invalid OCR item at index ${index}: invalid precioUnitario`,
+            item,
+          );
+          throw new BadRequestException(
+            `El item "${item.nombreDetectado}" tiene un precio invalido`,
+          );
         }
 
         const cantidad = Number(item.cantidadDetectada);
         if (isNaN(cantidad) || cantidad <= 0) {
-          console.error(`Invalid OCR item at index ${index}: invalid cantidadDetectada`, item);
-          throw new BadRequestException(`El item "${item.nombreDetectado}" tiene una cantidad invalida`);
+          console.error(
+            `Invalid OCR item at index ${index}: invalid cantidadDetectada`,
+            item,
+          );
+          throw new BadRequestException(
+            `El item "${item.nombreDetectado}" tiene una cantidad invalida`,
+          );
         }
 
         return {

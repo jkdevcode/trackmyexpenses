@@ -164,13 +164,13 @@ export class FacturaController {
   async createWithOcr(
     @Request() req: RequestWithUser,
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: any,
+    @Body() body: Record<string, unknown>,
   ) {
     // 1. Log pre-parsing type for debugging
     console.log('OCR items type (raw):', typeof body.items);
 
     // 2. Manual parsing of items
-    let parsedItems: any[] = [];
+    let parsedItems: unknown[] = [];
 
     if (!body.items) {
       throw new BadRequestException('El campo items es obligatorio');
@@ -192,7 +192,9 @@ export class FacturaController {
     console.log('OCR items type (parsed):', typeof parsedItems);
 
     if (!Array.isArray(parsedItems) || parsedItems.length === 0) {
-      throw new BadRequestException('Debe haber al menos un item (array no vacio)');
+      throw new BadRequestException(
+        'Debe haber al menos un item (array no vacio)',
+      );
     }
 
     // 4. Validate file
@@ -216,6 +218,10 @@ export class FacturaController {
       tasaCambio: body.tasaCambio ? Number(body.tasaCambio) : undefined,
     };
 
-    return this.facturaService.createWithOcrAndFile(req.user.id, cleanPayload, file);
+    return this.facturaService.createWithOcrAndFile(
+      req.user.id,
+      cleanPayload,
+      file,
+    );
   }
 }
