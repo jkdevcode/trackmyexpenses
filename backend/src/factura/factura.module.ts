@@ -9,9 +9,10 @@ import { TextParserService } from './text-parser.service';
 import { FACTURA_REPOSITORY } from './factura.repository.port';
 import { PrismaFacturaRepository } from './prisma-factura.repository';
 import { ExchangeRateService } from '../infra/exchange-rate/exchange-rate.service';
+import { StorageModule } from '../infra/storage/storage.module';
 
 @Module({
-  imports: [PrismaModule, ConfigModule],
+  imports: [PrismaModule, ConfigModule, StorageModule],
   controllers: [FacturaController],
   providers: [
     FacturaService,

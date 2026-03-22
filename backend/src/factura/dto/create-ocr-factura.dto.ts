@@ -9,7 +9,7 @@ const productoOcrSchema = z.object({
   descuentoDetectado: z.coerce.number().min(0).max(100).optional().default(0),
 });
 
-const createOcrFacturaSchema = z.object({
+export const createOcrFacturaSchema = z.object({
   metodoPago: z
     .enum([
       'EFECTIVO',

@@ -10,6 +10,7 @@ import { FacturaNotFoundError } from './errors/factura-not-found.error';
 import { FACTURA_REPOSITORY } from './factura.repository.port';
 import { FacturaService } from './factura.service';
 import { ExchangeRateService } from '../infra/exchange-rate/exchange-rate.service';
+import { StorageService } from '../infra/storage/storage.service';
 
 describe('FacturaService', () => {
   let service: FacturaService;
@@ -29,6 +30,7 @@ describe('FacturaService', () => {
   let logger: { error: jest.Mock };
   let cache: { get: jest.Mock; set: jest.Mock };
   let exchangeRateService: { getRate: jest.Mock };
+  let storage: { upload: jest.Mock };
 
   beforeEach(async () => {
     repo = {
@@ -48,6 +50,7 @@ describe('FacturaService', () => {
     logger = { error: jest.fn() };
     cache = { get: jest.fn(), set: jest.fn() };
     exchangeRateService = { getRate: jest.fn() };
+    storage = { upload: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -56,6 +59,7 @@ describe('FacturaService', () => {
         { provide: Logger, useValue: logger },
         { provide: CACHE_MANAGER, useValue: cache },
         { provide: ExchangeRateService, useValue: exchangeRateService },
+        { provide: StorageService, useValue: storage },
       ],
     }).compile();
 
@@ -611,5 +615,36 @@ describe('FacturaService', () => {
       } as any),
     ).rejects.toBeInstanceOf(InternalServerErrorException);
     expect(logger.error).toHaveBeenCalled();
+  });
+
+  it('should continue creating factura when image upload fails', async () => {
+    const tx = {
+      findProductosByIds: jest
+        .fn()
+        .mockResolvedValue([
+          { id: 1, precioUnitario: 3000, nombre: 'ARROZ', codigo: 'P-1' },
+        ]),
+      createFactura: jest.fn().mockResolvedValue({ id: 10 }),
+      createFacturaProducto: jest.fn().mockResolvedValue({ id: 20 }),
+      findFacturaByIdWithRelations: jest
+        .fn()
+        .mockResolvedValue({ id: 10, codigoFactura: 'FAC-1' }),
+    };
+    repo.transaction.mockImplementation(async (callback: any) => callback(tx));
+    storage.upload.mockRejectedValue(new Error('storage down'));
+
+    const dto = {
+      metodoPago: 'EFECTIVO',
+      lugarCompra: 'TIENDA',
+      items: [{ productoId: 1, cantidad: 2, descuento: 0 }],
+    };
+    const file = {
+      buffer: Buffer.from('image'),
+    } as Express.Multer.File;
+
+    const result = await service.create(5, dto as any, file);
+
+    expect(storage.upload).toHaveBeenCalled();
+    expect(result.status).toBe(201);
   });
 });
