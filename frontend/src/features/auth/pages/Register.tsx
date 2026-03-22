@@ -24,8 +24,8 @@ interface RegisterFormValues {
   nombre: string;
   apellido: string;
   email: string;
-  telefono: string;
-  direccion: string;
+  /*  telefono: string;
+  direccion: string; */
   tipo_documento: string;
   documento_identidad: string;
   monedaBase: string;
@@ -88,8 +88,8 @@ const RegisterPage = () => {
       nombre: "",
       apellido: "",
       email: "",
-      telefono: "",
-      direccion: "",
+      /*  telefono: "",
+      direccion: "", */
       tipo_documento: "",
       documento_identidad: "",
       monedaBase: DEFAULT_CURRENCY,
