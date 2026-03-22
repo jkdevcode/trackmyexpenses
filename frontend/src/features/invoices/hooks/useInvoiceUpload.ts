@@ -25,7 +25,7 @@ const isAllowedFileType = (file: File): boolean => {
 };
 
 interface UseInvoiceUploadParams {
-  onScanComplete: (data: ScanResponse) => void;
+  onScanComplete: (data: ScanResponse, file: File) => void;
   t: TFunction<"invoices">;
 }
 
@@ -60,7 +60,7 @@ export const useInvoiceUpload = ({
     try {
       const data = await scanInvoiceMutation.mutateAsync(file);
 
-      onScanComplete(data);
+      onScanComplete(data, file);
       addToast({
         title: t("toast.success"),
         description: t("upload.success"),

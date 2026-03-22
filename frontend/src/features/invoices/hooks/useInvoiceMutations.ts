@@ -1,6 +1,6 @@
 import type {
-  ConfirmFacturaDto,
   CreateFacturaDto,
+  CreateInvoiceWithFileDto,
   ProductCatalogItem,
   UpdateFacturaDto,
 } from "../types";
@@ -8,8 +8,8 @@ import type {
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import {
-  confirmInvoiceRequest,
   createInvoiceRequest,
+  createInvoiceWithFileRequest,
   createProductRequest,
   deleteInvoiceRequest,
   getProductsRequest,
@@ -22,9 +22,14 @@ export const useScanInvoiceMutation = () =>
     mutationFn: (file: File) => scanInvoiceRequest(file),
   });
 
-export const useConfirmInvoiceMutation = () =>
+/**
+ * Submits an OCR-confirmed invoice with its original image file to POST /facturas.
+ * This replaces the old useConfirmInvoiceMutation (POST /facturas/ocr/confirmar).
+ */
+export const useCreateInvoiceWithFileMutation = () =>
   useMutation({
-    mutationFn: (payload: ConfirmFacturaDto) => confirmInvoiceRequest(payload),
+    mutationFn: (dto: CreateInvoiceWithFileDto) =>
+      createInvoiceWithFileRequest(dto),
   });
 
 export const useCreateInvoiceMutation = () =>
