@@ -19,7 +19,11 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { FacturaService } from './factura.service';
 import { CreateFacturaDto } from './dto/create-factura.dto';
 import { AddProductoFacturaDto } from './dto/add-producto.dto';
-import { CreateOcrFacturaDto } from './dto/create-ocr-factura.dto';
+import {
+  CreateOcrFacturaDto,
+  createOcrFacturaSchema,
+} from './dto/create-ocr-factura.dto';
+import { ZodError } from 'zod';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { UpdateFacturaDto } from './dto/update-factura.dto';
@@ -210,7 +214,7 @@ export class FacturaController {
       }
     }
 
-    // 5. Build clean payload with numeric conversions and forward to service
+    // 5. Build clean payload with numeric conversions, validate with OCR schema
     const cleanPayload = {
       ...body,
       items: parsedItems,
@@ -218,10 +222,16 @@ export class FacturaController {
       tasaCambio: body.tasaCambio ? Number(body.tasaCambio) : undefined,
     };
 
-    return this.facturaService.createWithOcrAndFile(
-      req.user.id,
-      cleanPayload,
-      file,
-    );
+    let dto: CreateOcrFacturaDto;
+    try {
+      dto = createOcrFacturaSchema.parse(cleanPayload);
+    } catch (err) {
+      if (err instanceof ZodError) {
+        throw new BadRequestException(err.flatten());
+      }
+      throw err;
+    }
+
+    return this.facturaService.createWithOcrAndFile(req.user.id, dto, file);
   }
 }
