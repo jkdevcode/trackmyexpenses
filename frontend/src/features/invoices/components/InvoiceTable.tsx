@@ -10,14 +10,10 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import {
-  EyeIcon,
-  PencilSquareIcon,
-  TrashIcon,
-} from "@heroicons/react/24/outline";
 
 import { formatCurrency, formatDate } from "../utils/formatters";
 
+import { EyeFilledIcon, EditIcon, DeleteIcon } from "@/components/ui/icons";
 import { appColor } from "@/theme/theme.config";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 
@@ -96,7 +92,7 @@ export const InvoiceTable = ({
                     variant="light"
                     onPress={() => onView(invoice.id)}
                   >
-                    <EyeIcon className="h-5 w-5" />
+                    <EyeFilledIcon className="text-lg text-default-400 pointer-events-none" />
                   </Button>
                   <Button
                     isIconOnly
@@ -106,7 +102,7 @@ export const InvoiceTable = ({
                     variant="light"
                     onPress={() => onEdit(invoice.id)}
                   >
-                    <PencilSquareIcon className="h-5 w-5" />
+                    <EditIcon className="text-lg text-default-400 pointer-events-none" />
                   </Button>
                   <Button
                     isIconOnly
@@ -116,7 +112,7 @@ export const InvoiceTable = ({
                     variant="light"
                     onPress={() => onDelete(invoice.id)}
                   >
-                    <TrashIcon className="h-5 w-5" />
+                    <DeleteIcon className="text-lg pointer-events-none" />
                   </Button>
                 </div>
               </TableCell>
