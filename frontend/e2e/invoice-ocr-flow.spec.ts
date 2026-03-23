@@ -148,7 +148,9 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
 
   await Promise.all([
     page.waitForRequest("**/facturas/ocr/create"),
-    page.getByRole("button", { name: /Confirm and Save|Confirmar y Guardar/i }).click(),
+    page
+      .getByRole("button", { name: /Confirm and Save|Confirmar y Guardar/i })
+      .click(),
   ]);
 
   await expect(

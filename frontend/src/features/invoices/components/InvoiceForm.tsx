@@ -52,6 +52,22 @@ export interface InvoiceFormValues {
   moneda: string;
 }
 
+const safeParseDate = (dateString?: string | null): DateValue => {
+  if (!dateString) return today(getLocalTimeZone());
+  try {
+    const isoStr = dateString.split("T")[0];
+
+    // parseDate expects strictly YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(isoStr)) {
+      return parseDate(isoStr);
+    }
+  } catch {
+    // Ignore parse errors from DateValue
+  }
+
+  return today(getLocalTimeZone());
+};
+
 export const InvoiceForm = ({
   initialData,
   onSave,
@@ -94,8 +110,7 @@ export const InvoiceForm = ({
     defaultValues: {
       lugarCompra: initialData.empresa?.nombre || "",
       nitProveedor: initialData.empresa?.nit || "",
-      fechaHoraCompra:
-        initialData.fecha || new Date().toISOString().split("T")[0],
+      fechaHoraCompra: safeParseDate(initialData.fecha).toString(),
       metodoPago: "EFECTIVO",
       moneda: detectedCurrency,
     },
@@ -206,11 +221,7 @@ export const InvoiceForm = ({
                   }
                   label={t("form.date")}
                   maxValue={today(getLocalTimeZone())}
-                  value={
-                    field.value
-                      ? parseDate(field.value.split("T")[0])
-                      : today(getLocalTimeZone())
-                  }
+                  value={safeParseDate(field.value)}
                   variant="bordered"
                   onChange={(date: DateValue | null) =>
                     field.onChange(date ? date.toString() : "")

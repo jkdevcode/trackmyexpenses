@@ -228,7 +228,7 @@ export const InvoiceItemsModal = ({
                         variant="light"
                         onPress={() => handleDelete(item)}
                       >
-                        <DeleteIcon />
+                        <DeleteIcon className="text-lg pointer-events-none" />
                       </Button>
                     </TableCell>
                   </TableRow>
