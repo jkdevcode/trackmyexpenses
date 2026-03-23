@@ -56,6 +56,7 @@ const safeParseDate = (dateString?: string | null): DateValue => {
   if (!dateString) return today(getLocalTimeZone());
   try {
     const isoStr = dateString.split("T")[0];
+
     // parseDate expects strictly YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}$/.test(isoStr)) {
       return parseDate(isoStr);
@@ -364,14 +365,14 @@ export const InvoiceForm = ({
         )}
       </div>
 
-      {/* <div className="flex gap-4 justify-end pt-4">
+      <div className="flex gap-4 justify-end pt-4">
         <Button color="danger" type="button" variant="flat" onPress={onCancel}>
           {t("form.cancel")}
         </Button>
         <Button color={appColor} isLoading={saving} type="submit">
           {t("form.save")}
         </Button>
-      </div> */}
+      </div>
 
       <InvoiceItemsModal
         currencyCode={selectedCurrency}
