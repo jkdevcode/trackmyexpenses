@@ -16,10 +16,10 @@ import {
 } from "./LayoutIcons";
 
 import { useSession } from "@/contexts/session-context";
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { LanguageSwitch } from "@/components/ui/language-switch";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -27,6 +27,8 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
   const { t } = useTranslation();
   const { user, logout } = useSession();
   const ASSETS_URL = import.meta.env.VITE_ASSETS_URL;

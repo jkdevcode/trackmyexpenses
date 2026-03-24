@@ -363,3 +363,30 @@ export const GalleryIcon = (props: IconSvgProps) => {
     </svg>
   );
 };
+
+export const PaletteIcon = ({
+  size = 24,
+  width,
+  height,
+  ...props
+}: IconSvgProps) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height={size || height}
+    role="presentation"
+    viewBox="0 0 24 24"
+    width={size || width}
+    {...props}
+  >
+    <path
+      d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 12.5 2.5 13 3 13C3.5 13 4 12.5 4 12C4 7.5 7.5 4 12 4C16.5 4 20 7.5 20 12C20 16.5 16.5 20 12 20C11.5 20 11 20.5 11 21C11 21.5 11.5 22 12 22Z"
+      fill="currentColor"
+    />
+    <circle cx="7.5" cy="7.5" fill="currentColor" r="1.5" />
+    <circle cx="16.5" cy="7.5" fill="currentColor" r="1.5" />
+    <circle cx="7.5" cy="16.5" fill="currentColor" r="1.5" />
+    <circle cx="16.5" cy="16.5" fill="currentColor" r="1.5" />
+  </svg>
+);
