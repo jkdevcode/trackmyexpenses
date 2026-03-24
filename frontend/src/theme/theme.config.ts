@@ -13,10 +13,8 @@ export type HerouiColor =
 /*   | "danger"; */
 
 export const THEME_CONFIG = {
-  appColor: "primary" as HerouiColor,
+  appColor: "default" as HerouiColor,
 };
-
-export const appColor = THEME_CONFIG.appColor;
 
 // Mapeo de colores a valores RGB/Hex aproximados para uso en canvas o donde no llegue Tailwind
 // Estos valores coinciden aproximadamente con los defaults de Tailwind/HeroUI
