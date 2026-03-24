@@ -33,6 +33,7 @@ export const NewInvoicePage = () => {
         aria-label={t("page.title")}
         selectedKey={activeTab}
         variant="underlined"
+        disableAnimation
         onSelectionChange={(key) => setActiveTab(key as InvoiceTabKey)}
       >
         <Tab key="ocr" title={t("tabs.ocr")}>

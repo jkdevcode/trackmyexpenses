@@ -30,7 +30,7 @@ export const InvoiceFilters = ({
       color={appColor}
       label={t("list.period.label")}
       selectedKeys={[period]}
-      size="sm"
+      size="md"
       variant="bordered"
       onChange={(event) => onPeriodChange(event.target.value as InvoicePeriod)}
     >
