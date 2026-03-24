@@ -12,7 +12,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 
-import { THEME_COLOR_MAP, appColor } from "@/theme/theme.config";
+import { useColorTheme } from "@/hooks/use-color-theme";
+import { THEME_COLOR_MAP } from "@/theme/theme.config";
 
 interface RevenueChartProps {
   data: ExpenseData[];
@@ -21,6 +22,7 @@ interface RevenueChartProps {
 
 export const RevenueChart = ({ data, loading }: RevenueChartProps) => {
   const { t } = useTranslation("dashboard");
+  const { appColor } = useColorTheme();
   const [recharts, setRecharts] = useState<{
     BarChart: typeof BarChartType;
     Bar: typeof BarType;
