@@ -14,11 +14,11 @@ import { isAxiosError } from "axios";
 import { useRegisterMutation } from "../hooks/useAuthMutations";
 
 import { getErrorMessage } from "@/utils/errors";
-import { appColor } from "@/theme/theme.config";
 import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/ui/icons";
 import { getRegisterSchema } from "@/schemas/auth";
 import { CameraIcon } from "@/components/ui/CameraIcon";
 import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from "@/constants/currency";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface RegisterFormValues {
   nombre: string;
@@ -36,6 +36,8 @@ interface RegisterFormValues {
 const RegisterPage = () => {
   const { t } = useTranslation(["auth", "common", "validation"]);
   const navigate = useNavigate();
+  const { appColor } = useColorTheme();
+
   const [isVisible, setIsVisible] = useState(false);
   const registerMutation = useRegisterMutation();
   const linkColor = appColor === "default" ? "foreground" : "primary";

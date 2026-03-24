@@ -8,13 +8,14 @@ import { Link } from "@heroui/link";
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 
-import { appColor } from "@/theme/theme.config";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { LanguageSwitch, I18nIcon } from "@/components/ui/language-switch";
 import { availableLanguages } from "@/i18n";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 export const LandingHeader = () => {
   const { t } = useTranslation();
+  const { appColor } = useColorTheme();
   const linkColor = appColor === "default" ? "foreground" : "primary";
 
   return (
