@@ -1,7 +1,7 @@
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 
-import { appColor } from "@/theme/theme.config";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface InvoiceUploadButtonProps {
   disabled: boolean;
@@ -13,6 +13,7 @@ export const InvoiceUploadButton = ({
   loading,
 }: InvoiceUploadButtonProps) => {
   const { t } = useTranslation("invoices");
+  const { appColor } = useColorTheme();
 
   return (
     <Button

@@ -5,8 +5,8 @@ import { Input } from "@heroui/input";
 
 import { formatCurrency } from "../../utils/formatters";
 
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 type CurrencyConversionSectionProps = {
   moneda: string;
@@ -29,14 +29,12 @@ export const CurrencyConversionSection = ({
   const { t, i18n } = useTranslation("invoices");
   const normalizedMoneda = moneda?.trim().toUpperCase();
   const normalizedBase = monedaBase?.trim().toUpperCase();
-
-  if (
-    !normalizedMoneda ||
-    !normalizedBase ||
-    normalizedMoneda === normalizedBase
-  ) {
-    return null;
-  }
+  const shouldRender =
+    Boolean(normalizedMoneda) &&
+    Boolean(normalizedBase) &&
+    normalizedMoneda !== normalizedBase;
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
 
   const rateIsValid = Number.isFinite(tasaCambio) && (tasaCambio ?? 0) > 0;
   const totalBase = useMemo(() => {
@@ -52,6 +50,10 @@ export const CurrencyConversionSection = ({
   useEffect(() => {
     setInputValue(rateIsValid && tasaCambio ? String(tasaCambio) : "");
   }, [rateIsValid, tasaCambio]);
+
+  if (!shouldRender) {
+    return null;
+  }
 
   const handleRateChange = (value: string) => {
     setInputValue(value);

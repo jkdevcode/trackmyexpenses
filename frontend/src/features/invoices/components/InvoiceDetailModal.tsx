@@ -26,9 +26,9 @@ import { getInvoiceItemUnitPrice } from "../utils/invoice-item";
 
 import { OcrSourceBadge } from "./OcrSourceBadge";
 
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 const resolveCurrency = (value?: string | null) =>
   normalizeCurrencyCode(value, DEFAULT_CURRENCY);
@@ -48,6 +48,9 @@ export const InvoiceDetailModal = ({
 }: InvoiceDetailModalProps) => {
   const { t, i18n } = useTranslation("invoices");
   const detailQuery = useInvoiceDetailQuery(invoiceId, isOpen);
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
+
   const {
     isOpen: isImageOpen,
     onOpen: onImageOpen,

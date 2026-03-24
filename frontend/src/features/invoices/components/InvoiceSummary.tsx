@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 
 import { formatCurrency } from "../utils/formatters";
 
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface InvoiceSummaryProps {
   totalItems: number;
@@ -21,6 +21,8 @@ export const InvoiceSummary = ({
   onViewProducts,
 }: InvoiceSummaryProps) => {
   const { t, i18n } = useTranslation("invoices");
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
 
   return (
     <Card className="bg-default-50 border border-default-200">

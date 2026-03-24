@@ -6,9 +6,9 @@ import { Card, CardBody } from "@heroui/card";
 
 import { formatCurrency, formatDate } from "../utils/formatters";
 
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 const resolveCurrency = (value?: string | null) =>
   normalizeCurrencyCode(value, DEFAULT_CURRENCY);
@@ -27,6 +27,8 @@ export const InvoiceCardList = ({
   onDelete,
 }: InvoiceCardListProps) => {
   const { t, i18n } = useTranslation("invoices");
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
 
   return (
     <div className="space-y-3">
