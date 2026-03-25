@@ -26,7 +26,10 @@ export class ProductoController {
 
   @Post()
   @UsePipes(ZodValidationPipe)
-  async create(@Request() req: RequestWithUser, @Body() dto: CreateProductoDto) {
+  async create(
+    @Request() req: RequestWithUser,
+    @Body() dto: CreateProductoDto,
+  ) {
     return this.productoService.create(req.user.id, dto);
   }
 

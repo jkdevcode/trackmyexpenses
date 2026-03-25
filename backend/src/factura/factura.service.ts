@@ -288,7 +288,11 @@ export class FacturaService {
       };
 
       const factura = await this.repo.transaction(async (tx) => {
-        const input = await this.buildCreateInputFromOcrTx(tx, userId, confirmDto);
+        const input = await this.buildCreateInputFromOcrTx(
+          tx,
+          userId,
+          confirmDto,
+        );
         input.imagenUrl = imagenUrl;
         input.ocrSource = dto.ocrSource;
 

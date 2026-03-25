@@ -98,7 +98,10 @@ export type UpdateFacturaProductoSnapshotInput = {
 };
 
 export interface FacturaRepositoryTx {
-  findProductosByIds(userId: number, productIds: number[]): Promise<
+  findProductosByIds(
+    userId: number,
+    productIds: number[],
+  ): Promise<
     Array<{
       id: number;
       precioUnitario: unknown;
@@ -177,7 +180,10 @@ export interface FacturaRepository {
     monedaBase: string | null;
     tasaCambio: unknown;
   } | null>;
-  findProductoById(userId: number, productoId: number): Promise<{
+  findProductoById(
+    userId: number,
+    productoId: number,
+  ): Promise<{
     id: number;
     precioUnitario: unknown;
     nombre: string;
