@@ -12,7 +12,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 
-import { THEME_COLOR_MAP, appColor } from "@/theme/theme.config";
+import { useColorTheme } from "@/hooks/use-color-theme";
+import { THEME_COLOR_MAP } from "@/theme/theme.config";
 
 interface AverageTicketChartProps {
   data: ExpenseData[];
@@ -24,6 +25,7 @@ export const AverageTicketChart = ({
   loading,
 }: AverageTicketChartProps) => {
   const { t } = useTranslation("dashboard");
+  const { appColor } = useColorTheme();
   const [recharts, setRecharts] = useState<{
     LineChart: typeof LineChartType;
     Line: typeof LineType;

@@ -11,10 +11,10 @@ import { addToast } from "@heroui/toast";
 import { useLoginMutation } from "../hooks/useAuthMutations";
 
 import { getErrorMessage } from "@/utils/errors";
-import { appColor } from "@/theme/theme.config";
 import { EyeFilledIcon, EyeSlashFilledIcon, Logo } from "@/components/ui/icons";
 import { getLoginSchema } from "@/schemas/auth";
 import { useSession } from "@/contexts/session-context";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface LoginFormValues {
   documento: string;
@@ -25,6 +25,8 @@ const LoginPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useSession();
+  const { appColor } = useColorTheme();
+
   const [isVisible, setIsVisible] = useState(false);
   const loginMutation = useLoginMutation();
   const linkColor = appColor === "default" ? "foreground" : "primary";

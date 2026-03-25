@@ -4,7 +4,7 @@ import { Card, CardBody } from "@heroui/card";
 import { useTranslation } from "react-i18next";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 
 interface StatsCardsProps {
   stats: DashboardStats | null;
@@ -28,6 +28,7 @@ const containerVariants = {
 
 export const StatsCards = ({ stats, loading }: StatsCardsProps) => {
   const { t } = useTranslation("dashboard");
+  const appColorVariants = useAppColorVariants();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("es-CO", {

@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 
 import { useCreateProductMutation } from "../hooks/useInvoiceMutations";
 
-import { appColor } from "@/theme/theme.config";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface CreateProductModalProps {
   isOpen: boolean;
@@ -42,6 +42,8 @@ export const CreateProductModal = ({
 }: CreateProductModalProps) => {
   const { t } = useTranslation(["invoices", "validation"]);
   const createProductMutation = useCreateProductMutation();
+  const { appColor } = useColorTheme();
+
   const [form, setForm] = useState<CreateProductFormState>(initialState);
   const [error, setError] = useState<string>("");
 

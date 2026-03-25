@@ -3,7 +3,7 @@ import type { DragEventHandler, ReactNode } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { useTranslation } from "react-i18next";
 
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 import { GalleryIcon } from "@/components/ui/icons";
 
 interface InvoiceUploadDropzoneProps {
@@ -24,6 +24,7 @@ export const InvoiceUploadDropzone = ({
   children,
 }: InvoiceUploadDropzoneProps) => {
   const { t } = useTranslation("invoices");
+  const appColorVariants = useAppColorVariants();
 
   return (
     <Card

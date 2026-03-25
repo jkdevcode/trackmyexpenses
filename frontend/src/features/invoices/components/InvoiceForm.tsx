@@ -25,7 +25,6 @@ import { InvoiceSummary } from "./InvoiceSummary";
 import { InvoiceItemsModal } from "./InvoiceItemsModal";
 import { CurrencyConversionSection } from "./factura/CurrencyConversionSection";
 
-import { appColor } from "@/theme/theme.config";
 import { getInvoiceSchema } from "@/schemas/invoice";
 import {
   DEFAULT_CURRENCY,
@@ -33,6 +32,7 @@ import {
   normalizeCurrencyCode,
 } from "@/constants/currency";
 import { useSession } from "@/contexts/session-context";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface InvoiceFormProps {
   initialData: ParsedInvoice;
@@ -86,6 +86,7 @@ export const InvoiceForm = ({
     initialData.moneda ?? initialData.monedaDetectada,
     baseCurrency,
   );
+  const { appColor } = useColorTheme();
 
   const [products, setProducts] = useState<ProductSuggestion[]>(
     initialData.productos || [],

@@ -1,4 +1,4 @@
-import { appColor, type HerouiColor } from "./theme.config";
+import { type HerouiColor } from "./theme.config";
 
 type AppColorVariantSet = {
   text: string;
@@ -52,8 +52,10 @@ const APP_COLOR_VARIANTS: Record<HerouiColor, AppColorVariantSet> = {
   },
 };
 
-export const appColorVariants = APP_COLOR_VARIANTS[appColor];
+import { useColorTheme } from "@/hooks/use-color-theme";
 
-export const getAppColorVariant = <K extends keyof AppColorVariantSet>(
-  key: K,
-) => appColorVariants[key];
+export const useAppColorVariants = () => {
+  const { appColor } = useColorTheme();
+
+  return APP_COLOR_VARIANTS[appColor];
+};

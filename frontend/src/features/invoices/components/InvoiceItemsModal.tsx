@@ -23,8 +23,8 @@ import { useTranslation } from "react-i18next";
 
 import { formatCurrency } from "../utils/formatters";
 
-import { appColor } from "@/theme/theme.config";
 import { DeleteIcon, SearchIcon } from "@/components/ui/icons";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface InvoiceItemsModalProps {
   isOpen: boolean;
@@ -42,6 +42,8 @@ export const InvoiceItemsModal = ({
   currencyCode,
 }: InvoiceItemsModalProps) => {
   const { t, i18n } = useTranslation(["invoices", "common"]);
+  const { appColor } = useColorTheme();
+
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
   const [filterValue, setFilterValue] = useState("");

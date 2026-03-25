@@ -1,0 +1,24 @@
+{
+  "title": "Ajustes",
+  "sections": {
+    "appearance": {
+      "title": "Apariencia",
+      "description": "Personaliza la vista y el idioma"
+    },
+    "app_color": {
+      "title": "Color de la aplicación",
+      "description": "Selecciona un color de acento global"
+    },
+    "financial": {
+      "title": "Preferencias financieras",
+      "description": "Configura la moneda base para tus reportes"
+    }
+  },
+  "colors": {
+    "default": "Predeterminado",
+    "primary": "Primario",
+    "secondary": "Secundario",
+    "success": "Éxito",
+    "warning": "Advertencia"
+  }
+}

@@ -15,7 +15,7 @@ import { useUpdateProfileMutation } from "../hooks/useUserMutations";
 
 import { useSession } from "@/contexts/session-context";
 import { getErrorMessage } from "@/utils/errors";
-import { appColor } from "@/theme/theme.config";
+import { useColorTheme } from "@/hooks/use-color-theme";
 import { getProfileSchema } from "@/schemas/profile";
 import { CameraIcon } from "@/components/ui/CameraIcon";
 import {
@@ -34,6 +34,7 @@ interface ProfileFormValues {
 
 const ProfilePage = () => {
   const { t } = useTranslation(["profile", "auth", "validation", "common"]);
+  const { appColor } = useColorTheme();
   const { user, login } = useSession();
   const updateProfileMutation = useUpdateProfileMutation();
 

@@ -3,7 +3,7 @@ import type { DateFilterType } from "../types";
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 
-import { appColor } from "@/theme/theme.config";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface DateFilterProps {
   filter: DateFilterType;
@@ -12,6 +12,7 @@ interface DateFilterProps {
 
 export const DateFilter = ({ filter, onChange }: DateFilterProps) => {
   const { t } = useTranslation("dashboard");
+  const { appColor } = useColorTheme();
 
   const filters: DateFilterType[] = ["day", "week", "month", "year"];
 

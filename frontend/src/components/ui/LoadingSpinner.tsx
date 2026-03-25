@@ -1,6 +1,6 @@
 import { Spinner } from "@heroui/spinner";
 
-import { appColor } from "@/theme/theme.config";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface LoadingSpinnerProps {
   message?: string;
@@ -9,6 +9,8 @@ interface LoadingSpinnerProps {
 export const LoadingSpinner = ({
   message = "Cargando...",
 }: LoadingSpinnerProps) => {
+  const { appColor } = useColorTheme();
+
   return (
     <div className="min-h-[40vh] flex items-center justify-center p-6">
       <div className="w-full max-w-sm rounded-2xl border border-default-200 bg-content1/80 backdrop-blur px-6 py-8 shadow-lg">

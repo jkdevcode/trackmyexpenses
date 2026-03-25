@@ -23,8 +23,8 @@ import {
   getInvoiceItemUnitPrice,
 } from "../utils/invoice-item";
 
-import { appColor } from "@/theme/theme.config";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 const resolveCurrency = (value?: string | null) =>
   normalizeCurrencyCode(value, DEFAULT_CURRENCY);
@@ -85,6 +85,8 @@ export const InvoiceEditModal = ({
   const { t, i18n } = useTranslation(["invoices", "validation"]);
   const detailQuery = useInvoiceDetailQuery(invoiceId, isOpen);
   const updateMutation = useUpdateInvoiceMutation();
+  const { appColor } = useColorTheme();
+
   const [form, setForm] = useState<InvoiceEditFormState>(initialFormState);
   const [items, setItems] = useState<InvoiceEditItemState[]>([]);
   const [formError, setFormError] = useState<string>("");

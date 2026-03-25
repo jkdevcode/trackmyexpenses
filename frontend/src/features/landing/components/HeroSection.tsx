@@ -2,11 +2,13 @@ import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
 import { useTranslation } from "react-i18next";
 
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 export const HeroSection = () => {
   const { t } = useTranslation();
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
 
   return (
     <section className="flex flex-col items-center justify-center py-20 gap-8 text-center px-4">

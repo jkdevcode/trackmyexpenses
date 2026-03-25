@@ -27,11 +27,11 @@ import { InvoiceForm, type InvoiceFormValues } from "./InvoiceForm";
 import { InvoiceUpload } from "./InvoiceUpload";
 import { OcrSourceBadge } from "./OcrSourceBadge";
 
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 import { useCreateInvoiceWithFileMutation } from "@/features/invoices/hooks/useInvoiceMutations";
 import { useSession } from "@/contexts/session-context";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 type PendingData = {
   formData: {
@@ -52,6 +52,9 @@ const roundCurrency = (value: number) =>
 export const OcrInvoiceFlow = () => {
   const { t, i18n } = useTranslation(["invoices", "common"]);
   const { user } = useSession();
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
+
   const [step, setStep] = useState<"upload" | "edit">("upload");
   const [scanData, setScanData] = useState<ScanResponse | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

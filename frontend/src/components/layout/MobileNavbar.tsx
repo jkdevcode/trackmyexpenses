@@ -22,14 +22,17 @@ import {
 } from "./LayoutIcons";
 
 import { useSession } from "@/contexts/session-context";
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { LanguageSwitch } from "@/components/ui/language-switch";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 export const MobileNavbar = () => {
   const { t } = useTranslation();
   const { user, logout } = useSession();
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();

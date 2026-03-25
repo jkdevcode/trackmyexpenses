@@ -22,13 +22,13 @@ import { formatCurrency } from "../utils/formatters";
 
 import { CreateProductModal } from "./CreateProductModal";
 
-import { appColor } from "@/theme/theme.config";
 import {
   DEFAULT_CURRENCY,
   SUPPORTED_CURRENCIES,
   normalizeCurrencyCode,
 } from "@/constants/currency";
 import { useSession } from "@/contexts/session-context";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 const CREATE_PRODUCT_KEY = "__create__";
 
@@ -69,6 +69,8 @@ export const ManualInvoiceForm = () => {
   const productsQuery = useProductsQuery();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { appColor } = useColorTheme();
+
   const [form, setForm] = useState<ManualInvoiceFormState>(initialState);
   const [formError, setFormError] = useState<string>("");
   const [items, setItems] = useState<ManualInvoiceItem[]>([]);

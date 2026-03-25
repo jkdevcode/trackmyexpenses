@@ -14,8 +14,8 @@ import {
 import { formatCurrency, formatDate } from "../utils/formatters";
 
 import { EyeFilledIcon, EditIcon, DeleteIcon } from "@/components/ui/icons";
-import { appColor } from "@/theme/theme.config";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 const resolveCurrency = (value?: string | null) =>
   normalizeCurrencyCode(value, DEFAULT_CURRENCY);
@@ -34,6 +34,7 @@ export const InvoiceTable = ({
   onDelete,
 }: InvoiceTableProps) => {
   const { t, i18n } = useTranslation("invoices");
+  const { appColor } = useColorTheme();
 
   return (
     <Table removeWrapper aria-label={t("list.table.aria")}>

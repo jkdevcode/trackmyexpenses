@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
 
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 
 export const FeatureShowcase = () => {
   const { t } = useTranslation();
+  const appColorVariants = useAppColorVariants();
 
   return (
     <section className="py-20 px-4" id="features">

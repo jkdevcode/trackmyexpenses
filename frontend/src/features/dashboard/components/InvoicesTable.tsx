@@ -17,9 +17,9 @@ import { useTranslation } from "react-i18next";
 
 import { formatCurrency, formatDate } from "../../invoices/utils/formatters";
 
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface InvoicesTableProps {
   invoices: Invoice[];
@@ -46,6 +46,9 @@ const resolveCurrency = (value?: string | null) =>
 
 export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
   const { t, i18n } = useTranslation("dashboard");
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
+
   const [page, setPage] = useState(1);
 
   const rowsPerPage = 2;

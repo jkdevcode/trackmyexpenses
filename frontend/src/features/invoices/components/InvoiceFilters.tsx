@@ -3,7 +3,7 @@
 import { useTranslation } from "react-i18next";
 import { Select, SelectItem } from "@heroui/select";
 
-import { appColor } from "@/theme/theme.config";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 const PERIOD_OPTIONS: Array<{ key: InvoicePeriod; labelKey: string }> = [
   { key: "day", labelKey: "filters.day" },
@@ -22,6 +22,7 @@ export const InvoiceFilters = ({
   onPeriodChange,
 }: InvoiceFiltersProps) => {
   const { t } = useTranslation("invoices");
+  const { appColor } = useColorTheme();
 
   return (
     <Select
@@ -30,7 +31,7 @@ export const InvoiceFilters = ({
       color={appColor}
       label={t("list.period.label")}
       selectedKeys={[period]}
-      size="sm"
+      size="md"
       variant="bordered"
       onChange={(event) => onPeriodChange(event.target.value as InvoicePeriod)}
     >

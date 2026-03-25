@@ -16,11 +16,13 @@ import { InvoiceCardList } from "./InvoiceCardList";
 import { InvoiceDetailModal } from "./InvoiceDetailModal";
 import { InvoiceEditModal } from "./InvoiceEditModal";
 
-import { appColor } from "@/theme/theme.config";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 export const InvoiceListView = () => {
   const { t } = useTranslation("invoices");
   const queryClient = useQueryClient();
+  const { appColor } = useColorTheme();
+
   const [period, setPeriod] = useState<InvoicePeriod>("month");
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(
     null,
