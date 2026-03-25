@@ -11,6 +11,7 @@ describe('ProductoService', () => {
   let prisma: {
     producto: {
       findUnique: jest.Mock;
+      findFirst: jest.Mock;
       create: jest.Mock;
       findMany: jest.Mock;
     };
@@ -21,6 +22,7 @@ describe('ProductoService', () => {
     prisma = {
       producto: {
         findUnique: jest.fn(),
+        findFirst: jest.fn(),
         create: jest.fn(),
         findMany: jest.fn(),
       },
@@ -52,13 +54,18 @@ describe('ProductoService', () => {
     });
 
     const dto = { codigo: 'P-1', nombre: 'Arroz', precioUnitario: 20 };
-    const result = await service.create(dto);
+    const result = await service.create(7, dto);
 
     expect(prisma.producto.findUnique).toHaveBeenCalledWith({
-      where: { codigo: 'P-1' },
+      where: {
+        codigo_usuarioId: {
+          codigo: 'P-1',
+          usuarioId: 7,
+        },
+      },
     });
     expect(prisma.producto.create).toHaveBeenCalledWith({
-      data: dto,
+      data: { ...dto, usuarioId: 7 },
     });
     expect(result.status).toBe(201);
   });
@@ -67,7 +74,7 @@ describe('ProductoService', () => {
     prisma.producto.findUnique.mockResolvedValue({ id: 2, codigo: 'P-1' });
 
     await expect(
-      service.create({ codigo: 'P-1', nombre: 'Arroz', precioUnitario: 20 }),
+      service.create(7, { codigo: 'P-1', nombre: 'Arroz', precioUnitario: 20 }),
     ).rejects.toBeInstanceOf(DomainConflictError);
   });
 
@@ -76,9 +83,10 @@ describe('ProductoService', () => {
       { id: 1, codigo: 'P-1', nombre: 'Arroz', precioUnitario: 20 },
     ]);
 
-    const result = await service.findAll();
+    const result = await service.findAll(7);
 
     expect(prisma.producto.findMany).toHaveBeenCalledWith({
+      where: { usuarioId: 7 },
       orderBy: { nombre: 'asc' },
     });
     expect(result).toEqual({
@@ -92,9 +100,9 @@ describe('ProductoService', () => {
   });
 
   it('should throw ProductoNotFoundError when producto does not exist', async () => {
-    prisma.producto.findUnique.mockResolvedValue(null);
+    prisma.producto.findFirst.mockResolvedValue(null);
 
-    await expect(service.findOne(99)).rejects.toBeInstanceOf(
+    await expect(service.findOne(7, 99)).rejects.toBeInstanceOf(
       ProductoNotFoundError,
     );
   });
@@ -102,7 +110,7 @@ describe('ProductoService', () => {
   it('should throw InternalServerErrorException when listing fails', async () => {
     prisma.producto.findMany.mockRejectedValue(new Error('db error'));
 
-    await expect(service.findAll()).rejects.toBeInstanceOf(
+    await expect(service.findAll(7)).rejects.toBeInstanceOf(
       InternalServerErrorException,
     );
     expect(logger.error).toHaveBeenCalled();

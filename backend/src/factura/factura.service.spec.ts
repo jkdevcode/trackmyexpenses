@@ -94,7 +94,7 @@ describe('FacturaService', () => {
     const result = await service.create(5, dto as any);
 
     expect(repo.transaction).toHaveBeenCalled();
-    expect(tx.findProductosByIds).toHaveBeenCalledWith([1]);
+    expect(tx.findProductosByIds).toHaveBeenCalledWith(5, [1]);
     expect(tx.createFactura).toHaveBeenCalled();
     expect(tx.createFacturaProducto).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -160,7 +160,7 @@ describe('FacturaService', () => {
 
     const result = await service.createFromOcr(9, dto as any);
 
-    expect(tx.findProductoByNombre).toHaveBeenCalledWith('LECHE ENTERA');
+    expect(tx.findProductoByNombre).toHaveBeenCalledWith(9, 'LECHE ENTERA');
     expect(tx.createProducto).not.toHaveBeenCalled();
     expect(result.status).toBe(201);
     expect(result.message).toBe('Factura OCR confirmada exitosamente');
@@ -319,7 +319,7 @@ describe('FacturaService', () => {
     } as any);
 
     expect(repo.findFacturaCurrencyByUser).toHaveBeenCalledWith(1, 50);
-    expect(repo.findProductoById).toHaveBeenCalledWith(1);
+    expect(repo.findProductoById).toHaveBeenCalledWith(1, 1);
     expect(repo.transaction).toHaveBeenCalled();
     expect(tx.createFacturaProducto).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -545,6 +545,7 @@ describe('FacturaService', () => {
     } as any);
 
     expect(tx.createProducto).toHaveBeenCalledWith(
+      9,
       expect.objectContaining({
         nombre: 'PRODUCTO NUEVO',
         codigo: expect.stringContaining('PROD-'),

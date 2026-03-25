@@ -16,7 +16,7 @@ describe('PrismaFacturaRepository', () => {
         findFirst: jest.fn(),
       },
       producto: {
-        findUnique: jest.fn(),
+        findFirst: jest.fn(),
       },
       usuario: {
         findUnique: jest.fn(),
@@ -95,7 +95,7 @@ describe('PrismaFacturaRepository', () => {
     prisma.$transaction.mockImplementation((cb: any) => cb(txMock));
 
     const result = await repository.transaction(async (tx) => {
-      return tx.findProductosByIds([1]);
+      return tx.findProductosByIds(7, [1]);
     });
 
     expect(prisma.$transaction).toHaveBeenCalled();

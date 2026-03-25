@@ -43,6 +43,10 @@ interface RequestWithUser extends ExpressRequest {
   };
 }
 
+function isUnknownArray(value: unknown): value is unknown[] {
+  return Array.isArray(value);
+}
+
 @Controller('facturas')
 @UseGuards(JwtAuthGuard)
 export class FacturaController {
@@ -181,12 +185,21 @@ export class FacturaController {
     }
 
     if (typeof body.items === 'string') {
+      let parsed: unknown;
       try {
-        parsedItems = JSON.parse(body.items);
-      } catch (error) {
+        parsed = JSON.parse(body.items) as unknown;
+      } catch {
         throw new BadRequestException('JSON invalido en items');
       }
-    } else if (Array.isArray(body.items)) {
+
+      if (!isUnknownArray(parsed)) {
+        throw new BadRequestException(
+          'items debe ser un array o un JSON string',
+        );
+      }
+
+      parsedItems = parsed;
+    } else if (isUnknownArray(body.items)) {
       parsedItems = body.items;
     } else {
       throw new BadRequestException('items debe ser un array o un JSON string');
