@@ -167,7 +167,7 @@ export class FacturaService {
       );
 
       const factura = await this.repo.transaction(async (tx) => {
-        const input = await this.buildCreateInputFromOcrTx(tx, dto);
+        const input = await this.buildCreateInputFromOcrTx(tx, userId, dto);
         return this.createFacturaWithItemsTx(
           tx,
           userId,
@@ -288,7 +288,7 @@ export class FacturaService {
       };
 
       const factura = await this.repo.transaction(async (tx) => {
-        const input = await this.buildCreateInputFromOcrTx(tx, confirmDto);
+        const input = await this.buildCreateInputFromOcrTx(tx, userId, confirmDto);
         input.imagenUrl = imagenUrl;
         input.ocrSource = dto.ocrSource;
 
@@ -642,7 +642,7 @@ export class FacturaService {
       throw new FacturaNotFoundError();
     }
 
-    const producto = await this.repo.findProductoById(dto.productoId);
+    const producto = await this.repo.findProductoById(userId, dto.productoId);
 
     if (!producto) {
       throw new FacturaNotFoundError('Producto no encontrado');
@@ -765,7 +765,7 @@ export class FacturaService {
 
     const productIds = [...new Set(input.items.map((item) => item.productoId))];
 
-    const products = await tx.findProductosByIds(productIds);
+    const products = await tx.findProductosByIds(userId, productIds);
 
     if (products.length !== productIds.length) {
       const foundIds = new Set(products.map((product) => product.id));
@@ -848,6 +848,7 @@ export class FacturaService {
 
   private async buildCreateInputFromOcrTx(
     tx: FacturaRepositoryTx,
+    userId: number,
     dto: ConfirmFacturaDto,
   ): Promise<CreateFacturaInput> {
     const items: CreateFacturaItemInput[] = [];
@@ -863,7 +864,10 @@ export class FacturaService {
         throw error;
       }
 
-      let producto = await tx.findProductoByNombre(normalized.nombreDetectado);
+      let producto = await tx.findProductoByNombre(
+        userId,
+        normalized.nombreDetectado,
+      );
 
       if (!producto) {
         if (
@@ -875,7 +879,7 @@ export class FacturaService {
           );
         }
 
-        producto = await tx.createProducto({
+        producto = await tx.createProducto(userId, {
           nombre: normalized.nombreDetectado,
           codigo: this.generateProductoCode(),
           precioUnitario: normalized.precioUnitario,

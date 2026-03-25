@@ -198,18 +198,14 @@ ${text ?? ''}`,
     products: ParsedProduct[],
     userId?: number,
   ): Promise<ParsedProduct[]> {
-    const dbProducts = await this.prisma.producto.findMany({
-      where:
-        userId !== undefined
-          ? {
-              facturas: {
-                some: { factura: { usuarioId: userId } },
-              },
-            }
-          : {},
-      select: { id: true, nombre: true, codigo: true },
-      take: 500,
-    });
+    const dbProducts =
+      userId === undefined
+        ? []
+        : await this.prisma.producto.findMany({
+            where: { usuarioId: userId },
+            select: { id: true, nombre: true, codigo: true },
+            take: 500,
+          });
 
     const fuse = new Fuse(dbProducts, {
       keys: ['nombre', 'codigo'],
