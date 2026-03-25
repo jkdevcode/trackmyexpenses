@@ -24,6 +24,7 @@ model Usuario {
   fechaIngreso      DateTime  @default(now())
   fechaUltimaEdicion DateTime?
   facturas          Factura[]
+  productos         Producto[]
 
   @@index([documento])
   @@index([correo])
@@ -53,11 +54,16 @@ model Factura {
 }
 
 model Producto {
-  id           Int               @id @default(autoincrement())
-  codigo       String            @unique
-  nombre       String
-  precioUnitario Decimal          @db.Decimal(10,2)
-  facturas     FacturaProducto[]
+  id             Int               @id @default(autoincrement())
+  codigo         String
+  nombre         String
+  precioUnitario Decimal           @db.Decimal(10,2)
+  usuarioId      Int
+  usuario        Usuario           @relation(fields: [usuarioId], references: [id])
+  facturas       FacturaProducto[]
+
+  @@unique([codigo, usuarioId])
+  @@index([usuarioId])
 }
 
 model FacturaProducto {
