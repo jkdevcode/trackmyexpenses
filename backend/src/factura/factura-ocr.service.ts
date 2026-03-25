@@ -112,7 +112,7 @@ export class FacturaOcrService implements OnModuleInit, OnModuleDestroy {
         };
       }
     } catch (error: unknown) {
-      this.logger.warn('Image AI failed, falling back to OCR');
+      this.logger.warn('Image AI failed, falling back to OCR', error);
     }
 
     // 2. FALLBACK: OCR + text

@@ -24,7 +24,8 @@
   },
   "include": [
     "src/**/*",
-    "test/**/*"
+    "test/**/*",
+    "check-db.ts"
   ],
   "exclude": [
     "node_modules",
