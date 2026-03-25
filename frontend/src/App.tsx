@@ -21,6 +21,11 @@ const NewInvoicePage = lazy(() =>
 const PageNotFound = lazy(() =>
   import("@/pages/404").then((module) => ({ default: module.PageNotFound })),
 );
+const SettingsPage = lazy(() =>
+  import("@/features/settings/pages/SettingsPage").then((module) => ({
+    default: module.SettingsPage,
+  })),
+);
 const CookieConsent = lazy(() =>
   import("@/components/ui/cookie-consent").then((module) => ({
     default: module.CookieConsent,
@@ -131,7 +136,15 @@ function App() {
             path="/invoices"
           />
           <Route
-            element={<div className="p-4">Ajustes (WIP)</div>}
+            element={
+              <AppErrorBoundary>
+                <Suspense
+                  fallback={<LoadingSpinner message="Cargando ajustes..." />}
+                >
+                  <SettingsPage />
+                </Suspense>
+              </AppErrorBoundary>
+            }
             path="/settings"
           />
         </Route>

@@ -1,0 +1,24 @@
+{
+  "title": "Settings",
+  "sections": {
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the app look and language"
+    },
+    "app_color": {
+      "title": "App color",
+      "description": "Select a global accent color"
+    },
+    "financial": {
+      "title": "Financial preferences",
+      "description": "Set your base currency for reports"
+    }
+  },
+  "colors": {
+    "default": "Default",
+    "primary": "Primary",
+    "secondary": "Secondary",
+    "success": "Success",
+    "warning": "Warning"
+  }
+}
