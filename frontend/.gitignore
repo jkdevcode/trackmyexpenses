@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# build
+dist/
+
+# vite cache
+.vite/
+
+# editor
+.vscode/
+
 # dotenv environment variable files
 .env
 .env.development.local
@@ -34,5 +43,7 @@ pnpm-lock.yaml
 yarn.lock
 bun.lockb
 .github/copilot-instructions.md
+
+# testing
 playwright-report/
 test-results/
