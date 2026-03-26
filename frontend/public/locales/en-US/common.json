@@ -1,5 +1,11 @@
 {
   "error": "Error",
+  "error_boundary": {
+    "title": "Something went wrong",
+    "description": "This section failed. You can try reloading the view.",
+    "layout_title": "Application layout error",
+    "retry": "Retry"
+  },
   "search": "Search",
   "switch-to-dark-mode": "Switch to dark mode",
   "switch-to-light-mode": "Switch to light mode",
@@ -25,6 +31,20 @@
   "how-it-works": "How it works",
   "create-account": "Create account",
   "app-name": "TrackMyExpenses",
+  "loading": {
+    "basic": "Loading...",
+    "pages": {
+      "landing": "Loading home...",
+      "login": "Loading login...",
+      "register": "Loading registration...",
+      "dashboard": "Loading dashboard...",
+      "profile": "Loading profile...",
+      "invoices": "Loading invoices...",
+      "settings": "Loading settings...",
+      "reports": "Loading reports...",
+      "page": "Loading page..."
+    }
+  },
   "navigation": {
     "dashboard": "Dashboard",
     "invoices": "Invoices",

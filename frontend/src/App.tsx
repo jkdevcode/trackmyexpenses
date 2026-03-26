@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import { Route, Routes } from "react-router-dom";
 
 import { CookieConsentProvider } from "@/contexts/cookie-consent-context";
@@ -46,6 +47,8 @@ const shouldRenderCookieConsent = () => {
 };
 
 function App() {
+  const { t } = useTranslation("common");
+
   return (
     <CookieConsentProvider>
       {shouldRenderCookieConsent() ? (
@@ -58,7 +61,9 @@ function App() {
           element={
             <AppErrorBoundary>
               <Suspense
-                fallback={<LoadingSpinner message="Cargando inicio..." />}
+                fallback={
+                  <LoadingSpinner message={t("common:loading.pages.landing")} />
+                }
               >
                 <LandingPage />
               </Suspense>
@@ -71,7 +76,9 @@ function App() {
             <AppErrorBoundary>
               <PublicOnlyRoute>
                 <Suspense
-                  fallback={<LoadingSpinner message="Cargando login..." />}
+                  fallback={
+                    <LoadingSpinner message={t("common:loading.pages.login")} />
+                  }
                 >
                   <LoginPage />
                 </Suspense>
@@ -85,7 +92,11 @@ function App() {
             <AppErrorBoundary>
               <PublicOnlyRoute>
                 <Suspense
-                  fallback={<LoadingSpinner message="Cargando registro..." />}
+                  fallback={
+                    <LoadingSpinner
+                      message={t("common:loading.pages.register")}
+                    />
+                  }
                 >
                   <RegisterPage />
                 </Suspense>
@@ -96,7 +107,9 @@ function App() {
         />
         <Route
           element={
-            <AppErrorBoundary fallbackTitle="Error en el layout de la aplicacion">
+            <AppErrorBoundary
+              fallbackTitle={t("common:error_boundary.layout_title")}
+            >
               <ProtectedRoute>
                 <AppLayout />
               </ProtectedRoute>
@@ -108,7 +121,11 @@ function App() {
             element={
               <AppErrorBoundary>
                 <Suspense
-                  fallback={<LoadingSpinner message="Cargando dashboard..." />}
+                  fallback={
+                    <LoadingSpinner
+                      message={t("common:loading.pages.dashboard")}
+                    />
+                  }
                 >
                   <Dashboard />
                 </Suspense>
@@ -120,7 +137,11 @@ function App() {
             element={
               <AppErrorBoundary>
                 <Suspense
-                  fallback={<LoadingSpinner message="Cargando perfil..." />}
+                  fallback={
+                    <LoadingSpinner
+                      message={t("common:loading.pages.profile")}
+                    />
+                  }
                 >
                   <ProfilePage />
                 </Suspense>
@@ -132,7 +153,11 @@ function App() {
             element={
               <AppErrorBoundary>
                 <Suspense
-                  fallback={<LoadingSpinner message="Cargando facturas..." />}
+                  fallback={
+                    <LoadingSpinner
+                      message={t("common:loading.pages.invoices")}
+                    />
+                  }
                 >
                   <NewInvoicePage />
                 </Suspense>
@@ -144,7 +169,11 @@ function App() {
             element={
               <AppErrorBoundary>
                 <Suspense
-                  fallback={<LoadingSpinner message="Cargando ajustes..." />}
+                  fallback={
+                    <LoadingSpinner
+                      message={t("common:loading.pages.settings")}
+                    />
+                  }
                 >
                   <SettingsPage />
                 </Suspense>
@@ -156,7 +185,11 @@ function App() {
             element={
               <AppErrorBoundary>
                 <Suspense
-                  fallback={<LoadingSpinner message="Cargando reportes..." />}
+                  fallback={
+                    <LoadingSpinner
+                      message={t("common:loading.pages.reports")}
+                    />
+                  }
                 >
                   <ReportsPage />
                 </Suspense>
@@ -169,7 +202,9 @@ function App() {
           element={
             <AppErrorBoundary>
               <Suspense
-                fallback={<LoadingSpinner message="Cargando pagina..." />}
+                fallback={
+                  <LoadingSpinner message={t("common:loading.pages.page")} />
+                }
               >
                 <PageNotFound />
               </Suspense>

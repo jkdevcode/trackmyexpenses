@@ -1,5 +1,11 @@
 {
   "error": "Error",
+  "error_boundary": {
+    "title": "Ocurrio un error inesperado",
+    "description": "Esta seccion fallo. Puedes intentar recargar la vista.",
+    "layout_title": "Error en el layout de la aplicacion",
+    "retry": "Reintentar"
+  },
   "switch-to-dark-mode": "Cambiar a modo oscuro",
   "switch-to-light-mode": "Cambiar a modo claro",
   "home": "Inicio",
@@ -24,6 +30,20 @@
   "how-it-works": "Cómo funciona",
   "create-account": "Crear cuenta",
   "app-name": "TrackMyExpenses",
+  "loading": {
+    "basic": "Cargando...",
+    "pages": {
+      "landing": "Cargando inicio...",
+      "login": "Cargando login...",
+      "register": "Cargando registro...",
+      "dashboard": "Cargando dashboard...",
+      "profile": "Cargando perfil...",
+      "invoices": "Cargando facturas...",
+      "settings": "Cargando ajustes...",
+      "reports": "Cargando reportes...",
+      "page": "Cargando pagina..."
+    }
+  },
   "navigation": {
     "dashboard": "Panel Principal",
     "invoices": "Facturas",

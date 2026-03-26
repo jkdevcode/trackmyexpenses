@@ -1,6 +1,9 @@
 import { lazy, Suspense, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { Tabs, Tab } from "@heroui/tabs";
+import { Spinner } from "@heroui/spinner";
+import { useTranslation } from "react-i18next";
+
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 const OcrInvoiceFlow = lazy(() =>
   import("@/features/invoices/components/OcrInvoiceFlow").then((module) => ({
@@ -21,7 +24,8 @@ const InvoiceListView = lazy(() =>
 type InvoiceTabKey = "ocr" | "manual" | "list";
 
 export const NewInvoicePage = () => {
-  const { t } = useTranslation("invoices");
+  const { t } = useTranslation(["invoices", "common"]);
+  const { appColor } = useColorTheme();
   const [activeTab, setActiveTab] = useState<InvoiceTabKey>("ocr");
 
   return (
@@ -42,7 +46,8 @@ export const NewInvoicePage = () => {
               <Suspense
                 fallback={
                   <div className="py-8 text-center text-default-500">
-                    Cargando...
+                    <Spinner color={appColor} size="lg" />
+                    {t("common:loading.basic")}
                   </div>
                 }
               >
@@ -57,7 +62,7 @@ export const NewInvoicePage = () => {
               <Suspense
                 fallback={
                   <div className="py-8 text-center text-default-500">
-                    Cargando...
+                    {t("common:loading.basic")}
                   </div>
                 }
               >
@@ -72,7 +77,7 @@ export const NewInvoicePage = () => {
               <Suspense
                 fallback={
                   <div className="py-8 text-center text-default-500">
-                    Cargando...
+                    {t("common:loading.basic")}
                   </div>
                 }
               >
