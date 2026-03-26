@@ -19,6 +19,7 @@ import {
   SettingsIcon,
   LogoutIcon,
   Logo,
+  ReportsIcon,
 } from "./LayoutIcons";
 
 import { useSession } from "@/contexts/session-context";
@@ -51,6 +52,11 @@ export const MobileNavbar = () => {
       label: t("navigation.invoices"),
       href: "/invoices",
       icon: <InvoiceIcon />,
+    },
+    {
+      label: t("navigation.reports"),
+      href: "/reports",
+      icon: <ReportsIcon />,
     },
     {
       label: t("navigation.settings"),
