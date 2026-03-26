@@ -26,6 +26,11 @@ const SettingsPage = lazy(() =>
     default: module.SettingsPage,
   })),
 );
+const ReportsPage = lazy(() =>
+  import("@/features/reports/pages/ReportsPage").then((module) => ({
+    default: module.default,
+  })),
+);
 const CookieConsent = lazy(() =>
   import("@/components/ui/cookie-consent").then((module) => ({
     default: module.CookieConsent,
@@ -146,6 +151,18 @@ function App() {
               </AppErrorBoundary>
             }
             path="/settings"
+          />
+          <Route
+            element={
+              <AppErrorBoundary>
+                <Suspense
+                  fallback={<LoadingSpinner message="Cargando reportes..." />}
+                >
+                  <ReportsPage />
+                </Suspense>
+              </AppErrorBoundary>
+            }
+            path="/reports"
           />
         </Route>
         <Route

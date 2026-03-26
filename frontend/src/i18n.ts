@@ -70,6 +70,7 @@ i18n
       "profile",
       "dashboard",
       "settings",
+      "reports",
     ],
     defaultNS: "common",
     interpolation: {

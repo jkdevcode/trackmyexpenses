@@ -28,6 +28,7 @@
   "navigation": {
     "dashboard": "Dashboard",
     "invoices": "Invoices",
+    "reports": "Reports",
     "settings": "Settings"
   },
   "auth": {
