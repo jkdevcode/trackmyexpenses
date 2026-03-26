@@ -29,7 +29,7 @@ const LoginPage = () => {
 
   const [isVisible, setIsVisible] = useState(false);
   const loginMutation = useLoginMutation();
-  const linkColor = appColor === "default" ? "foreground" : "primary";
+  const linkColor = appColor === "default" ? "foreground" : appColor;
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
