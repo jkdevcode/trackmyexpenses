@@ -18,6 +18,7 @@ import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/ui/icons";
 import { getRegisterSchema } from "@/schemas/auth";
 import { CameraIcon } from "@/components/ui/CameraIcon";
 import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from "@/constants/currency";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface RegisterFormValues {
@@ -37,10 +38,11 @@ const RegisterPage = () => {
   const { t } = useTranslation(["auth", "common", "validation"]);
   const navigate = useNavigate();
   const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
 
   const [isVisible, setIsVisible] = useState(false);
   const registerMutation = useRegisterMutation();
-  const linkColor = appColor === "default" ? "foreground" : "primary";
+  const linkColor = appColor === "default" ? "foreground" : appColor;
 
   // Image handling
   const [foto, setFoto] = useState<File | null>(null);
@@ -146,7 +148,7 @@ const RegisterPage = () => {
               fallback={<CameraIcon className="w-10 h-10 text-default-500" />}
               src={fotoUrl}
             />
-            <span className="text-xs text-primary font-medium">
+            <span className={`text-xs font-medium ${appColorVariants.text}`}>
               {t("auth:register.avatar_fallback")}
             </span>
             <input

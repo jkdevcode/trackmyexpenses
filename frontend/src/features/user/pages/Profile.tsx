@@ -15,6 +15,7 @@ import { useUpdateProfileMutation } from "../hooks/useUserMutations";
 
 import { useSession } from "@/contexts/session-context";
 import { getErrorMessage } from "@/utils/errors";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 import { useColorTheme } from "@/hooks/use-color-theme";
 import { getProfileSchema } from "@/schemas/profile";
 import { CameraIcon } from "@/components/ui/CameraIcon";
@@ -35,6 +36,7 @@ interface ProfileFormValues {
 const ProfilePage = () => {
   const { t } = useTranslation(["profile", "auth", "validation", "common"]);
   const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
   const { user, login } = useSession();
   const updateProfileMutation = useUpdateProfileMutation();
 
@@ -197,7 +199,7 @@ const ProfilePage = () => {
               onChange={handleImageChange}
             />
           </div>
-          <p className="text-primary text-sm mt-3 font-medium transition-opacity opacity-70 hover:opacity-100">
+          <p className={`text-sm mt-3 font-medium transition-opacity opacity-70 hover:opacity-100 ${appColorVariants.text}`}>
             {t("profile:avatar.change")}
           </p>
           <h1 className="text-2xl font-bold mt-4">{t("profile:title")}</h1>

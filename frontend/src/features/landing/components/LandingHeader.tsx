@@ -16,7 +16,7 @@ import { useColorTheme } from "@/hooks/use-color-theme";
 export const LandingHeader = () => {
   const { t } = useTranslation();
   const { appColor } = useColorTheme();
-  const linkColor = appColor === "default" ? "foreground" : "primary";
+  const linkColor = appColor === "default" ? "foreground" : appColor;
 
   return (
     <HeroNavbar maxWidth="xl" position="sticky">
