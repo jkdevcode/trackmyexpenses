@@ -6,7 +6,7 @@ Componentes de navegacion y estructura para la aplicacion autenticada.
 
 - Definir shell responsive desktop/mobile.
 - Encapsular items de menu y accesos de navegacion.
-- Integrar acciones de perfil y cierre de sesion.
+- Integrar acciones de perfil, cierre de sesion y estado visual global.
 
 ## Main Files
 
@@ -18,5 +18,5 @@ Componentes de navegacion y estructura para la aplicacion autenticada.
 ## Usage
 
 - Importado por `src/App.tsx` dentro de `ProtectedRoute`.
-- Consumido por todas las rutas privadas (`dashboard`, `profile`, `invoices`).
-- Depende de `SessionContext` y `theme` para estado visual y sesion.
+- Consumido por todas las rutas privadas (`dashboard`, `profile`, `invoices`, `settings`, `reports`).
+- Depende de `SessionContext`, `theme` y `color-theme` para estado visual y sesion.
