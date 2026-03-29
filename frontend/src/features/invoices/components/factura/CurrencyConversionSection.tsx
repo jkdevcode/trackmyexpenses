@@ -9,6 +9,8 @@ import { useAppColorVariants } from "@/theme/app-color-variants";
 import { useColorTheme } from "@/hooks/use-color-theme";
 
 type CurrencyConversionSectionProps = {
+ /*  errorMessage?: string;
+  isInvalid?: boolean; */
   moneda: string;
   monedaBase: string;
   total: number;
@@ -20,6 +22,8 @@ const roundCurrency = (value: number) =>
   Math.round((value + Number.EPSILON) * 100) / 100;
 
 export const CurrencyConversionSection = ({
+ /*  errorMessage,
+  isInvalid = false, */
   moneda,
   monedaBase,
   total,
@@ -84,6 +88,8 @@ export const CurrencyConversionSection = ({
         <Input
           color={appColor}
           description={t("form.currency.rate_hint")}
+          /* errorMessage={errorMessage}
+          isInvalid={isInvalid} */
           label={t("form.currency.rate")}
           min={0.000001}
           step="0.000001"
