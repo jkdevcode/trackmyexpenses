@@ -90,10 +90,13 @@ export const RevenueChart = ({ data, loading }: RevenueChartProps) => {
             />
             <Tooltip
               contentStyle={{
+                backgroundColor: "hsl(var(--heroui-default-100))",
                 borderRadius: "8px",
-                border: "none",
-                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                border: "1px solid hsl(var(--heroui-default-200))",
+                color: "hsl(var(--heroui-foreground))",
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)",
               }}
+              labelStyle={{ color: "hsl(var(--heroui-default-500))" }}
               cursor={{ fill: "transparent" }}
             />
             <Bar
@@ -102,6 +105,7 @@ export const RevenueChart = ({ data, loading }: RevenueChartProps) => {
               // Opcional: una transición suave al hacer hover
               className="cursor-pointer hover:opacity-80 transition-opacity"
               dataKey="value"
+              name={t("charts.legend.total")}
               // 2. Aplicamos el color procesado
               fill={chartColor}
             />

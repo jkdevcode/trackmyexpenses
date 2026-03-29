@@ -60,7 +60,10 @@ export const AverageTicketChart = ({
   // Get colors
   const primaryRgb = THEME_COLOR_MAP[appColor].dark;
   const primaryColor = `rgb(${primaryRgb})`;
-  const secondaryColor = "#9333ea"; // Purple-ish for contrast or secondary metric
+  const secondaryColor =
+    appColor === "secondary"
+      ? "#22c55e" // verde (ej: success)
+      : "#9333ea"; // morado normal
 
   if (loading || !recharts) {
     return (
@@ -129,9 +132,14 @@ export const AverageTicketChart = ({
             />
             <Tooltip
               contentStyle={{
+                backgroundColor: "hsl(var(--heroui-default-100))",
                 borderRadius: "8px",
-                border: "none",
-                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                border: "1px solid hsl(var(--heroui-default-200))",
+                color: "hsl(var(--heroui-foreground))",
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)",
+              }}
+              labelStyle={{
+                color: "hsl(var(--heroui-default-500))",
               }}
               cursor={{
                 stroke: primaryColor,
