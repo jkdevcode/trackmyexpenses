@@ -1,41 +1,42 @@
 import {
-  BadRequestException,
-  Controller,
-  Post,
-  Get,
-  Put,
-  Delete,
   Body,
-  UseGuards,
-  Request,
-  UsePipes,
+  Controller,
+  Delete,
+  Get,
   Param,
   ParseIntPipe,
+  Post,
+  Put,
   Query,
+  Request,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
+  UsePipes,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { FacturaService } from './factura.service';
-import { CreateFacturaDto } from './dto/create-factura.dto';
-import { AddProductoFacturaDto } from './dto/add-producto.dto';
-import {
-  CreateOcrFacturaDto,
-  createOcrFacturaSchema,
-} from './dto/create-ocr-factura.dto';
-import { ZodError } from 'zod';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { ZodValidationPipe } from 'nestjs-zod';
-import { UpdateFacturaDto } from './dto/update-factura.dto';
-
-import { GetFacturasQueryDto } from './dto/get-facturas-query.dto';
-import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
-import { FacturaOcrService } from './factura-ocr.service';
 import type { Request as ExpressRequest } from 'express';
+import { ZodValidationPipe } from 'nestjs-zod';
+import { ZodError, type ZodIssue } from 'zod';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   MAX_UPLOAD_FILE_SIZE,
   imageFileInterceptorOptions,
 } from '../common/upload/upload-options';
+import type { AppErrorDetail } from '../common/errors/app.error';
+import { AddProductoFacturaDto } from './dto/add-producto.dto';
+import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
+import { CreateFacturaDto } from './dto/create-factura.dto';
+import {
+  CreateOcrFacturaDto,
+  createOcrFacturaSchema,
+} from './dto/create-ocr-factura.dto';
+import { GetFacturasQueryDto } from './dto/get-facturas-query.dto';
+import { UpdateFacturaDto } from './dto/update-factura.dto';
+import { FACTURA_ERROR_CODES } from './errors/factura-error-codes';
+import { FacturaDomainValidationError } from './factura.domain';
+import { FacturaOcrService } from './factura-ocr.service';
+import { FacturaService } from './factura.service';
 
 interface RequestWithUser extends ExpressRequest {
   user: {
@@ -46,6 +47,100 @@ interface RequestWithUser extends ExpressRequest {
 function isUnknownArray(value: unknown): value is unknown[] {
   return Array.isArray(value);
 }
+
+function buildDetail(
+  code: string,
+  field?: string,
+  meta?: Record<string, unknown>,
+): AppErrorDetail[] {
+  return [
+    {
+      code,
+      ...(field ? { field } : {}),
+      ...(meta ? { meta } : {}),
+    },
+  ];
+}
+
+function mapIssuePathToField(path: (string | number)[]): string | undefined {
+  if (path.length === 0) {
+    return undefined;
+  }
+
+  return path.reduce<string>((field, segment) => {
+    if (typeof segment === 'number') {
+      return `${field}[${segment}]`;
+    }
+
+    return field ? `${field}.${segment}` : segment;
+  }, '');
+}
+
+function mapIssueToCode(issue: ZodIssue): string {
+  const [root, second, third] = issue.path;
+
+  if (root === 'moneda') {
+    return FACTURA_ERROR_CODES.MONEDA_INVALID;
+  }
+
+  if (root === 'tasaCambio') {
+    return FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID;
+  }
+
+  if (root === 'items' && typeof second === 'number') {
+    if (third === 'nombreDetectado') {
+      return FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING;
+    }
+
+    if (third === 'precioUnitario') {
+      return FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID;
+    }
+
+    if (third === 'cantidadDetectada') {
+      return FACTURA_ERROR_CODES.OCR_ITEM_CANTIDAD_INVALID;
+    }
+
+    if (third === 'descuentoDetectado') {
+      return FACTURA_ERROR_CODES.ITEM_DESCUENTO_INVALID;
+    }
+  }
+
+  return FACTURA_ERROR_CODES.OCR_INVALID_PAYLOAD;
+}
+
+function mapZodErrorToDetails(error: ZodError): AppErrorDetail[] {
+  const details = error.issues.map((issue) => {
+    const safePath = issue.path.filter(
+      (key): key is string | number => typeof key !== 'symbol',
+    );
+
+    const field = mapIssuePathToField(safePath);
+
+    return {
+      code: mapIssueToCode(issue),
+      ...(field ? { field } : {}),
+      meta: { reason: issue.message },
+    };
+  });
+
+  return details.length > 0
+    ? details
+    : buildDetail(FACTURA_ERROR_CODES.OCR_INVALID_PAYLOAD);
+}
+
+/* function mapZodErrorToDetails(error: ZodError): AppErrorDetail[] {
+  const details = error.issues.map((issue) => ({
+    code: mapIssueToCode(issue),
+    ...(mapIssuePathToField(issue.path)
+      ? { field: mapIssuePathToField(issue.path) }
+      : {}),
+    meta: { reason: issue.message },
+  }));
+
+  return details.length > 0
+    ? details
+    : buildDetail(FACTURA_ERROR_CODES.OCR_INVALID_PAYLOAD);
+} */
 
 @Controller('facturas')
 @UseGuards(JwtAuthGuard)
@@ -65,11 +160,19 @@ export class FacturaController {
   ) {
     if (file) {
       if (file.size > MAX_UPLOAD_FILE_SIZE) {
-        throw new BadRequestException('El archivo supera el limite de 5MB');
+        throw new FacturaDomainValidationError(
+          FACTURA_ERROR_CODES.UPLOAD_FILE_TOO_LARGE,
+          buildDetail(FACTURA_ERROR_CODES.UPLOAD_FILE_TOO_LARGE, 'file', {
+            maxBytes: MAX_UPLOAD_FILE_SIZE,
+          }),
+        );
       }
 
       if (!file.mimetype.match(/^image\/(jpeg|png)$/)) {
-        throw new BadRequestException('Solo se permiten imagenes (JPEG, PNG)');
+        throw new FacturaDomainValidationError(
+          FACTURA_ERROR_CODES.UPLOAD_FILE_TYPE_INVALID,
+          buildDetail(FACTURA_ERROR_CODES.UPLOAD_FILE_TYPE_INVALID, 'file'),
+        );
       }
     }
 
@@ -142,16 +245,25 @@ export class FacturaController {
     @Request() req: RequestWithUser,
   ) {
     if (!file) {
-      throw new BadRequestException('Se requiere una imagen (field: image)');
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.OCR_IMAGE_REQUIRED,
+        buildDetail(FACTURA_ERROR_CODES.OCR_IMAGE_REQUIRED, 'image'),
+      );
     }
 
     if (file.size > MAX_UPLOAD_FILE_SIZE) {
-      throw new BadRequestException('El archivo supera el limite de 5MB');
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.UPLOAD_FILE_TOO_LARGE,
+        buildDetail(FACTURA_ERROR_CODES.UPLOAD_FILE_TOO_LARGE, 'image', {
+          maxBytes: MAX_UPLOAD_FILE_SIZE,
+        }),
+      );
     }
 
     if (!file.mimetype.match(/^image\/(jpeg|png|webp)$/)) {
-      throw new BadRequestException(
-        'Solo se permiten imagenes (JPEG, PNG, WEBP)',
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.UPLOAD_FILE_TYPE_INVALID,
+        buildDetail(FACTURA_ERROR_CODES.UPLOAD_FILE_TYPE_INVALID, 'image'),
       );
     }
 
@@ -174,14 +286,13 @@ export class FacturaController {
     @UploadedFile() file: Express.Multer.File,
     @Body() body: Record<string, unknown>,
   ) {
-    // 1. Log pre-parsing type for debugging
-    console.log('OCR items type (raw):', typeof body.items);
-
-    // 2. Manual parsing of items
     let parsedItems: unknown[] = [];
 
     if (!body.items) {
-      throw new BadRequestException('El campo items es obligatorio');
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.OCR_ITEMS_REQUIRED,
+        buildDetail(FACTURA_ERROR_CODES.OCR_ITEMS_REQUIRED, 'items'),
+      );
     }
 
     if (typeof body.items === 'string') {
@@ -189,12 +300,16 @@ export class FacturaController {
       try {
         parsed = JSON.parse(body.items) as unknown;
       } catch {
-        throw new BadRequestException('JSON invalido en items');
+        throw new FacturaDomainValidationError(
+          FACTURA_ERROR_CODES.OCR_ITEMS_INVALID_JSON,
+          buildDetail(FACTURA_ERROR_CODES.OCR_ITEMS_INVALID_JSON, 'items'),
+        );
       }
 
       if (!isUnknownArray(parsed)) {
-        throw new BadRequestException(
-          'items debe ser un array o un JSON string',
+        throw new FacturaDomainValidationError(
+          FACTURA_ERROR_CODES.OCR_ITEMS_INVALID_TYPE,
+          buildDetail(FACTURA_ERROR_CODES.OCR_ITEMS_INVALID_TYPE, 'items'),
         );
       }
 
@@ -202,32 +317,37 @@ export class FacturaController {
     } else if (isUnknownArray(body.items)) {
       parsedItems = body.items;
     } else {
-      throw new BadRequestException('items debe ser un array o un JSON string');
-    }
-
-    // 3. Log post-parsing type for debugging
-    console.log('OCR items type (parsed):', typeof parsedItems);
-
-    if (!Array.isArray(parsedItems) || parsedItems.length === 0) {
-      throw new BadRequestException(
-        'Debe haber al menos un item (array no vacio)',
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.OCR_ITEMS_INVALID_TYPE,
+        buildDetail(FACTURA_ERROR_CODES.OCR_ITEMS_INVALID_TYPE, 'items'),
       );
     }
 
-    // 4. Validate file
+    if (parsedItems.length === 0) {
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.ITEMS_EMPTY,
+        buildDetail(FACTURA_ERROR_CODES.ITEMS_EMPTY, 'items'),
+      );
+    }
+
     if (file) {
       if (file.size > MAX_UPLOAD_FILE_SIZE) {
-        throw new BadRequestException('El archivo supera el limite de 5MB');
+        throw new FacturaDomainValidationError(
+          FACTURA_ERROR_CODES.UPLOAD_FILE_TOO_LARGE,
+          buildDetail(FACTURA_ERROR_CODES.UPLOAD_FILE_TOO_LARGE, 'file', {
+            maxBytes: MAX_UPLOAD_FILE_SIZE,
+          }),
+        );
       }
 
       if (!file.mimetype.match(/^image\/(jpeg|png|webp)$/)) {
-        throw new BadRequestException(
-          'Solo se permiten imagenes (JPEG, PNG, WEBP)',
+        throw new FacturaDomainValidationError(
+          FACTURA_ERROR_CODES.UPLOAD_FILE_TYPE_INVALID,
+          buildDetail(FACTURA_ERROR_CODES.UPLOAD_FILE_TYPE_INVALID, 'file'),
         );
       }
     }
 
-    // 5. Build clean payload with numeric conversions, validate with OCR schema
     const cleanPayload = {
       ...body,
       items: parsedItems,
@@ -238,11 +358,14 @@ export class FacturaController {
     let dto: CreateOcrFacturaDto;
     try {
       dto = createOcrFacturaSchema.parse(cleanPayload);
-    } catch (err) {
-      if (err instanceof ZodError) {
-        throw new BadRequestException(err.flatten());
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw new FacturaDomainValidationError(
+          FACTURA_ERROR_CODES.OCR_INVALID_PAYLOAD,
+          mapZodErrorToDetails(error),
+        );
       }
-      throw err;
+      throw error;
     }
 
     return this.facturaService.createWithOcrAndFile(req.user.id, dto, file);

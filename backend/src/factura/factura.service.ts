@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -12,6 +11,7 @@ import { CreateFacturaDto } from './dto/create-factura.dto';
 import { CreateOcrFacturaDto } from './dto/create-ocr-factura.dto';
 import { UpdateFacturaDto } from './dto/update-factura.dto';
 import { Logger } from 'nestjs-pino';
+import { AppError } from '../common/errors/app.error';
 import { PeriodFilter } from './factura.types';
 import { RequestContext } from '../common/context/request-context';
 import {
@@ -25,7 +25,9 @@ import {
   getPeriodWindow,
   normalizeCurrencyCode,
   normalizeAndValidateOcrItem,
+  mergeOcrDuplicates,
 } from './factura.domain';
+import { FACTURA_ERROR_CODES } from './errors/factura-error-codes';
 import { FacturaNotFoundError } from './errors/factura-not-found.error';
 import { DomainConflictError } from '../common/errors/domain-conflict.error';
 import {
@@ -142,10 +144,7 @@ export class FacturaService {
         factura,
       };
     } catch (error: unknown) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof FacturaNotFoundError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -183,10 +182,7 @@ export class FacturaService {
         data: { factura },
       };
     } catch (error: unknown) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof FacturaNotFoundError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -230,38 +226,49 @@ export class FacturaService {
         dto.tasaCambio,
       );
 
-      // Map flat DTO to nested ConfirmFacturaDto structure for reuse
-      // 1. Strict business validation of items
-      const validatedItems = dto.items.map((item, index) => {
+      // 1. Normalize duplicates from OCR/AI before validation
+      const normalizedOcrItems = mergeOcrDuplicates(dto.items);
+
+      // 2. Strict business validation of items using domain codes
+      const validatedItems = normalizedOcrItems.map((item, index) => {
         if (!item.nombreDetectado || typeof item.nombreDetectado !== 'string') {
-          console.error(
-            `Invalid OCR item at index ${index}: missing nombreDetectado`,
-            item,
-          );
-          throw new BadRequestException(
-            `El item en la posicion ${index} no tiene un nombre valido`,
+          throw new FacturaDomainValidationError(
+            FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+            [
+              {
+                field: `items[${index}]`,
+                code: FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+                meta: { index },
+              },
+            ],
           );
         }
 
         const precio = Number(item.precioUnitario);
         if (isNaN(precio) || precio < 0) {
-          console.error(
-            `Invalid OCR item at index ${index}: invalid precioUnitario`,
-            item,
-          );
-          throw new BadRequestException(
-            `El item "${item.nombreDetectado}" tiene un precio invalido`,
+          throw new FacturaDomainValidationError(
+            FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID,
+            [
+              {
+                field: `items[${index}].precioUnitario`,
+                code: FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID,
+                meta: { index, productName: item.nombreDetectado },
+              },
+            ],
           );
         }
 
         const cantidad = Number(item.cantidadDetectada);
         if (isNaN(cantidad) || cantidad <= 0) {
-          console.error(
-            `Invalid OCR item at index ${index}: invalid cantidadDetectada`,
-            item,
-          );
-          throw new BadRequestException(
-            `El item "${item.nombreDetectado}" tiene una cantidad invalida`,
+          throw new FacturaDomainValidationError(
+            FACTURA_ERROR_CODES.OCR_ITEM_CANTIDAD_INVALID,
+            [
+              {
+                field: `items[${index}].cantidadDetectada`,
+                code: FACTURA_ERROR_CODES.OCR_ITEM_CANTIDAD_INVALID,
+                meta: { index, productName: item.nombreDetectado },
+              },
+            ],
           );
         }
 
@@ -311,10 +318,7 @@ export class FacturaService {
         factura,
       };
     } catch (error: unknown) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof FacturaNotFoundError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -422,10 +426,18 @@ export class FacturaService {
 
     if (itemsToUpdate.length > 0) {
       const seen = new Set<number>();
-      for (const item of itemsToUpdate) {
+      for (let idx = 0; idx < itemsToUpdate.length; idx++) {
+        const item = itemsToUpdate[idx];
         if (seen.has(item.productoId)) {
-          throw new BadRequestException(
-            `Producto duplicado en items: ${item.productoId}`,
+          throw new FacturaDomainValidationError(
+            FACTURA_ERROR_CODES.ITEM_DUPLICATE,
+            [
+              {
+                field: `items[${idx}]`,
+                code: FACTURA_ERROR_CODES.ITEM_DUPLICATE,
+                meta: { index: idx, productoId: item.productoId },
+              },
+            ],
           );
         }
         seen.add(item.productoId);
@@ -462,9 +474,13 @@ export class FacturaService {
           for (const item of itemsToUpdate) {
             const current = existingByProductoId.get(item.productoId);
             if (!current) {
-              throw new FacturaNotFoundError(
-                `Producto no encontrado en factura: ${item.productoId}`,
-              );
+              throw new FacturaNotFoundError([
+                {
+                  field: `items[${itemsToUpdate.indexOf(item)}]`,
+                  code: FACTURA_ERROR_CODES.PRODUCTO_NOT_FOUND,
+                  meta: { productoId: item.productoId },
+                },
+              ]);
             }
 
             const cantidad =
@@ -487,8 +503,15 @@ export class FacturaService {
               : Number(current.precioTotal) / Math.max(cantidad, 1);
 
             if (!Number.isFinite(precioUnitarioFinal)) {
-              throw new BadRequestException(
-                `precioUnitario invalido para producto ${item.productoId}`,
+              throw new FacturaDomainValidationError(
+                FACTURA_ERROR_CODES.ITEM_PRECIO_INVALID,
+                [
+                  {
+                    field: `items[${itemsToUpdate.indexOf(item)}].precioUnitario`,
+                    code: FACTURA_ERROR_CODES.ITEM_PRECIO_INVALID,
+                    meta: { productoId: item.productoId },
+                  },
+                ],
               );
             }
 
@@ -529,8 +552,9 @@ export class FacturaService {
                 : Number.NaN;
 
           if (!Number.isFinite(tasaCambio) || tasaCambio <= 0) {
-            throw new BadRequestException(
-              'Factura sin tasaCambio valida para actualizar totales',
+            throw new FacturaDomainValidationError(
+              FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID,
+              [{ code: FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID }],
             );
           }
 
@@ -558,10 +582,7 @@ export class FacturaService {
         factura: updatedFactura,
       };
     } catch (error: unknown) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof FacturaNotFoundError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -649,7 +670,9 @@ export class FacturaService {
     const producto = await this.repo.findProductoById(userId, dto.productoId);
 
     if (!producto) {
-      throw new FacturaNotFoundError('Producto no encontrado');
+      throw new FacturaNotFoundError([
+        { code: FACTURA_ERROR_CODES.PRODUCTO_NOT_FOUND },
+      ]);
     }
 
     const precioUnitario =
@@ -673,8 +696,9 @@ export class FacturaService {
           : Number.NaN;
 
     if (!Number.isFinite(tasaCambio) || tasaCambio <= 0) {
-      throw new BadRequestException(
-        'Factura sin tasaCambio valida para actualizar totales',
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID,
+        [{ code: FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID }],
       );
     }
 
@@ -758,14 +782,7 @@ export class FacturaService {
     codePrefix: 'FAC' | 'OCR',
     currencyInfo: CurrencyInfo,
   ) {
-    try {
-      assertValidFacturaItems(input.items);
-    } catch (error: unknown) {
-      if (error instanceof FacturaDomainValidationError) {
-        throw new BadRequestException(error.message);
-      }
-      throw error;
-    }
+    assertValidFacturaItems(input.items);
 
     const productIds = [...new Set(input.items.map((item) => item.productoId))];
 
@@ -775,9 +792,12 @@ export class FacturaService {
       const foundIds = new Set(products.map((product) => product.id));
       const missingIds = productIds.filter((id) => !foundIds.has(id));
 
-      throw new FacturaNotFoundError(
-        `Productos no encontrados: ${missingIds.join(', ')}`,
-      );
+      throw new FacturaNotFoundError([
+        {
+          code: FACTURA_ERROR_CODES.ITEMS_NOT_FOUND,
+          meta: { missingIds },
+        },
+      ]);
     }
 
     const productById = new Map(
@@ -857,16 +877,10 @@ export class FacturaService {
   ): Promise<CreateFacturaInput> {
     const items: CreateFacturaItemInput[] = [];
 
-    for (const item of dto.productos) {
-      let normalized: ReturnType<typeof normalizeAndValidateOcrItem>;
-      try {
-        normalized = normalizeAndValidateOcrItem(item);
-      } catch (error: unknown) {
-        if (error instanceof FacturaDomainValidationError) {
-          throw new BadRequestException(error.message);
-        }
-        throw error;
-      }
+    for (let index = 0; index < dto.productos.length; index++) {
+      const item = dto.productos[index];
+      // FacturaDomainValidationError (AppError) is caught by GlobalExceptionFilter directly
+      const normalized = normalizeAndValidateOcrItem(item, index);
 
       let producto = await tx.findProductoByNombre(
         userId,
@@ -878,8 +892,15 @@ export class FacturaService {
           !Number.isFinite(normalized.precioUnitario) ||
           normalized.precioUnitario <= 0
         ) {
-          throw new BadRequestException(
-            'Items OCR sin producto existente requieren precioUnitario valido',
+          throw new FacturaDomainValidationError(
+            FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID,
+            [
+              {
+                field: `items[${index}].precioUnitario`,
+                code: FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID,
+                meta: { index, productName: normalized.nombreDetectado },
+              },
+            ],
           );
         }
 
@@ -953,20 +974,15 @@ export class FacturaService {
     const monedaBase = normalizeCurrencyCode(userMonedaBase ?? 'COP');
     const moneda = normalizeCurrencyCode(monedaInput ?? monedaBase);
 
-    try {
-      assertValidCurrencyCode(monedaBase);
-      assertValidCurrencyCode(moneda);
-    } catch (error: unknown) {
-      if (error instanceof FacturaDomainValidationError) {
-        throw new BadRequestException(error.message);
-      }
-      throw error;
-    }
+    // FacturaDomainValidationError (AppError) propagates to GlobalExceptionFilter
+    assertValidCurrencyCode(monedaBase);
+    assertValidCurrencyCode(moneda);
 
     if (moneda === monedaBase) {
       if (tasaCambioInput && Math.abs(tasaCambioInput - 1) > 0.000001) {
-        throw new BadRequestException(
-          'tasaCambio debe ser 1 cuando la moneda coincide con monedaBase',
+        throw new FacturaDomainValidationError(
+          FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID,
+          [{ code: FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID }],
         );
       }
 
@@ -981,7 +997,10 @@ export class FacturaService {
 
     if (tasaCambioInput !== undefined) {
       if (!Number.isFinite(tasaCambioInput) || tasaCambioInput <= 0) {
-        throw new BadRequestException('tasaCambio invalida');
+        throw new FacturaDomainValidationError(
+          FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID,
+          [{ code: FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID }],
+        );
       }
 
       return {
@@ -1009,8 +1028,9 @@ export class FacturaService {
         error,
       });
 
-      throw new BadRequestException(
-        'No se pudo obtener tasa de cambio. Proporcione tasaCambio manual',
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID,
+        [{ code: FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID }],
       );
     }
   }

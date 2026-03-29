@@ -1,5 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { FACTURA_ERROR_CODES } from './errors/factura-error-codes';
+import { FacturaDomainValidationError } from './factura.domain';
 import { FacturaController } from './factura.controller';
 import { FacturaOcrService } from './factura-ocr.service';
 import { FacturaService } from './factura.service';
@@ -76,19 +77,24 @@ describe('FacturaController', () => {
   it('POST /facturas/ocr should validate required file', async () => {
     await expect(
       controller.uploadFile(undefined as any, {} as any),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toMatchObject({
+      code: FACTURA_ERROR_CODES.OCR_IMAGE_REQUIRED,
+    });
   });
 
   it('POST /facturas/ocr should reject invalid mimetype', async () => {
-    await expect(
-      controller.uploadFile(
-        {
-          buffer: Buffer.from('text'),
-          mimetype: 'text/plain',
-        } as Express.Multer.File,
-        {} as any,
-      ),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    const promise = controller.uploadFile(
+      {
+        buffer: Buffer.from('text'),
+        mimetype: 'text/plain',
+      } as Express.Multer.File,
+      {} as any,
+    );
+
+    await expect(promise).rejects.toBeInstanceOf(FacturaDomainValidationError);
+    await expect(promise).rejects.toMatchObject({
+      code: FACTURA_ERROR_CODES.UPLOAD_FILE_TYPE_INVALID,
+    });
   });
 
   it('POST /facturas/ocr/confirmar should call OCR service', async () => {
@@ -145,17 +151,20 @@ describe('FacturaController', () => {
       items: [{ productoId: 1, cantidad: 1 }],
     };
 
-    await expect(
-      controller.create(
-        req,
-        dto as any,
-        {
-          buffer: Buffer.from('text'),
-          mimetype: 'image/webp',
-          size: 1024,
-        } as Express.Multer.File,
-      ),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    const promise = controller.create(
+      req,
+      dto as any,
+      {
+        buffer: Buffer.from('text'),
+        mimetype: 'image/webp',
+        size: 1024,
+      } as Express.Multer.File,
+    );
+
+    await expect(promise).rejects.toBeInstanceOf(FacturaDomainValidationError);
+    await expect(promise).rejects.toMatchObject({
+      code: FACTURA_ERROR_CODES.UPLOAD_FILE_TYPE_INVALID,
+    });
   });
 
   it('GET /facturas should call service.findAll with user and query params', async () => {

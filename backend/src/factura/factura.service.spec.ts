@@ -1,12 +1,11 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import {
-  BadRequestException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { InternalServerErrorException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from 'nestjs-pino';
 import { DomainConflictError } from '../common/errors/domain-conflict.error';
+import { FACTURA_ERROR_CODES } from './errors/factura-error-codes';
 import { FacturaNotFoundError } from './errors/factura-not-found.error';
+import { FacturaDomainValidationError } from './factura.domain';
 import { FACTURA_REPOSITORY } from './factura.repository.port';
 import { FacturaService } from './factura.service';
 import { ExchangeRateService } from '../infra/exchange-rate/exchange-rate.service';
@@ -127,6 +126,27 @@ describe('FacturaService', () => {
     ).rejects.toBeInstanceOf(FacturaNotFoundError);
   });
 
+  it('should rethrow structured AppError in create when item payload is invalid', async () => {
+    repo.transaction.mockImplementation(async (callback: any) => callback({}));
+
+    const promise = service.create(5, {
+      metodoPago: 'EFECTIVO',
+      lugarCompra: 'TIENDA',
+      items: [{ productoId: 1, cantidad: 0 }],
+    } as any);
+
+    await expect(promise).rejects.toBeInstanceOf(FacturaDomainValidationError);
+    await expect(promise).rejects.toMatchObject({
+      code: FACTURA_ERROR_CODES.ITEM_CANTIDAD_INVALID,
+      details: [
+        expect.objectContaining({
+          field: 'items[0].cantidad',
+          code: FACTURA_ERROR_CODES.ITEM_CANTIDAD_INVALID,
+        }),
+      ],
+    });
+  });
+
   it('should confirm factura from OCR successfully (createFromOcr)', async () => {
     const tx = {
       findProductoByNombre: jest.fn().mockResolvedValue({ id: 7 }),
@@ -205,7 +225,7 @@ describe('FacturaService', () => {
     );
   });
 
-  it('should throw BadRequestException in createFromOcr when product does not exist and price is invalid', async () => {
+  it('should throw structured AppError in createFromOcr when product does not exist and price is invalid', async () => {
     const tx = {
       findProductoByNombre: jest.fn().mockResolvedValue(null),
       createProducto: jest.fn(),
@@ -216,22 +236,31 @@ describe('FacturaService', () => {
     };
     repo.transaction.mockImplementation(async (callback: any) => callback(tx));
 
-    await expect(
-      service.createFromOcr(1, {
-        factura: {
-          fechaHoraCompra: '2026-03-05T10:00:00.000Z',
-          metodoPago: 'EFECTIVO',
-          lugarCompra: 'TIENDA',
+    const promise = service.createFromOcr(1, {
+      factura: {
+        fechaHoraCompra: '2026-03-05T10:00:00.000Z',
+        metodoPago: 'EFECTIVO',
+        lugarCompra: 'TIENDA',
+      },
+      productos: [
+        {
+          nombreDetectado: 'NUEVO',
+          precioUnitario: 0,
+          cantidadDetectada: 1,
         },
-        productos: [
-          {
-            nombreDetectado: 'NUEVO',
-            precioUnitario: 0,
-            cantidadDetectada: 1,
-          },
-        ],
-      } as any),
-    ).rejects.toBeInstanceOf(BadRequestException);
+      ],
+    } as any);
+
+    await expect(promise).rejects.toBeInstanceOf(FacturaDomainValidationError);
+    await expect(promise).rejects.toMatchObject({
+      code: FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID,
+      details: [
+        expect.objectContaining({
+          field: 'items[0].precioUnitario',
+          code: FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID,
+        }),
+      ],
+    });
   });
 
   it('should throw FacturaNotFoundError in confirmFactura (createFromOcr) when confirmed product ids are missing', async () => {
@@ -554,7 +583,7 @@ describe('FacturaService', () => {
     );
   });
 
-  it('should throw BadRequestException on invalid OCR item shape', async () => {
+  it('should throw structured AppError on invalid OCR item shape', async () => {
     const tx = {
       findProductoByNombre: jest.fn(),
       createProducto: jest.fn(),
@@ -565,22 +594,31 @@ describe('FacturaService', () => {
     };
     repo.transaction.mockImplementation(async (callback: any) => callback(tx));
 
-    await expect(
-      service.createFromOcr(1, {
-        factura: {
-          fechaHoraCompra: '2026-03-06T10:00:00.000Z',
-          metodoPago: 'EFECTIVO',
-          lugarCompra: 'TIENDA',
+    const promise = service.createFromOcr(1, {
+      factura: {
+        fechaHoraCompra: '2026-03-06T10:00:00.000Z',
+        metodoPago: 'EFECTIVO',
+        lugarCompra: 'TIENDA',
+      },
+      productos: [
+        {
+          nombreDetectado: '',
+          precioUnitario: 1000,
+          cantidadDetectada: 1,
         },
-        productos: [
-          {
-            nombreDetectado: '',
-            precioUnitario: 1000,
-            cantidadDetectada: 1,
-          },
-        ],
-      } as any),
-    ).rejects.toBeInstanceOf(BadRequestException);
+      ],
+    } as any);
+
+    await expect(promise).rejects.toBeInstanceOf(FacturaDomainValidationError);
+    await expect(promise).rejects.toMatchObject({
+      code: FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+      details: [
+        expect.objectContaining({
+          field: 'items[0]',
+          code: FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+        }),
+      ],
+    });
   });
 
   it('should throw InternalServerErrorException on unexpected createFromOcr error', async () => {
