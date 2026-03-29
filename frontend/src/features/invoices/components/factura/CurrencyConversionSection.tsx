@@ -9,7 +9,7 @@ import { useAppColorVariants } from "@/theme/app-color-variants";
 import { useColorTheme } from "@/hooks/use-color-theme";
 
 type CurrencyConversionSectionProps = {
- /*  errorMessage?: string;
+  /*  errorMessage?: string;
   isInvalid?: boolean; */
   moneda: string;
   monedaBase: string;
@@ -22,7 +22,7 @@ const roundCurrency = (value: number) =>
   Math.round((value + Number.EPSILON) * 100) / 100;
 
 export const CurrencyConversionSection = ({
- /*  errorMessage,
+  /*  errorMessage,
   isInvalid = false, */
   moneda,
   monedaBase,

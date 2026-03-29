@@ -199,7 +199,9 @@ const ProfilePage = () => {
               onChange={handleImageChange}
             />
           </div>
-          <p className={`text-sm mt-3 font-medium transition-opacity opacity-70 hover:opacity-100 ${appColorVariants.text}`}>
+          <p
+            className={`text-sm mt-3 font-medium transition-opacity opacity-70 hover:opacity-100 ${appColorVariants.text}`}
+          >
             {t("profile:avatar.change")}
           </p>
           <h1 className="text-2xl font-bold mt-4">{t("profile:title")}</h1>
