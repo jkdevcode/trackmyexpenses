@@ -1,5 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { PeriodFilter } from './factura.types';
+import { AppError, type AppErrorDetail } from '../common/errors/app.error';
+import { FACTURA_ERROR_CODES } from './errors/factura-error-codes';
 
 export type FacturaItemInput = {
   productoId: number;
@@ -24,29 +26,82 @@ export type PeriodWindow = {
   prevEndDate: Date;
 };
 
-export class FacturaDomainValidationError extends Error {
-  constructor(message: string) {
-    super(message);
+export class FacturaDomainValidationError extends AppError {
+  constructor(code: string, details?: AppErrorDetail[]) {
+    super(code, code, details);
     this.name = 'FacturaDomainValidationError';
   }
 }
 
+/**
+ * Normalizes OCR/AI product items by merging duplicates (same name, case-insensitive).
+ * Quantities are summed; the first item's price and unit are preserved.
+ * Only used in the OCR flow — the manual flow never normalizes.
+ */
+export function mergeOcrDuplicates(
+  items: OcrProductoInput[],
+): OcrProductoInput[] {
+  const seen = new Map<
+    string,
+    OcrProductoInput & { cantidadDetectada: number }
+  >();
+
+  for (const item of items) {
+    const key = (item.nombreDetectado ?? '').trim().toUpperCase();
+    if (!key) continue;
+
+    if (seen.has(key)) {
+      const existing = seen.get(key)!;
+      existing.cantidadDetectada =
+        Number(existing.cantidadDetectada) +
+        Number(item.cantidadDetectada || 1);
+    } else {
+      seen.set(key, {
+        ...item,
+        cantidadDetectada: Number(item.cantidadDetectada || 1),
+      });
+    }
+  }
+
+  return Array.from(seen.values());
+}
+
 export function assertValidFacturaItems(items: FacturaItemInput[]): void {
   if (!items || items.length === 0) {
-    throw new FacturaDomainValidationError(
-      'No se permite crear factura sin items',
-    );
+    throw new FacturaDomainValidationError(FACTURA_ERROR_CODES.ITEMS_EMPTY, [
+      { code: FACTURA_ERROR_CODES.ITEMS_EMPTY },
+    ]);
   }
 
   const productIds = new Set<number>();
 
-  for (const item of items) {
+  for (let index = 0; index < items.length; index++) {
+    const item = items[index];
+
     if (!Number.isInteger(item.productoId) || item.productoId <= 0) {
-      throw new FacturaDomainValidationError('productoId invalido en items');
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.ITEM_PRODUCTO_ID_INVALID,
+        [
+          {
+            field: `items[${index}]`,
+            code: FACTURA_ERROR_CODES.ITEM_PRODUCTO_ID_INVALID,
+            meta: { index, productoId: item.productoId },
+          },
+        ],
+      );
     }
 
     if (!Number.isInteger(item.cantidad) || item.cantidad <= 0) {
-      throw new FacturaDomainValidationError('cantidad invalida en items');
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.ITEM_CANTIDAD_INVALID,
+        [
+          {
+            field: `items[${index}].cantidad`,
+            code: FACTURA_ERROR_CODES.ITEM_CANTIDAD_INVALID,
+            meta: { index, productoId: item.productoId },
+          },
+        ],
+      );
     }
 
     if (
@@ -54,7 +109,14 @@ export function assertValidFacturaItems(items: FacturaItemInput[]): void {
       (item.descuento < 0 || item.descuento > 100)
     ) {
       throw new FacturaDomainValidationError(
-        'descuento invalido en items (debe estar entre 0 y 100)',
+        FACTURA_ERROR_CODES.ITEM_DESCUENTO_INVALID,
+        [
+          {
+            field: `items[${index}].descuento`,
+            code: FACTURA_ERROR_CODES.ITEM_DESCUENTO_INVALID,
+            meta: { index, productoId: item.productoId },
+          },
+        ],
       );
     }
 
@@ -63,13 +125,27 @@ export function assertValidFacturaItems(items: FacturaItemInput[]): void {
       (!Number.isFinite(item.precioUnitario) || item.precioUnitario <= 0)
     ) {
       throw new FacturaDomainValidationError(
-        'precioUnitario invalido en items',
+        FACTURA_ERROR_CODES.ITEM_PRECIO_INVALID,
+        [
+          {
+            field: `items[${index}].precioUnitario`,
+            code: FACTURA_ERROR_CODES.ITEM_PRECIO_INVALID,
+            meta: { index, productoId: item.productoId },
+          },
+        ],
       );
     }
 
     if (productIds.has(item.productoId)) {
       throw new FacturaDomainValidationError(
-        `No se permiten items repetidos del producto ${item.productoId}`,
+        FACTURA_ERROR_CODES.ITEM_DUPLICATE,
+        [
+          {
+            field: `items[${index}]`,
+            code: FACTURA_ERROR_CODES.ITEM_DUPLICATE,
+            meta: { index, productoId: item.productoId },
+          },
+        ],
       );
     }
 
@@ -77,7 +153,10 @@ export function assertValidFacturaItems(items: FacturaItemInput[]): void {
   }
 }
 
-export function normalizeAndValidateOcrItem(item: OcrProductoInput): {
+export function normalizeAndValidateOcrItem(
+  item: OcrProductoInput,
+  index = 0,
+): {
   nombreDetectado: string;
   cantidad: number;
   descuento: number;
@@ -91,19 +170,40 @@ export function normalizeAndValidateOcrItem(item: OcrProductoInput): {
 
   if (!nombreDetectado) {
     throw new FacturaDomainValidationError(
-      'Cada item OCR debe tener nombreDetectado',
+      FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+      [
+        {
+          field: `items[${index}]`,
+          code: FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+          meta: { index },
+        },
+      ],
     );
   }
 
   if (!Number.isFinite(cantidad) || cantidad <= 0) {
     throw new FacturaDomainValidationError(
-      'La cantidad de cada item debe ser > 0',
+      FACTURA_ERROR_CODES.OCR_ITEM_CANTIDAD_INVALID,
+      [
+        {
+          field: `items[${index}].cantidad`,
+          code: FACTURA_ERROR_CODES.OCR_ITEM_CANTIDAD_INVALID,
+          meta: { index, productName: nombreDetectado },
+        },
+      ],
     );
   }
 
   if (!Number.isFinite(descuento) || descuento < 0 || descuento > 100) {
     throw new FacturaDomainValidationError(
-      'El descuento de cada item debe estar entre 0 y 100',
+      FACTURA_ERROR_CODES.ITEM_DESCUENTO_INVALID,
+      [
+        {
+          field: `items[${index}].descuento`,
+          code: FACTURA_ERROR_CODES.ITEM_DESCUENTO_INVALID,
+          meta: { index, productName: nombreDetectado },
+        },
+      ],
     );
   }
 
@@ -163,9 +263,9 @@ export function normalizeCurrencyCode(code: string): string {
 
 export function assertValidCurrencyCode(code: string): void {
   if (!/^[A-Z]{3}$/.test(code)) {
-    throw new FacturaDomainValidationError(
-      'moneda invalida, debe ser ISO 4217 (3 letras)',
-    );
+    throw new FacturaDomainValidationError(FACTURA_ERROR_CODES.MONEDA_INVALID, [
+      { code: FACTURA_ERROR_CODES.MONEDA_INVALID, meta: { code } },
+    ]);
   }
 }
 

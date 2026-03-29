@@ -8,6 +8,7 @@ import {
   normalizeAndValidateOcrItem,
   roundCurrency,
 } from './factura.domain';
+import { FACTURA_ERROR_CODES } from './errors/factura-error-codes';
 
 describe('factura.domain', () => {
   describe('calculateFacturaTotal', () => {
@@ -53,12 +54,24 @@ describe('factura.domain', () => {
     });
 
     it('should throw on duplicate productoId', () => {
-      expect(() =>
+      try {
         assertValidFacturaItems([
           { productoId: 1, cantidad: 1 },
           { productoId: 1, cantidad: 2 },
-        ]),
-      ).toThrow(FacturaDomainValidationError);
+        ]);
+        fail('Expected duplicate item validation error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(FacturaDomainValidationError);
+        expect(error).toMatchObject({
+          code: FACTURA_ERROR_CODES.ITEM_DUPLICATE,
+          details: [
+            expect.objectContaining({
+              field: 'items[1]',
+              code: FACTURA_ERROR_CODES.ITEM_DUPLICATE,
+            }),
+          ],
+        });
+      }
     });
 
     it('should throw on invalid descuento', () => {
@@ -115,12 +128,24 @@ describe('factura.domain', () => {
     });
 
     it('should throw when nombreDetectado is missing', () => {
-      expect(() =>
+      try {
         normalizeAndValidateOcrItem({
           cantidadDetectada: 1,
           precioUnitario: 1000,
-        }),
-      ).toThrow(FacturaDomainValidationError);
+        });
+        fail('Expected OCR item validation error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(FacturaDomainValidationError);
+        expect(error).toMatchObject({
+          code: FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+          details: [
+            expect.objectContaining({
+              field: 'items[0]',
+              code: FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+            }),
+          ],
+        });
+      }
     });
 
     it('should throw when cantidadDetectada is invalid', () => {
