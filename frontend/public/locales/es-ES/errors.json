@@ -1,0 +1,37 @@
+{
+  "GENERIC_ERROR": "Ocurrio un error inesperado. Intente de nuevo.",
+  "NETWORK_ERROR": "Error de conexion. Verifica tu internet.",
+  "BAD_REQUEST": "No se pudo procesar la solicitud.",
+  "UNAUTHORIZED": "Sesion expirada. Por favor inicia sesion.",
+  "FORBIDDEN": "No tienes permisos para esta accion.",
+  "NOT_FOUND": "Recurso no encontrado.",
+  "UNPROCESSABLE_ENTITY": "Hay datos que requieren revision.",
+  "SERVER_ERROR": "Error del servidor. Intenta mas tarde.",
+
+  "FACTURA_ITEMS_EMPTY": "Debes agregar al menos un producto.",
+  "FACTURA_ITEM_PRODUCTO_ID_INVALID": "Este item tiene una referencia de producto invalida.",
+  "FACTURA_ITEM_CANTIDAD_INVALID": "La cantidad debe ser un numero entero positivo.",
+  "FACTURA_ITEM_DESCUENTO_INVALID": "El descuento debe estar entre 0 y 100.",
+  "FACTURA_ITEM_PRECIO_INVALID": "El precio unitario debe ser mayor a 0.",
+  "FACTURA_ITEM_DUPLICATE": "Este producto aparece mas de una vez.",
+  "FACTURA_ITEMS_NOT_FOUND": "Uno o mas productos no fueron encontrados en tu catalogo.",
+  "FACTURA_UPLOAD_FILE_TOO_LARGE": "El archivo seleccionado es demasiado grande.",
+  "FACTURA_UPLOAD_FILE_TYPE_INVALID": "El tipo de archivo seleccionado no es compatible.",
+
+  "FACTURA_MONEDA_INVALID": "La moneda debe ser un codigo ISO de 3 letras (ej: USD).",
+  "FACTURA_TASA_CAMBIO_INVALID": "Se requiere una tasa de cambio valida para esta moneda.",
+
+  "FACTURA_OCR_IMAGE_REQUIRED": "Debes subir una imagen de la factura para continuar.",
+  "FACTURA_OCR_ITEMS_REQUIRED": "Se requiere al menos un item OCR.",
+  "FACTURA_OCR_ITEMS_INVALID_JSON": "El payload de items OCR no es JSON valido.",
+  "FACTURA_OCR_ITEMS_INVALID_TYPE": "El payload de items OCR debe ser un arreglo.",
+  "FACTURA_OCR_INVALID_PAYLOAD": "Revisa los datos de la factura e intenta nuevamente.",
+  "FACTURA_OCR_ITEM_NAME_MISSING": "No se pudo detectar el nombre del producto.",
+  "FACTURA_OCR_ITEM_PRECIO_INVALID": "No se pudo detectar el precio. Por favor ingresalo manualmente.",
+  "FACTURA_OCR_ITEM_CANTIDAD_INVALID": "No se pudo detectar la cantidad. Por favor ingresala manualmente.",
+
+  "FACTURA_NOT_FOUND": "Factura no encontrada.",
+  "FACTURA_PRODUCTO_NOT_FOUND": "Producto no encontrado en esta factura.",
+
+  "ITEMS_HAS_ERRORS": "{{count}} item(s) tienen errores. Revisa las filas marcadas."
+}

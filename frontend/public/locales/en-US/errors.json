@@ -1,0 +1,37 @@
+{
+  "GENERIC_ERROR": "An unexpected error occurred. Please try again.",
+  "NETWORK_ERROR": "Connection error. Check your internet connection.",
+  "BAD_REQUEST": "The request could not be processed.",
+  "UNAUTHORIZED": "Session expired. Please log in again.",
+  "FORBIDDEN": "You don't have permission for this action.",
+  "NOT_FOUND": "Resource not found.",
+  "UNPROCESSABLE_ENTITY": "Some data needs your attention.",
+  "SERVER_ERROR": "Server error. Please try again later.",
+
+  "FACTURA_ITEMS_EMPTY": "You must add at least one product.",
+  "FACTURA_ITEM_PRODUCTO_ID_INVALID": "Item has an invalid product reference.",
+  "FACTURA_ITEM_CANTIDAD_INVALID": "Quantity must be a positive whole number.",
+  "FACTURA_ITEM_DESCUENTO_INVALID": "Discount must be between 0 and 100.",
+  "FACTURA_ITEM_PRECIO_INVALID": "Unit price must be greater than 0.",
+  "FACTURA_ITEM_DUPLICATE": "This product appears more than once.",
+  "FACTURA_ITEMS_NOT_FOUND": "One or more products were not found in your catalog.",
+  "FACTURA_UPLOAD_FILE_TOO_LARGE": "The selected file is too large.",
+  "FACTURA_UPLOAD_FILE_TYPE_INVALID": "The selected file type is not supported.",
+
+  "FACTURA_MONEDA_INVALID": "Currency must be a valid 3-letter ISO code (e.g. USD).",
+  "FACTURA_TASA_CAMBIO_INVALID": "A valid exchange rate is required for this currency.",
+
+  "FACTURA_OCR_IMAGE_REQUIRED": "Upload an invoice image to continue.",
+  "FACTURA_OCR_ITEMS_REQUIRED": "At least one OCR item is required.",
+  "FACTURA_OCR_ITEMS_INVALID_JSON": "The OCR items payload is not valid JSON.",
+  "FACTURA_OCR_ITEMS_INVALID_TYPE": "The OCR items payload must be an array.",
+  "FACTURA_OCR_INVALID_PAYLOAD": "Review the invoice data and try again.",
+  "FACTURA_OCR_ITEM_NAME_MISSING": "Product name could not be detected.",
+  "FACTURA_OCR_ITEM_PRECIO_INVALID": "Price could not be detected for this item. Please enter it manually.",
+  "FACTURA_OCR_ITEM_CANTIDAD_INVALID": "Quantity could not be detected. Please enter it manually.",
+
+  "FACTURA_NOT_FOUND": "Invoice not found.",
+  "FACTURA_PRODUCTO_NOT_FOUND": "Product not found in this invoice.",
+
+  "ITEMS_HAS_ERRORS": "{{count}} item(s) have errors. Review the highlighted rows."
+}
