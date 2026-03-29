@@ -111,4 +111,38 @@ describe('FacturaProducto Interaction (e2e)', () => {
         expect(newTotal).toBeCloseTo(150.0, 1);
       });
   });
+
+  it('POST /api/facturas - returns structured domain errors for duplicate items', () => {
+    return request(httpServer())
+      .post('/api/facturas')
+      .set('Cookie', authCookie)
+      .send({
+        metodoPago: 'EFECTIVO',
+        lugarCompra: 'SUPERMERCADO E2E',
+        fechaHoraCompra: new Date().toISOString(),
+        items: [
+          {
+            productoId: baseProductId,
+            cantidad: 1,
+            descuento: 0,
+          },
+          {
+            productoId: baseProductId,
+            cantidad: 2,
+            descuento: 0,
+          },
+        ],
+      })
+      .expect(422)
+      .expect((res) => {
+        expect(res.body.success).toBe(false);
+        expect(res.body.error.code).toBe('FACTURA_ITEM_DUPLICATE');
+        expect(res.body.error.details).toEqual([
+          expect.objectContaining({
+            field: 'items[1]',
+            code: 'FACTURA_ITEM_DUPLICATE',
+          }),
+        ]);
+      });
+  });
 });
