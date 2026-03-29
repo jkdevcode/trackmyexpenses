@@ -373,8 +373,8 @@ export const InvoiceForm = ({
             }
           >
             <CurrencyConversionSection
-              errorMessage={fieldErrors.get("tasaCambio")}
-              isInvalid={fieldErrors.has("tasaCambio")}
+              /* errorMessage={fieldErrors.get("tasaCambio")} */
+              /* isInvalid={fieldErrors.has("tasaCambio")} */
               moneda={selectedCurrency}
               monedaBase={baseCurrency}
               total={totalPagar}
