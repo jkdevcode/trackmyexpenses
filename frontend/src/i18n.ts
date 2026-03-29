@@ -71,6 +71,8 @@ i18n
       "dashboard",
       "settings",
       "reports",
+      "invoices",
+      "errors",
     ],
     defaultNS: "common",
     interpolation: {
