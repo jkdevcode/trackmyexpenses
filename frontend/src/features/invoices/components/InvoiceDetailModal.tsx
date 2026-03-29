@@ -33,7 +33,7 @@ import { useColorTheme } from "@/hooks/use-color-theme";
 const resolveCurrency = (value?: string | null) =>
   normalizeCurrencyCode(value, DEFAULT_CURRENCY);
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+const ASSETS_URL = import.meta.env.VITE_ASSETS_URL || "";
 
 type InvoiceDetailModalProps = {
   invoiceId: number | null;
@@ -214,7 +214,7 @@ export const InvoiceDetailModal = ({
               <img
                 alt="Invoice"
                 className="max-w-full h-auto rounded-lg shadow-lg"
-                src={`${API_BASE_URL}${detail.imagenUrl}`}
+                src={`${ASSETS_URL}${detail.imagenUrl}`}
               />
             </ModalBody>
             <ModalFooter>
