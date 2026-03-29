@@ -28,10 +28,12 @@ import { InvoiceUpload } from "./InvoiceUpload";
 import { OcrSourceBadge } from "./OcrSourceBadge";
 
 import { useAppColorVariants } from "@/theme/app-color-variants";
+import { useInvoiceErrorToast } from "@/features/invoices/hooks/useInvoiceErrorToast";
 import { useCreateInvoiceWithFileMutation } from "@/features/invoices/hooks/useInvoiceMutations";
 import { useSession } from "@/contexts/session-context";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 import { useColorTheme } from "@/hooks/use-color-theme";
+import { scrollToFirstError } from "@/utils/scrollToFirstError";
 
 type PendingData = {
   formData: {
@@ -54,10 +56,16 @@ export const OcrInvoiceFlow = () => {
   const { user } = useSession();
   const { appColor } = useColorTheme();
   const appColorVariants = useAppColorVariants();
+  const showInvoiceError = useInvoiceErrorToast();
 
   const [step, setStep] = useState<"upload" | "edit">("upload");
   const [scanData, setScanData] = useState<ScanResponse | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Map<string, string>>(
+    new Map(),
+  );
+  const [itemErrors, setItemErrors] = useState<Map<number, string>>(new Map());
+  const [saveErrorMessage, setSaveErrorMessage] = useState("");
   const createInvoiceMutation = useCreateInvoiceWithFileMutation();
   const navigate = useNavigate();
 
@@ -73,7 +81,14 @@ export const OcrInvoiceFlow = () => {
     DEFAULT_CURRENCY,
   );
 
+  const clearServerErrors = () => {
+    setFieldErrors(new Map());
+    setItemErrors(new Map());
+    setSaveErrorMessage("");
+  };
+
   const handleScanComplete = (data: ScanResponse, file: File) => {
+    clearServerErrors();
     setScanData(data);
     setSelectedFile(file);
     setStep("edit");
@@ -83,6 +98,7 @@ export const OcrInvoiceFlow = () => {
     formData: InvoiceFormValues & { totalPagar: number; tasaCambio?: number },
     products: ProductSuggestion[],
   ) => {
+    clearServerErrors();
     setPendingData({ formData, products });
     onConfirmOpen();
   };
@@ -136,12 +152,20 @@ export const OcrInvoiceFlow = () => {
       });
       navigate("/dashboard");
     } catch (error) {
-      void error;
-      addToast({
-        title: t("toast.save_error_title"),
-        description: t("toast.save_error_desc"),
-        color: "danger",
-      });
+      const {
+        itemErrors: nextItemErrors,
+        fieldErrors: nextFieldErrors,
+        hasFieldErrors,
+        message,
+      } = showInvoiceError(error);
+
+      setItemErrors(nextItemErrors);
+      setFieldErrors(nextFieldErrors);
+      setSaveErrorMessage(message);
+
+      if (hasFieldErrors) {
+        setTimeout(() => scrollToFirstError(), 120);
+      }
     }
   };
 
@@ -214,9 +238,13 @@ export const OcrInvoiceFlow = () => {
               </div>
 
               <InvoiceForm
+                errorMessage={saveErrorMessage}
+                fieldErrors={fieldErrors}
                 initialData={scanData.parsed}
+                itemErrors={itemErrors}
                 saving={createInvoiceMutation.isPending}
                 onCancel={() => {
+                  clearServerErrors();
                   setStep("upload");
                   setSelectedFile(null);
                   setScanData(null);

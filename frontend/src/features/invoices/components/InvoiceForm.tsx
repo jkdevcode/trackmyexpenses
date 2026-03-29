@@ -42,6 +42,9 @@ interface InvoiceFormProps {
   ) => void;
   onCancel: () => void;
   saving: boolean;
+  errorMessage?: string;
+  fieldErrors?: Map<string, string>;
+  itemErrors?: Map<number, string>;
 }
 
 export interface InvoiceFormValues {
@@ -69,7 +72,10 @@ const safeParseDate = (dateString?: string | null): DateValue => {
 };
 
 export const InvoiceForm = ({
+  errorMessage = "",
+  fieldErrors = new Map(),
   initialData,
+  itemErrors = new Map(),
   onSave,
   onCancel,
   saving,
@@ -158,6 +164,12 @@ export const InvoiceForm = ({
     }
   }, [exchangeRateQuery.data, rateIsValid, selectedCurrency, showConversion]);
 
+  useEffect(() => {
+    if (itemErrors.size > 0 && products.length > 10) {
+      onOpen();
+    }
+  }, [itemErrors, onOpen, products.length]);
+
   const handleRateChange = (value: number) => {
     if (!Number.isFinite(value) || value <= 0) {
       setTasaCambio(undefined);
@@ -195,94 +207,153 @@ export const InvoiceForm = ({
         </CardHeader>
         <CardBody className="gap-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              isRequired
-              errorMessage={errors.lugarCompra?.message}
-              isInvalid={!!touchedFields.lugarCompra && !!errors.lugarCompra}
-              label={t("form.provider")}
-              variant="bordered"
-              {...register("lugarCompra")}
-            />
-            <Input
-              errorMessage={errors.nitProveedor?.message}
-              isInvalid={!!touchedFields.nitProveedor && !!errors.nitProveedor}
-              label={t("form.nit")}
-              variant="bordered"
-              {...register("nitProveedor")}
-            />
-            <Controller
-              control={control}
-              name="fechaHoraCompra"
-              render={({ field }) => (
-                <DatePicker
-                  isRequired
-                  errorMessage={errors.fechaHoraCompra?.message}
-                  isInvalid={
-                    !!touchedFields.fechaHoraCompra && !!errors.fechaHoraCompra
-                  }
-                  label={t("form.date")}
-                  maxValue={today(getLocalTimeZone())}
-                  value={safeParseDate(field.value)}
-                  variant="bordered"
-                  onChange={(date: DateValue | null) =>
-                    field.onChange(date ? date.toString() : "")
-                  }
-                />
-              )}
-            />
-            <Controller
-              control={control}
-              name="metodoPago"
-              render={({ field }) => (
-                <Select
-                  isRequired
-                  errorMessage={errors.metodoPago?.message}
-                  isInvalid={!!touchedFields.metodoPago && !!errors.metodoPago}
-                  label={t("form.payment_method")}
-                  selectedKeys={[field.value]}
-                  variant="bordered"
-                  onChange={(e) => field.onChange(e.target.value)}
-                >
-                  <SelectItem key="EFECTIVO">
-                    {t("common.cash", "Efectivo")}
-                  </SelectItem>
-                  <SelectItem key="TARJETA_CREDITO">
-                    {t("common.credit_card", "Tarjeta Credito")}
-                  </SelectItem>
-                  <SelectItem key="TARJETA_DEBITO">
-                    {t("common.debit_card", "Tarjeta Debito")}
-                  </SelectItem>
-                  <SelectItem key="TRANSFERENCIA">
-                    {t("common.transfer", "Transferencia")}
-                  </SelectItem>
-                  <SelectItem key="OTRO">
-                    {t("common.other", "Otro")}
-                  </SelectItem>
-                </Select>
-              )}
-            />
-            <Controller
-              control={control}
-              name="moneda"
-              render={({ field }) => (
-                <Select
-                  isRequired
-                  errorMessage={errors.moneda?.message}
-                  isInvalid={!!touchedFields.moneda && !!errors.moneda}
-                  label={t("form.currency.label")}
-                  placeholder={t("form.currency.placeholder")}
-                  selectedKeys={field.value ? [field.value] : []}
-                  variant="bordered"
-                  onChange={(e) => field.onChange(e.target.value)}
-                >
-                  {SUPPORTED_CURRENCIES.map((code) => (
-                    <SelectItem key={code}>
-                      {t(`common:currency.options.${code}`, code)}
+            <div
+              data-error-field={
+                fieldErrors.has("lugarCompra") ? "lugarCompra" : undefined
+              }
+            >
+              <Input
+                isRequired
+                errorMessage={
+                  fieldErrors.get("lugarCompra") ?? errors.lugarCompra?.message
+                }
+                isInvalid={
+                  fieldErrors.has("lugarCompra") ||
+                  (!!touchedFields.lugarCompra && !!errors.lugarCompra)
+                }
+                label={t("form.provider")}
+                variant="bordered"
+                {...register("lugarCompra")}
+              />
+            </div>
+            <div
+              data-error-field={
+                fieldErrors.has("nitProveedor") ? "nitProveedor" : undefined
+              }
+            >
+              <Input
+                errorMessage={
+                  fieldErrors.get("nitProveedor") ??
+                  errors.nitProveedor?.message
+                }
+                isInvalid={
+                  fieldErrors.has("nitProveedor") ||
+                  (!!touchedFields.nitProveedor && !!errors.nitProveedor)
+                }
+                label={t("form.nit")}
+                variant="bordered"
+                {...register("nitProveedor")}
+              />
+            </div>
+            <div
+              data-error-field={
+                fieldErrors.has("fechaHoraCompra")
+                  ? "fechaHoraCompra"
+                  : undefined
+              }
+            >
+              <Controller
+                control={control}
+                name="fechaHoraCompra"
+                render={({ field }) => (
+                  <DatePicker
+                    isRequired
+                    errorMessage={
+                      fieldErrors.get("fechaHoraCompra") ??
+                      errors.fechaHoraCompra?.message
+                    }
+                    isInvalid={
+                      fieldErrors.has("fechaHoraCompra") ||
+                      (!!touchedFields.fechaHoraCompra &&
+                        !!errors.fechaHoraCompra)
+                    }
+                    label={t("form.date")}
+                    maxValue={today(getLocalTimeZone())}
+                    value={safeParseDate(field.value)}
+                    variant="bordered"
+                    onChange={(date: DateValue | null) =>
+                      field.onChange(date ? date.toString() : "")
+                    }
+                  />
+                )}
+              />
+            </div>
+            <div
+              data-error-field={
+                fieldErrors.has("metodoPago") ? "metodoPago" : undefined
+              }
+            >
+              <Controller
+                control={control}
+                name="metodoPago"
+                render={({ field }) => (
+                  <Select
+                    isRequired
+                    errorMessage={
+                      fieldErrors.get("metodoPago") ??
+                      errors.metodoPago?.message
+                    }
+                    isInvalid={
+                      fieldErrors.has("metodoPago") ||
+                      (!!touchedFields.metodoPago && !!errors.metodoPago)
+                    }
+                    label={t("form.payment_method")}
+                    selectedKeys={[field.value]}
+                    variant="bordered"
+                    onChange={(e) => field.onChange(e.target.value)}
+                  >
+                    <SelectItem key="EFECTIVO">
+                      {t("common.cash", "Efectivo")}
                     </SelectItem>
-                  ))}
-                </Select>
-              )}
-            />
+                    <SelectItem key="TARJETA_CREDITO">
+                      {t("common.credit_card", "Tarjeta Credito")}
+                    </SelectItem>
+                    <SelectItem key="TARJETA_DEBITO">
+                      {t("common.debit_card", "Tarjeta Debito")}
+                    </SelectItem>
+                    <SelectItem key="TRANSFERENCIA">
+                      {t("common.transfer", "Transferencia")}
+                    </SelectItem>
+                    <SelectItem key="OTRO">
+                      {t("common.other", "Otro")}
+                    </SelectItem>
+                  </Select>
+                )}
+              />
+            </div>
+            <div
+              data-error-field={
+                fieldErrors.has("moneda") ? "moneda" : undefined
+              }
+            >
+              <Controller
+                control={control}
+                name="moneda"
+                render={({ field }) => (
+                  <Select
+                    isRequired
+                    errorMessage={
+                      fieldErrors.get("moneda") ?? errors.moneda?.message
+                    }
+                    isInvalid={
+                      fieldErrors.has("moneda") ||
+                      (!!touchedFields.moneda && !!errors.moneda)
+                    }
+                    label={t("form.currency.label")}
+                    placeholder={t("form.currency.placeholder")}
+                    selectedKeys={field.value ? [field.value] : []}
+                    variant="bordered"
+                    onChange={(e) => field.onChange(e.target.value)}
+                  >
+                    {SUPPORTED_CURRENCIES.map((code) => (
+                      <SelectItem key={code}>
+                        {t(`common:currency.options.${code}`, code)}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                )}
+              />
+            </div>
           </div>
 
           <p className="text-sm text-default-500">
@@ -296,13 +367,34 @@ export const InvoiceForm = ({
               : t("form.currency.fallback", { currency: baseCurrency })}
           </p>
 
-          <CurrencyConversionSection
-            moneda={selectedCurrency}
-            monedaBase={baseCurrency}
-            total={totalPagar}
-            tasaCambio={tasaCambio}
-            onChangeTasa={handleRateChange}
-          />
+          <div
+            data-error-field={
+              fieldErrors.has("tasaCambio") ? "tasaCambio" : undefined
+            }
+          >
+            <CurrencyConversionSection
+              /* errorMessage={fieldErrors.get("tasaCambio")} */
+              /* isInvalid={fieldErrors.has("tasaCambio")} */
+              moneda={selectedCurrency}
+              monedaBase={baseCurrency}
+              total={totalPagar}
+              tasaCambio={tasaCambio}
+              onChangeTasa={handleRateChange}
+            />
+          </div>
+
+          {errorMessage ? (
+            <div
+              className="rounded-medium border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700"
+              data-error-field={
+                fieldErrors.size === 0 && itemErrors.size === 0
+                  ? "form-error"
+                  : undefined
+              }
+            >
+              {errorMessage}
+            </div>
+          ) : null}
 
           <div className="border-t border-default-200 pt-4 mt-2 space-y-3">
             <Input
@@ -321,7 +413,7 @@ export const InvoiceForm = ({
         </CardBody>
       </Card>
 
-      <div>
+      <div data-error-field={fieldErrors.has("items") ? "items" : undefined}>
         <h3 className="text-lg font-semibold mb-2 ml-1">
           {t("form.products_title")}
         </h3>
@@ -344,23 +436,33 @@ export const InvoiceForm = ({
               </Button>
             </div>
             <ul className="space-y-2">
-              {products.map((p) => (
-                <li
-                  key={`${p.nombreDetected}-${p.cantidad}-${p.precioTotal}`}
-                  className="flex justify-between text-sm border-b border-default-100 pb-1"
-                >
-                  <span>
-                    {p.cantidad} x {p.nombreDetected}
-                  </span>
-                  <span>
-                    {formatCurrency(
-                      p.precioTotal,
-                      i18n.language,
-                      selectedCurrency,
-                    )}
-                  </span>
-                </li>
-              ))}
+              {products.map((p, index) => {
+                const rowError = itemErrors.get(index);
+
+                return (
+                  <li
+                    key={`${p.nombreDetected}-${p.cantidad}-${p.precioTotal}`}
+                    className={`border-b border-default-100 pb-2 text-sm ${rowError ? "rounded-medium bg-danger-50 px-3 py-2" : ""}`}
+                    data-error-field={rowError ? `items[${index}]` : undefined}
+                  >
+                    <div className="flex justify-between gap-3">
+                      <span>
+                        {p.cantidad} x {p.nombreDetected}
+                      </span>
+                      <span>
+                        {formatCurrency(
+                          p.precioTotal,
+                          i18n.language,
+                          selectedCurrency,
+                        )}
+                      </span>
+                    </div>
+                    {rowError ? (
+                      <p className="mt-1 text-xs text-danger">{rowError}</p>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           </Card>
         )}
@@ -378,6 +480,7 @@ export const InvoiceForm = ({
       <InvoiceItemsModal
         currencyCode={selectedCurrency}
         isOpen={isOpen}
+        itemErrors={itemErrors}
         products={products}
         onClose={onClose}
         onProductsChange={setProducts}

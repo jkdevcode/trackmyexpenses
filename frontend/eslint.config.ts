@@ -22,6 +22,8 @@ export default [
         process: "readonly",
         Buffer: "readonly",
         console: "readonly",
+        HTMLElement: "readonly",
+        Element: "readonly",
         HTMLDivElement: "readonly",
         HTMLInputElement: "readonly",
         HTMLFormElement: "readonly",
@@ -32,6 +34,7 @@ export default [
         window: "readonly",
         SVGSVGElement: "readonly",
         URL: "readonly",
+        setTimeout: "readonly",
       },
       parserOptions: {
         ecmaFeatures: {

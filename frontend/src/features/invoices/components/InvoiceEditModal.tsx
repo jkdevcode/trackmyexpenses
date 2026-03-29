@@ -16,6 +16,7 @@ import { Spinner } from "@heroui/spinner";
 import { addToast } from "@heroui/toast";
 
 import { useInvoiceDetailQuery } from "../hooks/useInvoicesQuery";
+import { useInvoiceErrorToast } from "../hooks/useInvoiceErrorToast";
 import { useUpdateInvoiceMutation } from "../hooks/useInvoiceMutations";
 import { formatCurrency } from "../utils/formatters";
 import {
@@ -25,6 +26,7 @@ import {
 
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 import { useColorTheme } from "@/hooks/use-color-theme";
+import { scrollToFirstError } from "@/utils/scrollToFirstError";
 
 const resolveCurrency = (value?: string | null) =>
   normalizeCurrencyCode(value, DEFAULT_CURRENCY);
@@ -84,12 +86,17 @@ export const InvoiceEditModal = ({
 }: InvoiceEditModalProps) => {
   const { t, i18n } = useTranslation(["invoices", "validation"]);
   const detailQuery = useInvoiceDetailQuery(invoiceId, isOpen);
+  const showInvoiceError = useInvoiceErrorToast();
   const updateMutation = useUpdateInvoiceMutation();
   const { appColor } = useColorTheme();
 
   const [form, setForm] = useState<InvoiceEditFormState>(initialFormState);
   const [items, setItems] = useState<InvoiceEditItemState[]>([]);
   const [formError, setFormError] = useState<string>("");
+  const [fieldErrors, setFieldErrors] = useState<Map<string, string>>(
+    new Map(),
+  );
+  const [itemErrors, setItemErrors] = useState<Map<number, string>>(new Map());
   const warningShown = useRef(false);
 
   const currency = resolveCurrency(
@@ -111,6 +118,8 @@ export const InvoiceEditModal = ({
         })),
       );
       setFormError("");
+      setFieldErrors(new Map());
+      setItemErrors(new Map());
     }
   }, [detailQuery.data]);
 
@@ -146,6 +155,17 @@ export const InvoiceEditModal = ({
     key: K,
     value: InvoiceEditFormState[K],
   ) => {
+    setFieldErrors((prev) => {
+      if (!prev.has(key)) {
+        return prev;
+      }
+
+      const next = new Map(prev);
+
+      next.delete(key);
+
+      return next;
+    });
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -154,6 +174,18 @@ export const InvoiceEditModal = ({
     field: "cantidad" | "descuento" | "precioUnitario",
     value: string,
   ) => {
+    setItemErrors((prev) => {
+      if (!prev.has(productoId)) {
+        return prev;
+      }
+
+      const next = new Map(prev);
+
+      next.delete(productoId);
+
+      return next;
+    });
+
     setItems((prev) =>
       prev.map((item) => {
         if (item.productoId !== productoId) return item;
@@ -189,6 +221,8 @@ export const InvoiceEditModal = ({
     if (!invoiceId) return;
 
     setFormError("");
+    setFieldErrors(new Map());
+    setItemErrors(new Map());
 
     if (!form.lugarCompra.trim()) {
       const message = t("manual.validation.lugar_required");
@@ -258,15 +292,30 @@ export const InvoiceEditModal = ({
       onSaved();
       onClose();
     } catch (error) {
-      void error;
-      const message = t("detail.error");
+      const {
+        itemErrors: indexErrors,
+        fieldErrors: nextFieldErrors,
+        hasFieldErrors,
+        message,
+      } = showInvoiceError(error);
 
-      setFormError(message);
-      addToast({
-        title: t("toast.error"),
-        description: message,
-        color: "danger",
+      const productoIdErrors = new Map<number, string>();
+
+      indexErrors.forEach((itemMessage, index) => {
+        const item = items[index];
+
+        if (item) {
+          productoIdErrors.set(item.productoId, itemMessage);
+        }
       });
+
+      setFieldErrors(nextFieldErrors);
+      setItemErrors(productoIdErrors);
+      setFormError(message);
+
+      if (hasFieldErrors) {
+        setTimeout(() => scrollToFirstError(), 100);
+      }
     }
   };
 
@@ -293,123 +342,195 @@ export const InvoiceEditModal = ({
                 {t("detail.edit_warning")}
               </div>
 
-              <Input
-                color={appColor}
-                label={t("manual.fecha")}
-                type="date"
-                value={form.fechaHoraCompra}
-                variant="bordered"
-                onValueChange={(value) => updateField("fechaHoraCompra", value)}
-              />
-
-              <Select
-                color={appColor}
-                label={t("manual.metodoPago")}
-                selectedKeys={[form.metodoPago]}
-                variant="bordered"
-                onChange={(event) =>
-                  updateField("metodoPago", event.target.value as PaymentMethod)
+              <div
+                data-error-field={
+                  fieldErrors.has("fechaHoraCompra")
+                    ? "fechaHoraCompra"
+                    : undefined
                 }
               >
-                <SelectItem key="EFECTIVO">
-                  {t("common.cash", "Efectivo")}
-                </SelectItem>
-                <SelectItem key="TARJETA_CREDITO">
-                  {t("common.credit_card", "Tarjeta Credito")}
-                </SelectItem>
-                <SelectItem key="TARJETA_DEBITO">
-                  {t("common.debit_card", "Tarjeta Debito")}
-                </SelectItem>
-                <SelectItem key="TRANSFERENCIA">
-                  {t("common.transfer", "Transferencia")}
-                </SelectItem>
-                <SelectItem key="OTRO">{t("common.other", "Otro")}</SelectItem>
-              </Select>
+                <Input
+                  color={appColor}
+                  errorMessage={fieldErrors.get("fechaHoraCompra")}
+                  isInvalid={fieldErrors.has("fechaHoraCompra")}
+                  label={t("manual.fecha")}
+                  type="date"
+                  value={form.fechaHoraCompra}
+                  variant="bordered"
+                  onValueChange={(value) =>
+                    updateField("fechaHoraCompra", value)
+                  }
+                />
+              </div>
 
-              <Input
-                color={appColor}
-                label={t("manual.lugarCompra")}
-                value={form.lugarCompra}
-                variant="bordered"
-                onValueChange={(value) => updateField("lugarCompra", value)}
-              />
+              <div
+                data-error-field={
+                  fieldErrors.has("metodoPago") ? "metodoPago" : undefined
+                }
+              >
+                <Select
+                  color={appColor}
+                  errorMessage={fieldErrors.get("metodoPago")}
+                  isInvalid={fieldErrors.has("metodoPago")}
+                  label={t("manual.metodoPago")}
+                  selectedKeys={[form.metodoPago]}
+                  variant="bordered"
+                  onChange={(event) =>
+                    updateField(
+                      "metodoPago",
+                      event.target.value as PaymentMethod,
+                    )
+                  }
+                >
+                  <SelectItem key="EFECTIVO">
+                    {t("common.cash", "Efectivo")}
+                  </SelectItem>
+                  <SelectItem key="TARJETA_CREDITO">
+                    {t("common.credit_card", "Tarjeta Credito")}
+                  </SelectItem>
+                  <SelectItem key="TARJETA_DEBITO">
+                    {t("common.debit_card", "Tarjeta Debito")}
+                  </SelectItem>
+                  <SelectItem key="TRANSFERENCIA">
+                    {t("common.transfer", "Transferencia")}
+                  </SelectItem>
+                  <SelectItem key="OTRO">
+                    {t("common.other", "Otro")}
+                  </SelectItem>
+                </Select>
+              </div>
 
-              <Input
-                color={appColor}
-                label={t("manual.nitProveedor")}
-                value={form.nitProveedor}
-                variant="bordered"
-                onValueChange={(value) => updateField("nitProveedor", value)}
-              />
+              <div
+                data-error-field={
+                  fieldErrors.has("lugarCompra") ? "lugarCompra" : undefined
+                }
+              >
+                <Input
+                  color={appColor}
+                  errorMessage={fieldErrors.get("lugarCompra")}
+                  isInvalid={fieldErrors.has("lugarCompra")}
+                  label={t("manual.lugarCompra")}
+                  value={form.lugarCompra}
+                  variant="bordered"
+                  onValueChange={(value) => updateField("lugarCompra", value)}
+                />
+              </div>
 
-              <div className="space-y-3 rounded-medium border border-default-200 p-4">
+              <div
+                data-error-field={
+                  fieldErrors.has("nitProveedor") ? "nitProveedor" : undefined
+                }
+              >
+                <Input
+                  color={appColor}
+                  errorMessage={fieldErrors.get("nitProveedor")}
+                  isInvalid={fieldErrors.has("nitProveedor")}
+                  label={t("manual.nitProveedor")}
+                  value={form.nitProveedor}
+                  variant="bordered"
+                  onValueChange={(value) => updateField("nitProveedor", value)}
+                />
+              </div>
+
+              <div
+                className="space-y-3 rounded-medium border border-default-200 p-4"
+                data-error-field={
+                  fieldErrors.has("items") ? "items" : undefined
+                }
+              >
                 <h3 className="font-semibold">{t("detail.items_aria")}</h3>
                 <div className="space-y-3">
-                  {items.map((item) => (
-                    <div
-                      key={item.productoId}
-                      className="flex flex-col gap-3 rounded-medium border border-default-100 p-3"
-                    >
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-semibold">{item.nombre}</p>
-                          <p className="text-xs text-default-500">
-                            {t("detail.table.cantidad")}: {item.cantidad} �{" "}
-                            {t("detail.table.descuento")}: {item.descuento}%
+                  {items.map((item, index) => {
+                    const rowError = itemErrors.get(item.productoId);
+
+                    return (
+                      <div
+                        key={item.productoId}
+                        className={`flex flex-col gap-3 rounded-medium border p-3 ${rowError ? "border-danger-200 bg-danger-50" : "border-default-100"}`}
+                        data-error-field={
+                          rowError ? `items[${index}]` : undefined
+                        }
+                      >
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold">
+                              {item.nombre}
+                            </p>
+                            <p className="text-xs text-default-500">
+                              {t("detail.table.cantidad")}: {item.cantidad} �{" "}
+                              {t("detail.table.descuento")}: {item.descuento}%
+                            </p>
+                          </div>
+                          <p className="text-sm font-semibold">
+                            {formatCurrency(
+                              item.precioTotal,
+                              i18n.language,
+                              currency,
+                            )}
                           </p>
                         </div>
-                        <p className="text-sm font-semibold">
-                          {formatCurrency(
-                            item.precioTotal,
-                            i18n.language,
-                            currency,
-                          )}
-                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <Input
+                            color={appColor}
+                            errorMessage={rowError}
+                            isInvalid={Boolean(rowError)}
+                            label={t("detail.table.cantidad")}
+                            min={1}
+                            step="1"
+                            type="number"
+                            value={String(item.cantidad)}
+                            variant="bordered"
+                            onValueChange={(value) =>
+                              updateItemField(
+                                item.productoId,
+                                "cantidad",
+                                value,
+                              )
+                            }
+                          />
+                          <Input
+                            color={appColor}
+                            errorMessage={rowError}
+                            isInvalid={Boolean(rowError)}
+                            label={t("detail.table.descuento")}
+                            min={0}
+                            step="0.01"
+                            type="number"
+                            value={String(item.descuento)}
+                            variant="bordered"
+                            onValueChange={(value) =>
+                              updateItemField(
+                                item.productoId,
+                                "descuento",
+                                value,
+                              )
+                            }
+                          />
+                          <Input
+                            color={appColor}
+                            errorMessage={rowError}
+                            isInvalid={Boolean(rowError)}
+                            label={t("detail.table.precioUnitario")}
+                            min={0.01}
+                            step="0.01"
+                            type="number"
+                            value={item.precioUnitario}
+                            variant="bordered"
+                            onValueChange={(value) =>
+                              updateItemField(
+                                item.productoId,
+                                "precioUnitario",
+                                value,
+                              )
+                            }
+                          />
+                        </div>
+                        {rowError ? (
+                          <p className="text-xs text-danger">{rowError}</p>
+                        ) : null}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <Input
-                          color={appColor}
-                          label={t("detail.table.cantidad")}
-                          min={1}
-                          step="1"
-                          type="number"
-                          value={String(item.cantidad)}
-                          variant="bordered"
-                          onValueChange={(value) =>
-                            updateItemField(item.productoId, "cantidad", value)
-                          }
-                        />
-                        <Input
-                          color={appColor}
-                          label={t("detail.table.descuento")}
-                          min={0}
-                          step="0.01"
-                          type="number"
-                          value={String(item.descuento)}
-                          variant="bordered"
-                          onValueChange={(value) =>
-                            updateItemField(item.productoId, "descuento", value)
-                          }
-                        />
-                        <Input
-                          color={appColor}
-                          label={t("detail.table.precioUnitario")}
-                          min={0.01}
-                          step="0.01"
-                          type="number"
-                          value={item.precioUnitario}
-                          variant="bordered"
-                          onValueChange={(value) =>
-                            updateItemField(
-                              item.productoId,
-                              "precioUnitario",
-                              value,
-                            )
-                          }
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="flex justify-end">
                   <p className="text-sm font-semibold">
@@ -420,7 +541,16 @@ export const InvoiceEditModal = ({
               </div>
 
               {formError ? (
-                <p className="text-danger text-sm">{formError}</p>
+                <p
+                  className="text-danger text-sm"
+                  data-error-field={
+                    fieldErrors.size === 0 && itemErrors.size === 0
+                      ? "form-error"
+                      : undefined
+                  }
+                >
+                  {formError}
+                </p>
               ) : null}
             </div>
           ) : null}

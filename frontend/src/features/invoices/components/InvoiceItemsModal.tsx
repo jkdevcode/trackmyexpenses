@@ -32,6 +32,8 @@ interface InvoiceItemsModalProps {
   products: ProductSuggestion[];
   onProductsChange: (products: ProductSuggestion[]) => void;
   currencyCode?: string;
+  /** Map<originalIndex, translatedErrorMessage> from backend details[] */
+  itemErrors?: Map<number, string>;
 }
 
 export const InvoiceItemsModal = ({
@@ -40,6 +42,7 @@ export const InvoiceItemsModal = ({
   products,
   onProductsChange,
   currencyCode,
+  itemErrors = new Map(),
 }: InvoiceItemsModalProps) => {
   const { t, i18n } = useTranslation(["invoices", "common"]);
   const { appColor } = useColorTheme();
@@ -62,7 +65,7 @@ export const InvoiceItemsModal = ({
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage);
 
-  const items = useMemo(() => {
+  const pagedItems = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
 
@@ -74,7 +77,7 @@ export const InvoiceItemsModal = ({
     field: keyof ProductSuggestion,
     value: string | number,
   ) => {
-    const itemToUpdate = items[index];
+    const itemToUpdate = pagedItems[index];
     const originalIndex = products.indexOf(itemToUpdate);
 
     if (originalIndex === -1) return;
@@ -112,6 +115,15 @@ export const InvoiceItemsModal = ({
           <span className="text-sm font-normal text-default-500">
             {products.length} {t("modal.items_count")}
           </span>
+          {itemErrors.size > 0 && (
+            <span className="text-danger text-xs font-normal">
+              ⚠{" "}
+              {t("errors:ITEMS_HAS_ERRORS", {
+                count: itemErrors.size,
+                defaultValue: `${itemErrors.size} item(s) have errors`,
+              })}
+            </span>
+          )}
         </ModalHeader>
         <ModalBody>
           <div className="flex justify-between items-center mb-4">
@@ -152,25 +164,41 @@ export const InvoiceItemsModal = ({
               <TableColumn>{t("modal.columns.total")}</TableColumn>
               <TableColumn>{t("modal.columns.actions")}</TableColumn>
             </TableHeader>
-            <TableBody items={items}>
+            <TableBody items={pagedItems}>
               {(item: ProductSuggestion) => {
-                const localIndex = items.indexOf(item);
+                const localIndex = pagedItems.indexOf(item);
+                const originalIndex = products.indexOf(item);
+                const rowError = itemErrors.get(originalIndex);
 
                 return (
-                  <TableRow key={localIndex}>
+                  <TableRow
+                    key={localIndex}
+                    data-error-field={
+                      rowError ? `items[${originalIndex}]` : undefined
+                    }
+                    className={rowError ? "bg-danger-50" : ""}
+                  >
                     <TableCell>
-                      <Input
-                        size="sm"
-                        value={item.nombreDetected}
-                        variant="underlined"
-                        onChange={(e) =>
-                          handleUpdate(
-                            localIndex,
-                            "nombreDetected",
-                            e.target.value,
-                          )
-                        }
-                      />
+                      <div>
+                        <Input
+                          size="sm"
+                          value={item.nombreDetected}
+                          variant={rowError ? "bordered" : "underlined"}
+                          color={rowError ? "danger" : "default"}
+                          onChange={(e) =>
+                            handleUpdate(
+                              localIndex,
+                              "nombreDetected",
+                              e.target.value,
+                            )
+                          }
+                        />
+                        {rowError && (
+                          <p className="text-danger text-xs mt-1">
+                            ⚠ {rowError}
+                          </p>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Input
