@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardBody, CardHeader } from "@heroui/card";
+import { addToast } from "@heroui/toast";
 
 import ReportFilters from "../components/ReportFilters";
 import GenerateReportButton from "../components/GenerateReportButton";
-import { useReport } from "../hooks/useReport";
+import { useReport, useCheckReportData } from "../hooks/useReport";
 
 import { useColorTheme } from "@/hooks/use-color-theme";
 
@@ -46,10 +47,29 @@ const ReportsPage = () => {
     };
   }, [from, to, submitAttempted, t]);
 
+  const { data: checkData, isFetching: isChecking } = useCheckReportData(
+    validation.isValid ? from : "",
+    validation.isValid ? to : "",
+  );
+
+  const hasData = checkData?.hasData ?? true;
+
   const handleGenerate = async () => {
     setSubmitAttempted(true);
 
     if (!validation.isValid) return;
+
+    if (!hasData) {
+      addToast({
+        title: t("reports:info.no_data"),
+        description: t("reports:validation.REPORT_NO_DATA"),
+        color: "warning",
+        variant: "flat",
+        timeout: 4000,
+      });
+
+      return;
+    }
 
     await downloadReport(from, to);
   };
@@ -88,12 +108,14 @@ const ReportsPage = () => {
               </Card>
             )}
 
-            <GenerateReportButton
-              color={appColor}
-              disabled={!validation.isValid || loading}
-              loading={loading}
-              onPress={handleGenerate}
-            />
+            <div className="flex flex-col gap-2">
+              <GenerateReportButton
+                color={appColor}
+                disabled={!validation.isValid || loading || isChecking}
+                loading={loading || isChecking}
+                onPress={handleGenerate}
+              />
+            </div>
           </CardBody>
         </Card>
       </div>
