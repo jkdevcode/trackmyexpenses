@@ -8,11 +8,18 @@ import GenerateReportButton from "../components/GenerateReportButton";
 import { useReport, useCheckReportData } from "../hooks/useReport";
 
 import { useColorTheme } from "@/hooks/use-color-theme";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const ReportsPage = () => {
   const { t } = useTranslation("reports");
+  const { t: tMeta } = useTranslation("meta");
   const { appColor } = useColorTheme();
   const { downloadReport, loading, error, info } = useReport();
+
+  usePageMeta({
+    title: tMeta("reports.title"),
+    description: tMeta("reports.description")
+  });
 
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");

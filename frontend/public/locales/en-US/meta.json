@@ -1,0 +1,42 @@
+{
+  "default": {
+    "title": "TrackMyExpenses",
+    "description": "Manage and track your expenses and invoices easily."
+  },
+  "dashboard": {
+    "title": "Dashboard | TrackMyExpenses",
+    "description": "Overview of your expenses, invoices, and financial activity."
+  },
+  "invoices": {
+    "title": "Invoices | TrackMyExpenses",
+    "description": "View and manage all your invoices."
+  },
+  "manual": {
+    "title": "Create Manual Invoice | TrackMyExpenses",
+    "description": "Manually record an invoice by adding products, quantities, and prices."
+  },
+  "newInvoice": {
+    "title": "Create Invoice | TrackMyExpenses",
+    "description": "Create a new invoice manually or upload a PDF/Image using OCR."
+  },
+  "ocr": {
+    "title": "Scan Invoice | TrackMyExpenses",
+    "description": "Use OCR to extract data automatically from your invoice files."
+  },
+  "reports": {
+    "title": "Reports | TrackMyExpenses",
+    "description": "Generate comprehensive reports for your expenses and financial data."
+  },
+  "profile": {
+    "title": "Profile | TrackMyExpenses",
+    "description": "Manage your user profile and personal information."
+  },
+  "settings": {
+    "title": "Settings | TrackMyExpenses",
+    "description": "Configure application preferences and general settings."
+  },
+  "landing": {
+    "title": "Welcome to TrackMyExpenses",
+    "description": "The best tool for managing your expenses effortlessly."
+  }
+}

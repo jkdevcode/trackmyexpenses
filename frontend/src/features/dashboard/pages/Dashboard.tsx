@@ -7,11 +7,18 @@ import { RevenueChart } from "../components/RevenueChart";
 import { InvoicesTable } from "../components/InvoicesTable";
 import { AverageTicketChart } from "../components/AverageTicketChart";
 import { useDashboardData } from "../hooks/useDashboardData";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const Dashboard = () => {
   const { t } = useTranslation("dashboard");
+  const { t: tMeta } = useTranslation("meta");
   const { filter, setFilter, stats, chartData, recentInvoices, loading } =
     useDashboardData();
+
+  usePageMeta({
+    title: tMeta("dashboard.title"),
+    description: tMeta("dashboard.description")
+  });
 
   return (
     <div className="w-full max-w-7xl mx-auto p-4 space-y-6">

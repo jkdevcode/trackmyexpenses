@@ -15,6 +15,7 @@ import { EyeFilledIcon, EyeSlashFilledIcon, Logo } from "@/components/ui/icons";
 import { getLoginSchema } from "@/schemas/auth";
 import { useSession } from "@/contexts/session-context";
 import { useColorTheme } from "@/hooks/use-color-theme";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 interface LoginFormValues {
   documento: string;
@@ -26,6 +27,12 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useSession();
   const { appColor } = useColorTheme();
+
+  const { t: tMeta } = useTranslation("meta");
+  usePageMeta({
+    title: tMeta("login.title", "Login | TrackMyExpenses"),
+    description: tMeta("login.description", "Access your TrackMyExpenses account.")
+  });
 
   const [isVisible, setIsVisible] = useState(false);
   const loginMutation = useLoginMutation();

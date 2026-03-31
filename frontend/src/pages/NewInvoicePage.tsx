@@ -4,6 +4,7 @@ import { Spinner } from "@heroui/spinner";
 import { useTranslation } from "react-i18next";
 
 import { useColorTheme } from "@/hooks/use-color-theme";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const OcrInvoiceFlow = lazy(() =>
   import("@/features/invoices/components/OcrInvoiceFlow").then((module) => ({
@@ -25,8 +26,31 @@ type InvoiceTabKey = "ocr" | "manual" | "list";
 
 export const NewInvoicePage = () => {
   const { t } = useTranslation(["invoices", "common"]);
+  const { t: tMeta } = useTranslation("meta");
   const { appColor } = useColorTheme();
   const [activeTab, setActiveTab] = useState<InvoiceTabKey>("ocr");
+
+  const metaByTab = {
+    ocr: {
+      title: tMeta("ocr.title"),
+      description: tMeta("ocr.description"),
+    },
+    manual: {
+      title: tMeta("manual.title"),
+      description: tMeta("manual.description"),
+    },
+    list: {
+      title: tMeta("invoices.title"),
+      description: tMeta("invoices.description"),
+    },
+  };
+
+  const currentMeta = metaByTab[activeTab];
+
+  usePageMeta({
+    title: currentMeta.title,
+    description: currentMeta.description,
+  });
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
