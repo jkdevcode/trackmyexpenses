@@ -42,4 +42,17 @@ export class ReportesController {
 
     res.end(pdfBuffer);
   }
+
+  @Get('facturas/check')
+  @UsePipes(ZodValidationPipe)
+  async checkReporteFacturas(
+    @Request() req: RequestWithUser,
+    @Query() query: GetReportesQueryDto,
+  ) {
+    return this.reportesService.checkFacturasReport(
+      req.user.id,
+      query.from,
+      query.to,
+    );
+  }
 }
