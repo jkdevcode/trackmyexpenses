@@ -95,6 +95,26 @@ export class ReportesService {
     }
   }
 
+  async checkFacturasReport(
+    userId: number,
+    from: string,
+    to: string,
+  ): Promise<{ hasData: boolean; count: number }> {
+    const { fromDate, toDate } = this.parseDateRange(from, to);
+
+    const count = await this.prisma.factura.count({
+      where: {
+        usuarioId: userId,
+        fechaHoraCompra: {
+          gte: fromDate,
+          lte: toDate,
+        },
+      },
+    });
+
+    return { hasData: count > 0, count };
+  }
+
   private parseDateRange(from: string, to: string) {
     const fromDate = this.parseDateOnly(from, false);
     const toDate = this.parseDateOnly(to, true);
