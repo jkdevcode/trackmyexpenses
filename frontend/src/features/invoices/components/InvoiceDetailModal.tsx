@@ -28,6 +28,7 @@ import { useInvoiceFilter } from "../hooks/useInvoiceFilter";
 
 import { OcrSourceBadge } from "./OcrSourceBadge";
 import { InvoiceSearchInput } from "./InvoiceSearchInput";
+import { PaginatedItems } from "./PaginatedItems";
 
 import { useAppColorVariants } from "@/theme/app-color-variants";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
@@ -164,47 +165,59 @@ export const InvoiceDetailModal = ({
                   onValueChange={setFilterValue}
                 />
               </div>
-              <Table removeWrapper aria-label={t("detail.items_aria")}>
-                <TableHeader>
-                  <TableColumn>{t("detail.table.producto")}</TableColumn>
-                  <TableColumn>{t("detail.table.cantidad")}</TableColumn>
-                  <TableColumn>{t("detail.table.precioUnitario")}</TableColumn>
-                  <TableColumn>{t("detail.table.descuento")}</TableColumn>
-                  <TableColumn>{t("detail.table.precioTotal")}</TableColumn>
-                </TableHeader>
-                <TableBody items={filteredProductos}>
-                  {(item: InvoiceDetailItem) => {
-                    const key =
-                      item.id ??
-                      item.productoId ??
-                      `${item.productoNombre}-${item.cantidad}-${item.precioTotal}`;
-                    const productName =
-                      item.productoNombre ?? item.producto?.nombre ?? "-";
+              <PaginatedItems
+                items={filteredProductos}
+                itemsPerPage={10}
+                resetKey={filterValue}
+                renderList={(itemsContent, paginationContent) => (
+                  <Table
+                    removeWrapper
+                    aria-label={t("detail.items_aria")}
+                    bottomContent={paginationContent}
+                  >
+                    <TableHeader>
+                      <TableColumn>{t("detail.table.producto")}</TableColumn>
+                      <TableColumn>{t("detail.table.cantidad")}</TableColumn>
+                      <TableColumn>
+                        {t("detail.table.precioUnitario")}
+                      </TableColumn>
+                      <TableColumn>{t("detail.table.descuento")}</TableColumn>
+                      <TableColumn>{t("detail.table.precioTotal")}</TableColumn>
+                    </TableHeader>
+                    <TableBody>{itemsContent as any}</TableBody>
+                  </Table>
+                )}
+                renderItem={(item: InvoiceDetailItem) => {
+                  const key =
+                    item.id ??
+                    item.productoId ??
+                    `${item.productoNombre}-${item.cantidad}-${item.precioTotal}`;
+                  const productName =
+                    item.productoNombre ?? item.producto?.nombre ?? "-";
 
-                    return (
-                      <TableRow key={String(key)}>
-                        <TableCell>{productName}</TableCell>
-                        <TableCell>{item.cantidad}</TableCell>
-                        <TableCell>
-                          {formatCurrency(
-                            getInvoiceItemUnitPrice(item),
-                            i18n.language,
-                            currency,
-                          )}
-                        </TableCell>
-                        <TableCell>{item.descuento ?? 0}%</TableCell>
-                        <TableCell>
-                          {formatCurrency(
-                            item.precioTotal,
-                            i18n.language,
-                            currency,
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  }}
-                </TableBody>
-              </Table>
+                  return (
+                    <TableRow key={String(key)}>
+                      <TableCell>{productName}</TableCell>
+                      <TableCell>{item.cantidad}</TableCell>
+                      <TableCell>
+                        {formatCurrency(
+                          getInvoiceItemUnitPrice(item),
+                          i18n.language,
+                          currency,
+                        )}
+                      </TableCell>
+                      <TableCell>{item.descuento ?? 0}%</TableCell>
+                      <TableCell>
+                        {formatCurrency(
+                          item.precioTotal,
+                          i18n.language,
+                          currency,
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }}
+              />
             </div>
           ) : null}
         </ModalBody>

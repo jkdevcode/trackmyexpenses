@@ -166,6 +166,7 @@ export const InvoiceListView = () => {
           <div className="hidden md:block">
             <InvoiceTable
               invoices={invoices}
+              resetKey={filterValue}
               onDelete={handleDelete}
               onEdit={openEdit}
               onView={openDetail}
@@ -175,6 +176,7 @@ export const InvoiceListView = () => {
           <div className="block md:hidden">
             <InvoiceCardList
               invoices={invoices}
+              resetKey={filterValue}
               onDelete={handleDelete}
               onEdit={openEdit}
               onView={openDetail}

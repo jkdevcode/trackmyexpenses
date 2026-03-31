@@ -23,6 +23,7 @@ import { calculateInvoiceItemTotal } from "../utils/invoice-item";
 import { formatCurrency } from "../utils/formatters";
 
 import { CreateProductModal } from "./CreateProductModal";
+import { PaginatedItems } from "./PaginatedItems";
 
 import { scrollToFirstError } from "@/utils/scrollToFirstError";
 import {
@@ -626,122 +627,125 @@ export const ManualInvoiceForm = () => {
                 {t("manual.items.empty")}
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-default-200 text-left">
-                      <th className="py-2 pr-2">
-                        {t("manual.items.columns.nombre")}
-                      </th>
-                      <th className="py-2 pr-2">
-                        {t("manual.items.columns.cantidad")}
-                      </th>
-                      <th className="py-2 pr-2">
-                        {t("manual.items.columns.precioUnitario")}
-                      </th>
-                      <th className="py-2 pr-2">
-                        {t("manual.items.columns.descuento")}
-                      </th>
-                      <th className="py-2 pr-2">
-                        {t("manual.items.columns.subtotal")}
-                      </th>
-                      <th className="py-2">
-                        {t("manual.items.columns.acciones")}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item, idx) => {
-                      const rowError = itemErrors.get(item.productoId);
-
-                      return (
-                        <>
-                          <tr
-                            key={item.productoId}
-                            data-error-field={
-                              rowError ? `items[${idx}]` : undefined
-                            }
-                            className={`border-b border-default-100 transition-colors ${rowError ? "bg-danger-50" : ""}`}
-                          >
-                            <td className="py-2 pr-2">{item.nombre}</td>
-                            <td className="py-2 pr-2">
-                              <Input
-                                className="max-w-[120px]"
-                                min={1}
-                                size="sm"
-                                type="number"
-                                value={String(item.cantidad)}
-                                variant="bordered"
-                                onValueChange={(value) =>
-                                  updateItemField(
-                                    item.productoId,
-                                    "cantidad",
-                                    value,
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="py-2 pr-2">
-                              {formatCurrency(
-                                item.precioUnitario,
-                                i18n.language,
-                                moneda,
-                              )}
-                            </td>
-                            <td className="py-2 pr-2">
-                              <Input
-                                className="max-w-[120px]"
-                                min={0}
-                                size="sm"
-                                type="number"
-                                value={String(item.descuento ?? 0)}
-                                variant="bordered"
-                                onValueChange={(value) =>
-                                  updateItemField(
-                                    item.productoId,
-                                    "descuento",
-                                    value,
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="py-2 pr-2">
-                              {formatCurrency(
-                                item.subtotal,
-                                i18n.language,
-                                moneda,
-                              )}
-                            </td>
-                            <td className="py-2">
-                              <Button
-                                color="danger"
-                                size="sm"
-                                type="button"
-                                variant="light"
-                                onPress={() =>
-                                  handleRemoveItem(item.productoId)
-                                }
-                              >
-                                {t("manual.items.remove")}
-                              </Button>
-                            </td>
+              <PaginatedItems
+                items={items}
+                itemsPerPage={10}
+                renderList={(itemsContent, paginationContent) => (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-default-200 text-left">
+                            <th className="py-2 pr-2">
+                              {t("manual.items.columns.nombre")}
+                            </th>
+                            <th className="py-2 pr-2">
+                              {t("manual.items.columns.cantidad")}
+                            </th>
+                            <th className="py-2 pr-2">
+                              {t("manual.items.columns.precioUnitario")}
+                            </th>
+                            <th className="py-2 pr-2">
+                              {t("manual.items.columns.descuento")}
+                            </th>
+                            <th className="py-2 pr-2">
+                              {t("manual.items.columns.subtotal")}
+                            </th>
+                            <th className="py-2">
+                              {t("manual.items.columns.acciones")}
+                            </th>
                           </tr>
-                          {rowError ? (
-                            <tr key={`${item.productoId}-error`}>
-                              <td
-                                className="text-danger text-xs pb-2 pl-1"
-                                colSpan={6}
-                              >
-                                ⚠ {rowError}
-                              </td>
-                            </tr>
-                          ) : null}
-                        </>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                        </thead>
+                        <tbody>{itemsContent}</tbody>
+                      </table>
+                    </div>
+                    {paginationContent}
+                  </>
+                )}
+                renderItem={(item) => {
+                  const originalIndex = items.indexOf(item);
+                  const rowError = itemErrors.get(item.productoId);
+
+                  return (
+                    <>
+                      <tr
+                        key={item.productoId}
+                        data-error-field={
+                          rowError ? `items[${originalIndex}]` : undefined
+                        }
+                        className={`border-b border-default-100 transition-colors ${rowError ? "bg-danger-50" : ""}`}
+                      >
+                        <td className="py-2 pr-2">{item.nombre}</td>
+                        <td className="py-2 pr-2">
+                          <Input
+                            className="max-w-[120px]"
+                            min={1}
+                            size="sm"
+                            type="number"
+                            value={String(item.cantidad)}
+                            variant="bordered"
+                            onValueChange={(value) =>
+                              updateItemField(
+                                item.productoId,
+                                "cantidad",
+                                value,
+                              )
+                            }
+                          />
+                        </td>
+                        <td className="py-2 pr-2">
+                          {formatCurrency(
+                            item.precioUnitario,
+                            i18n.language,
+                            moneda,
+                          )}
+                        </td>
+                        <td className="py-2 pr-2">
+                          <Input
+                            className="max-w-[120px]"
+                            min={0}
+                            size="sm"
+                            type="number"
+                            value={String(item.descuento ?? 0)}
+                            variant="bordered"
+                            onValueChange={(value) =>
+                              updateItemField(
+                                item.productoId,
+                                "descuento",
+                                value,
+                              )
+                            }
+                          />
+                        </td>
+                        <td className="py-2 pr-2">
+                          {formatCurrency(item.subtotal, i18n.language, moneda)}
+                        </td>
+                        <td className="py-2">
+                          <Button
+                            color="danger"
+                            size="sm"
+                            type="button"
+                            variant="light"
+                            onPress={() => handleRemoveItem(item.productoId)}
+                          >
+                            {t("manual.items.remove")}
+                          </Button>
+                        </td>
+                      </tr>
+                      {rowError ? (
+                        <tr key={`${item.productoId}-error`}>
+                          <td
+                            className="text-danger text-xs pb-2 pl-1"
+                            colSpan={6}
+                          >
+                            ⚠ {rowError}
+                          </td>
+                        </tr>
+                      ) : null}
+                    </>
+                  );
+                }}
+              />
             )}
 
             <div className="grid grid-cols-1 gap-3">

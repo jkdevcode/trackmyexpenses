@@ -6,6 +6,8 @@ import { Card, CardBody } from "@heroui/card";
 
 import { formatCurrency, formatDate } from "../utils/formatters";
 
+import { PaginatedItems } from "./PaginatedItems";
+
 import { useAppColorVariants } from "@/theme/app-color-variants";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 import { useColorTheme } from "@/hooks/use-color-theme";
@@ -15,6 +17,7 @@ const resolveCurrency = (value?: string | null) =>
 
 type InvoiceCardListProps = {
   invoices: InvoiceSummaryItem[];
+  resetKey?: string;
   onView: (invoiceId: number) => void;
   onEdit: (invoiceId: number) => void;
   onDelete: (invoiceId: number) => void;
@@ -22,6 +25,7 @@ type InvoiceCardListProps = {
 
 export const InvoiceCardList = ({
   invoices,
+  resetKey,
   onView,
   onEdit,
   onDelete,
@@ -31,8 +35,17 @@ export const InvoiceCardList = ({
   const appColorVariants = useAppColorVariants();
 
   return (
-    <div className="space-y-3">
-      {invoices.map((invoice) => {
+    <PaginatedItems
+      items={invoices}
+      itemsPerPage={10}
+      resetKey={resetKey}
+      renderList={(itemsContent, paginationContent) => (
+        <div className="flex flex-col gap-4">
+          <div className="space-y-3">{itemsContent}</div>
+          {paginationContent}
+        </div>
+      )}
+      renderItem={(invoice) => {
         const currency = resolveCurrency(invoice.moneda ?? invoice.monedaBase);
         const baseCurrency = resolveCurrency(invoice.monedaBase ?? currency);
         const showBase = currency !== baseCurrency;
@@ -102,7 +115,7 @@ export const InvoiceCardList = ({
             </CardBody>
           </Card>
         );
-      })}
-    </div>
+      }}
+    />
   );
 };

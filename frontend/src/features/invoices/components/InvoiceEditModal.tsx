@@ -26,6 +26,7 @@ import {
 import { useInvoiceFilter } from "../hooks/useInvoiceFilter";
 
 import { InvoiceSearchInput } from "./InvoiceSearchInput";
+import { PaginatedItems } from "./PaginatedItems";
 
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 import { useColorTheme } from "@/hooks/use-color-theme";
@@ -459,8 +460,17 @@ export const InvoiceEditModal = ({
                     onValueChange={setFilterValue}
                   />
                 </div>
-                <div className="space-y-3">
-                  {filteredItems.map((item) => {
+                <PaginatedItems
+                  items={filteredItems}
+                  itemsPerPage={10}
+                  resetKey={filterValue}
+                  renderList={(itemsContent, paginationContent) => (
+                    <>
+                      <div className="space-y-3">{itemsContent}</div>
+                      {paginationContent}
+                    </>
+                  )}
+                  renderItem={(item) => {
                     const originalIndex = items.indexOf(item);
                     const rowError = itemErrors.get(item.productoId);
 
@@ -551,8 +561,8 @@ export const InvoiceEditModal = ({
                         ) : null}
                       </div>
                     );
-                  })}
-                </div>
+                  }}
+                />
                 <div className="flex justify-end">
                   <p className="text-sm font-semibold">
                     {t("detail.total")}:{" "}
