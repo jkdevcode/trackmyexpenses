@@ -1,7 +1,8 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Tabs, Tab } from "@heroui/tabs";
 import { Spinner } from "@heroui/spinner";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 
 import { useColorTheme } from "@/hooks/use-color-theme";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -23,12 +24,28 @@ const InvoiceListView = lazy(() =>
 );
 
 type InvoiceTabKey = "ocr" | "manual" | "list";
+const validTabs: InvoiceTabKey[] = ["ocr", "manual", "list"];
 
 export const NewInvoicePage = () => {
   const { t } = useTranslation(["invoices", "common"]);
   const { t: tMeta } = useTranslation("meta");
   const { appColor } = useColorTheme();
-  const [activeTab, setActiveTab] = useState<InvoiceTabKey>("ocr");
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab") as InvoiceTabKey | null;
+
+  const activeTab: InvoiceTabKey =
+    tabParam && validTabs.includes(tabParam) ? tabParam : "ocr";
+
+  useEffect(() => {
+    if (tabParam !== null && !validTabs.includes(tabParam)) {
+      setSearchParams({ tab: "ocr" }, { replace: true });
+    }
+  }, [tabParam, setSearchParams]);
+
+  const handleTabChange = (key: string) => {
+    setSearchParams({ tab: key });
+  };
 
   const metaByTab = {
     ocr: {
@@ -62,7 +79,7 @@ export const NewInvoicePage = () => {
         selectedKey={activeTab}
         variant="underlined"
         disableAnimation
-        onSelectionChange={(key) => setActiveTab(key as InvoiceTabKey)}
+        onSelectionChange={(key) => handleTabChange(key as string)}
       >
         <Tab key="ocr" title={t("tabs.ocr")}>
           {activeTab === "ocr" ? (
