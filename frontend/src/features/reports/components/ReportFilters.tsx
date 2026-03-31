@@ -50,6 +50,7 @@ const ReportFilters = ({
         color={appColor}
         value={fromValue}
         variant="bordered"
+        maxValue={today(getLocalTimeZone())}
         onChange={(date: DateValue | null) =>
           onFromChange(date ? date.toString() : "")
         }

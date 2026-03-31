@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 
 import axiosClient from "@/lib/axiosClient";
 
@@ -73,4 +74,19 @@ export const useReport = () => {
     error,
     info,
   };
+};
+
+export const useCheckReportData = (from: string, to: string) => {
+  return useQuery({
+    queryKey: ["report-check", from, to],
+    queryFn: async () => {
+      if (!from || !to) return { hasData: false, count: 0 };
+      const response = await axiosClient.get(
+        `/reportes/facturas/check?from=${from}&to=${to}`,
+      );
+
+      return response.data as { hasData: boolean; count: number };
+    },
+    enabled: Boolean(from && to),
+  });
 };
