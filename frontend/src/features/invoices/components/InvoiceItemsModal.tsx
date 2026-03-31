@@ -1,6 +1,6 @@
 import type { ProductSuggestion } from "../types";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Modal,
   ModalContent,
@@ -22,8 +22,11 @@ import { Pagination } from "@heroui/pagination";
 import { useTranslation } from "react-i18next";
 
 import { formatCurrency } from "../utils/formatters";
+import { useInvoiceFilter } from "../hooks/useInvoiceFilter";
 
-import { DeleteIcon, SearchIcon } from "@/components/ui/icons";
+import { InvoiceSearchInput } from "./InvoiceSearchInput";
+
+import { DeleteIcon } from "@/components/ui/icons";
 import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface InvoiceItemsModalProps {
@@ -49,19 +52,17 @@ export const InvoiceItemsModal = ({
 
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
-  const [filterValue, setFilterValue] = useState("");
+  const { filterValue, setFilterValue, filteredItems } = useInvoiceFilter({
+    data: products,
+    searchFn: (item, query) =>
+      item.nombreDetected.toLowerCase().includes(query),
+  });
 
-  const filteredItems = useMemo(() => {
-    let items = [...products];
-
-    if (filterValue) {
-      items = items.filter((p) =>
-        p.nombreDetected.toLowerCase().includes(filterValue.toLowerCase()),
-      );
+  useEffect(() => {
+    if (!isOpen) {
+      setFilterValue("");
     }
-
-    return items;
-  }, [products, filterValue]);
+  }, [isOpen, setFilterValue]);
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage);
 
@@ -127,12 +128,7 @@ export const InvoiceItemsModal = ({
         </ModalHeader>
         <ModalBody>
           <div className="flex justify-between items-center mb-4">
-            <Input
-              aria-label={t("modal.search")}
-              className="max-w-xs"
-              placeholder={t("modal.search")}
-              size="sm"
-              startContent={<SearchIcon className="text-default-400" />}
+            <InvoiceSearchInput
               value={filterValue}
               onValueChange={setFilterValue}
             />

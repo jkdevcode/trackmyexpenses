@@ -23,6 +23,9 @@ import {
   calculateInvoiceItemTotal,
   getInvoiceItemUnitPrice,
 } from "../utils/invoice-item";
+import { useInvoiceFilter } from "../hooks/useInvoiceFilter";
+
+import { InvoiceSearchInput } from "./InvoiceSearchInput";
 
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 import { useColorTheme } from "@/hooks/use-color-theme";
@@ -102,6 +105,17 @@ export const InvoiceEditModal = ({
   const currency = resolveCurrency(
     detailQuery.data?.moneda ?? detailQuery.data?.monedaBase,
   );
+
+  const { filterValue, setFilterValue, filteredItems } = useInvoiceFilter({
+    data: items,
+    searchFn: (item, query) => item.nombre.toLowerCase().includes(query),
+  });
+
+  useEffect(() => {
+    if (!isOpen) {
+      setFilterValue("");
+    }
+  }, [isOpen, setFilterValue]);
 
   useEffect(() => {
     if (detailQuery.data) {
@@ -438,9 +452,16 @@ export const InvoiceEditModal = ({
                   fieldErrors.has("items") ? "items" : undefined
                 }
               >
-                <h3 className="font-semibold">{t("detail.items_aria")}</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold">{t("detail.items_aria")}</h3>
+                  <InvoiceSearchInput
+                    value={filterValue}
+                    onValueChange={setFilterValue}
+                  />
+                </div>
                 <div className="space-y-3">
-                  {items.map((item, index) => {
+                  {filteredItems.map((item) => {
+                    const originalIndex = items.indexOf(item);
                     const rowError = itemErrors.get(item.productoId);
 
                     return (
@@ -448,7 +469,7 @@ export const InvoiceEditModal = ({
                         key={item.productoId}
                         className={`flex flex-col gap-3 rounded-medium border p-3 ${rowError ? "border-danger-200 bg-danger-50" : "border-default-100"}`}
                         data-error-field={
-                          rowError ? `items[${index}]` : undefined
+                          rowError ? `items[${originalIndex}]` : undefined
                         }
                       >
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
@@ -457,7 +478,7 @@ export const InvoiceEditModal = ({
                               {item.nombre}
                             </p>
                             <p className="text-xs text-default-500">
-                              {t("detail.table.cantidad")}: {item.cantidad} �{" "}
+                              {t("detail.table.cantidad")}: {item.cantidad}{" "}
                               {t("detail.table.descuento")}: {item.descuento}%
                             </p>
                           </div>
