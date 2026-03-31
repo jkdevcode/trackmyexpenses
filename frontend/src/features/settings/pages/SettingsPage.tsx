@@ -30,7 +30,7 @@ export const SettingsPage = () => {
 
   usePageMeta({
     title: tMeta("settings.title"),
-    description: tMeta("settings.description")
+    description: tMeta("settings.description"),
   });
 
   const colors: HerouiColor[] = [

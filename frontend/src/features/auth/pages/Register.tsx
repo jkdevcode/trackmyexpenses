@@ -42,9 +42,13 @@ const RegisterPage = () => {
   const appColorVariants = useAppColorVariants();
 
   const { t: tMeta } = useTranslation("meta");
+
   usePageMeta({
     title: tMeta("register.title", "Register | TrackMyExpenses"),
-    description: tMeta("register.description", "Create a new TrackMyExpenses account.")
+    description: tMeta(
+      "register.description",
+      "Create a new TrackMyExpenses account.",
+    ),
   });
 
   const [isVisible, setIsVisible] = useState(false);
