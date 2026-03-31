@@ -1,5 +1,6 @@
 import type { InvoiceDetailItem, OcrSource } from "../types";
 
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@heroui/button";
 import {
@@ -23,8 +24,10 @@ import {
 import { useInvoiceDetailQuery } from "../hooks/useInvoicesQuery";
 import { formatCurrency, formatDate } from "../utils/formatters";
 import { getInvoiceItemUnitPrice } from "../utils/invoice-item";
+import { useInvoiceFilter } from "../hooks/useInvoiceFilter";
 
 import { OcrSourceBadge } from "./OcrSourceBadge";
+import { InvoiceSearchInput } from "./InvoiceSearchInput";
 
 import { useAppColorVariants } from "@/theme/app-color-variants";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
@@ -58,6 +61,28 @@ export const InvoiceDetailModal = ({
   } = useDisclosure();
 
   const detail = detailQuery.data;
+  const {
+    filterValue,
+    setFilterValue,
+    filteredItems: filteredProductos,
+  } = useInvoiceFilter({
+    data: detail?.productos ?? [],
+    searchFn: (item: InvoiceDetailItem, query) => {
+      const productName = item.productoNombre ?? item.producto?.nombre ?? "";
+
+      return (
+        productName.toLowerCase().includes(query) ||
+        String(item.precioTotal).includes(query)
+      );
+    },
+  });
+
+  useEffect(() => {
+    if (!isOpen) {
+      setFilterValue("");
+    }
+  }, [isOpen, setFilterValue]);
+
   const currency = resolveCurrency(detail?.moneda ?? detail?.monedaBase);
   const baseCurrency = resolveCurrency(detail?.monedaBase ?? currency);
   const showBase = currency !== baseCurrency;
@@ -130,6 +155,15 @@ export const InvoiceDetailModal = ({
                 ) : null}
               </div>
 
+              <div className="flex justify-between items-center mt-6">
+                <h3 className="text-md font-semibold">
+                  {t("detail.table.title", { defaultValue: "Productos" })}
+                </h3>
+                <InvoiceSearchInput
+                  value={filterValue}
+                  onValueChange={setFilterValue}
+                />
+              </div>
               <Table removeWrapper aria-label={t("detail.items_aria")}>
                 <TableHeader>
                   <TableColumn>{t("detail.table.producto")}</TableColumn>
@@ -138,7 +172,7 @@ export const InvoiceDetailModal = ({
                   <TableColumn>{t("detail.table.descuento")}</TableColumn>
                   <TableColumn>{t("detail.table.precioTotal")}</TableColumn>
                 </TableHeader>
-                <TableBody items={detail.productos}>
+                <TableBody items={filteredProductos}>
                   {(item: InvoiceDetailItem) => {
                     const key =
                       item.id ??
@@ -210,7 +244,7 @@ export const InvoiceDetailModal = ({
         >
           <ModalContent>
             <ModalHeader>{t("detail.view_image")}</ModalHeader>
-            <ModalBody className="p-1 overflow-auto max-h-[80vh] flex justify-center items-center bg-black/5">
+            <ModalBody className="p-1 overflow-auto max-h-[80vh] flex items-center bg-black/5">
               <img
                 alt="Invoice"
                 className="max-w-full h-auto rounded-lg shadow-lg"

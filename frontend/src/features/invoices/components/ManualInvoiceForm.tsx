@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
+import { Autocomplete, AutocompleteItem } from "@heroui/autocomplete";
 import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
 import { addToast } from "@heroui/toast";
@@ -31,6 +32,7 @@ import {
 } from "@/constants/currency";
 import { useSession } from "@/contexts/session-context";
 import { useColorTheme } from "@/hooks/use-color-theme";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 
 const CREATE_PRODUCT_KEY = "__create__";
 
@@ -72,6 +74,7 @@ export const ManualInvoiceForm = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
   const showInvoiceError = useInvoiceErrorToast();
 
   const [form, setForm] = useState<ManualInvoiceFormState>(initialState);
@@ -84,6 +87,7 @@ export const ManualInvoiceForm = () => {
   const [itemCantidad, setItemCantidad] = useState<string>("1");
   const [itemDescuento, setItemDescuento] = useState<string>("");
   const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
+  const [inputText, setInputText] = useState("");
   // Map<productoId, translatedErrorMessage> — per-row backend error display
   const [itemErrors, setItemErrors] = useState<Map<number, string>>(new Map());
 
@@ -162,22 +166,39 @@ export const ManualInvoiceForm = () => {
   }, [showConversion, rateIsValid, totalCalculado, parsedRate]);
 
   const productOptions = useMemo(() => {
-    const options = (productsQuery.data ?? []).map((product) => ({
-      key: String(product.id),
-      label: `${product.nombre}${product.codigo ? ` (${product.codigo})` : ""} - ${formatCurrency(
-        product.precioUnitario,
-        i18n.language,
-        moneda,
-      )}`,
-    }));
+    const search = inputText.toLowerCase().trim();
 
-    options.push({
-      key: CREATE_PRODUCT_KEY,
-      label: t("manual.items.create_product"),
-    });
+    const options = (productsQuery.data ?? [])
+      .filter((product) => {
+        if (!search) return true;
+        const searchNombre = product.nombre.toLowerCase().includes(search);
+        const searchCodigo = product.codigo?.toLowerCase().includes(search);
 
-    return options;
-  }, [productsQuery.data, t, i18n.language, moneda]);
+        return searchNombre || searchCodigo;
+      })
+      .map((product) => ({
+        key: String(product.id),
+        label: `${product.nombre}${product.codigo ? ` (${product.codigo})` : ""} - ${formatCurrency(
+          product.precioUnitario,
+          i18n.language,
+          moneda,
+        )}`,
+        textValue: `${product.nombre}${product.codigo ? ` ${product.codigo}` : ""}`,
+        isSpecial: false,
+      }));
+
+    return [
+      {
+        key: CREATE_PRODUCT_KEY,
+        label: inputText
+          ? `Crear "${inputText}"`
+          : t("manual.items.create_product"),
+        textValue: inputText || CREATE_PRODUCT_KEY,
+        isSpecial: true,
+      },
+      ...options,
+    ];
+  }, [productsQuery.data, t, i18n.language, moneda, inputText]);
 
   const handleAddItem = () => {
     const productId = Number(selectedProductId);
@@ -531,28 +552,40 @@ export const ManualInvoiceForm = () => {
           >
             <h3 className="font-semibold">{t("manual.items.add_title")}</h3>
 
-            <Select
+            <Autocomplete
               color={appColor}
               isLoading={productsQuery.isLoading}
               label={t("manual.items.producto")}
-              selectedKeys={selectedProductId ? [selectedProductId] : []}
+              selectedKey={selectedProductId || null}
               variant="bordered"
               items={productOptions}
-              onChange={(event) => {
-                const value = event.target.value;
-
-                if (value === CREATE_PRODUCT_KEY) {
+              onInputChange={setInputText}
+              onSelectionChange={(key) => {
+                if (key === CREATE_PRODUCT_KEY) {
                   setIsCreateProductOpen(true);
-                  setSelectedProductId("");
 
+                  // NO hacemos setSelectedProductId() aún, permitiendo
+                  // que Autocomplete restablezca su input value automáticamente.
                   return;
                 }
 
-                setSelectedProductId(value);
+                setSelectedProductId(key ? String(key) : "");
               }}
             >
-              {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}
-            </Select>
+              {(item) => (
+                <AutocompleteItem
+                  key={item.key}
+                  textValue={item.textValue}
+                  className={
+                    item.isSpecial
+                      ? `font-semibold ${appColorVariants.text}`
+                      : ""
+                  }
+                >
+                  {item.label}
+                </AutocompleteItem>
+              )}
+            </Autocomplete>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Input

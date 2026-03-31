@@ -1,6 +1,6 @@
-﻿import type { InvoicePeriod } from "../types";
+import type { InvoicePeriod } from "../types";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardBody } from "@heroui/card";
@@ -9,12 +9,14 @@ import { addToast } from "@heroui/toast";
 
 import { useInvoicesQuery } from "../hooks/useInvoicesQuery";
 import { useDeleteInvoiceMutation } from "../hooks/useInvoiceMutations";
+import { useInvoiceFilter } from "../hooks/useInvoiceFilter";
 
 import { InvoiceFilters } from "./InvoiceFilters";
 import { InvoiceTable } from "./InvoiceTable";
 import { InvoiceCardList } from "./InvoiceCardList";
 import { InvoiceDetailModal } from "./InvoiceDetailModal";
 import { InvoiceEditModal } from "./InvoiceEditModal";
+import { InvoiceSearchInput } from "./InvoiceSearchInput";
 
 import { useColorTheme } from "@/hooks/use-color-theme";
 
@@ -40,10 +42,21 @@ export const InvoiceListView = () => {
   const invoicesQuery = useInvoicesQuery(period);
   const deleteMutation = useDeleteInvoiceMutation();
 
-  const invoices = useMemo(
-    () => invoicesQuery.data ?? [],
-    [invoicesQuery.data],
-  );
+  const {
+    filterValue,
+    setFilterValue,
+    filteredItems: invoices,
+  } = useInvoiceFilter({
+    data: invoicesQuery.data ?? [],
+    searchFn: (item, query) => {
+      return (
+        item.codigoFactura.toLowerCase().includes(query) ||
+        item.lugarCompra.toLowerCase().includes(query) ||
+        String(item.totalPagar).includes(query) ||
+        item.fechaHoraCompra.toLowerCase().includes(query)
+      );
+    },
+  });
 
   const openDetail = (invoiceId: number) => {
     setSelectedInvoiceId(invoiceId);
@@ -99,13 +112,21 @@ export const InvoiceListView = () => {
 
   return (
     <div className="space-y-4 min-h-[520px]">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold">{t("list.title")}</h2>
-        <div className="flex items-center gap-3">
-          <InvoiceFilters period={period} onPeriodChange={setPeriod} />
-          {invoicesQuery.isFetching ? (
-            <Spinner color={appColor} size="sm" />
-          ) : null}
+
+        <div className="flex flex-col md:flex-row md:items-center w-full gap-3">
+          <div className="w-full md:max-w-md">
+            <InvoiceSearchInput
+              value={filterValue}
+              onValueChange={setFilterValue}
+            />
+          </div>
+
+          <div className="flex items-center gap-3 md:ml-auto">
+            <InvoiceFilters period={period} onPeriodChange={setPeriod} />
+            {invoicesQuery.isFetching && <Spinner color={appColor} size="sm" />}
+          </div>
         </div>
       </div>
 

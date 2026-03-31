@@ -208,7 +208,7 @@
   "modal": {
     "title": "Detalle de Productos",
     "items_count": "items encontrados",
-    "search": "Buscar producto...",
+    "search": "Buscar...",
     "close": "Cerrar",
     "columns": {
       "product": "PRODUCTO",
