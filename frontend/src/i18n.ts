@@ -73,6 +73,7 @@ i18n
       "reports",
       "invoices",
       "errors",
+      "meta",
     ],
     defaultNS: "common",
     interpolation: {

@@ -8,6 +8,7 @@ import { addToast } from "@heroui/toast";
 import { useSession } from "@/contexts/session-context";
 import { useColorTheme } from "@/hooks/use-color-theme";
 import { HerouiColor } from "@/theme/theme.config";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { LanguageSwitch } from "@/components/ui/language-switch";
 import { useUpdateProfileMutation } from "@/features/user/hooks/useUserMutations";
@@ -25,6 +26,12 @@ export const SettingsPage = () => {
   const { user, login } = useSession();
   const { appColor, setAppColor } = useColorTheme();
   const updateProfileMutation = useUpdateProfileMutation();
+  const { t: tMeta } = useTranslation("meta");
+
+  usePageMeta({
+    title: tMeta("settings.title"),
+    description: tMeta("settings.description")
+  });
 
   const colors: HerouiColor[] = [
     "default",

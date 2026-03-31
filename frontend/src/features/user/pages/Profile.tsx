@@ -18,6 +18,7 @@ import { getErrorMessage } from "@/utils/errors";
 import { useAppColorVariants } from "@/theme/app-color-variants";
 import { useColorTheme } from "@/hooks/use-color-theme";
 import { getProfileSchema } from "@/schemas/profile";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { CameraIcon } from "@/components/ui/CameraIcon";
 import {
   DEFAULT_CURRENCY,
@@ -39,6 +40,12 @@ const ProfilePage = () => {
   const appColorVariants = useAppColorVariants();
   const { user, login } = useSession();
   const updateProfileMutation = useUpdateProfileMutation();
+  const { t: tMeta } = useTranslation("meta");
+
+  usePageMeta({
+    title: tMeta("profile.title"),
+    description: tMeta("profile.description")
+  });
 
   const ASSETS_URL = import.meta.env.VITE_ASSETS_URL;
 

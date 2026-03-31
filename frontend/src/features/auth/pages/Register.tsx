@@ -20,6 +20,7 @@ import { CameraIcon } from "@/components/ui/CameraIcon";
 import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from "@/constants/currency";
 import { useAppColorVariants } from "@/theme/app-color-variants";
 import { useColorTheme } from "@/hooks/use-color-theme";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 interface RegisterFormValues {
   nombre: string;
@@ -39,6 +40,12 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const { appColor } = useColorTheme();
   const appColorVariants = useAppColorVariants();
+
+  const { t: tMeta } = useTranslation("meta");
+  usePageMeta({
+    title: tMeta("register.title", "Register | TrackMyExpenses"),
+    description: tMeta("register.description", "Create a new TrackMyExpenses account.")
+  });
 
   const [isVisible, setIsVisible] = useState(false);
   const registerMutation = useRegisterMutation();
