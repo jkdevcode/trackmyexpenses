@@ -45,7 +45,7 @@ export interface ScanResponse {
 export interface ConfirmFacturaDto {
   factura: {
     fechaHoraCompra: string;
-    metodoPago: string;
+    metodoPago: PaymentMethod;
     lugarCompra: string;
     nitProveedor?: string;
     totalPagar?: number;
@@ -65,7 +65,7 @@ export interface ConfirmFacturaDto {
 export interface CreateInvoiceWithFileDto {
   factura: {
     fechaHoraCompra: string;
-    metodoPago: string;
+    metodoPago: PaymentMethod;
     lugarCompra: string;
     nitProveedor?: string;
     totalPagar?: number;
@@ -85,7 +85,7 @@ export interface CreateInvoiceWithFileDto {
 
 export interface CreateFacturaDto {
   fechaHoraCompra?: string;
-  metodoPago: string;
+  metodoPago: PaymentMethod;
   lugarCompra: string;
   nitProveedor?: string;
   moneda?: string;
@@ -99,7 +99,7 @@ export interface CreateFacturaDto {
 
 export interface UpdateFacturaDto {
   fechaHoraCompra?: string;
-  metodoPago: string;
+  metodoPago: PaymentMethod;
   lugarCompra: string;
   nitProveedor?: string;
   items?: {
@@ -117,6 +117,13 @@ export interface ProductCatalogItem {
   precioUnitario: number;
 }
 
+export type PaymentMethod =
+  | "EFECTIVO"
+  | "TARJETA_CREDITO"
+  | "TARJETA_DEBITO"
+  | "TRANSFERENCIA"
+  | "OTRO";
+
 export type InvoicePeriod = "day" | "week" | "month" | "year";
 
 export interface InvoiceSummaryItem {
@@ -124,7 +131,7 @@ export interface InvoiceSummaryItem {
   codigoFactura: string;
   fechaHoraCompra: string;
   lugarCompra: string;
-  metodoPago: string;
+  metodoPago: PaymentMethod;
   totalPagar: number;
   moneda?: string | null;
   monedaBase?: string | null;
@@ -152,7 +159,7 @@ export interface InvoiceDetailItem {
 export interface InvoiceDetail {
   id: number;
   codigoFactura: string;
-  metodoPago: string;
+  metodoPago: PaymentMethod;
   lugarCompra: string;
   nitProveedor?: string | null;
   fechaHoraCompra: string;

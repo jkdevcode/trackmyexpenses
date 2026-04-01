@@ -1,8 +1,8 @@
 import type {
-  ScanResponse,
-  ProductSuggestion,
   CreateInvoiceWithFileDto,
   OcrSource,
+  ProductSuggestion,
+  ScanResponse,
 } from "@/features/invoices/types";
 
 import { useMemo, useState } from "react";
@@ -11,34 +11,35 @@ import { addToast } from "@heroui/toast";
 import { useNavigate } from "react-router-dom";
 import {
   Modal,
-  ModalContent,
-  ModalHeader,
   ModalBody,
+  ModalContent,
   ModalFooter,
+  ModalHeader,
   useDisclosure,
 } from "@heroui/modal";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 
+import { OcrSourceBadge } from "../components/OcrSourceBadge";
+import { calculateInvoiceBaseTotal } from "../utils/currency";
 import { formatCurrency } from "../utils/formatters";
 
-import { InvoiceForm, type InvoiceFormValues } from "./InvoiceForm";
-import { InvoiceUpload } from "./InvoiceUpload";
-import { OcrSourceBadge } from "./OcrSourceBadge";
+import { InvoiceForm, type InvoiceFormValues } from "./components/InvoiceForm";
+import { InvoiceUpload } from "./components/InvoiceUpload";
 
 import { useAppColorVariants } from "@/theme/app-color-variants";
 import { useInvoiceErrorToast } from "@/features/invoices/hooks/useInvoiceErrorToast";
 import { useCreateInvoiceWithFileMutation } from "@/features/invoices/hooks/useInvoiceMutations";
-import { useSession } from "@/contexts/session-context";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
+import { useSession } from "@/contexts/session-context";
 import { useColorTheme } from "@/hooks/use-color-theme";
 import { scrollToFirstError } from "@/utils/scrollToFirstError";
 
 type PendingData = {
   formData: {
     fechaHoraCompra: string;
-    metodoPago: string;
+    metodoPago: InvoiceFormValues["metodoPago"];
     lugarCompra: string;
     nitProveedor?: string;
     totalPagar: number;
@@ -47,9 +48,6 @@ type PendingData = {
   };
   products: ProductSuggestion[];
 };
-
-const roundCurrency = (value: number) =>
-  Math.round((value + Number.EPSILON) * 100) / 100;
 
 export const OcrInvoiceFlow = () => {
   const { t, i18n } = useTranslation(["invoices", "common"]);
@@ -104,7 +102,10 @@ export const OcrInvoiceFlow = () => {
   };
 
   const handleConfirmSave = async () => {
-    if (!pendingData) return;
+    if (!pendingData) {
+      return;
+    }
+
     onConfirmClose();
 
     try {
@@ -123,7 +124,8 @@ export const OcrInvoiceFlow = () => {
           fechaHoraCompra: new Date(
             pendingData.formData.fechaHoraCompra,
           ).toISOString(),
-          metodoPago: pendingData.formData.metodoPago,
+          metodoPago: pendingData.formData
+            .metodoPago as CreateInvoiceWithFileDto["factura"]["metodoPago"],
           lugarCompra: pendingData.formData.lugarCompra.trim(),
           nitProveedor: pendingData.formData.nitProveedor?.trim() || undefined,
           totalPagar: pendingData.formData.totalPagar,
@@ -131,12 +133,12 @@ export const OcrInvoiceFlow = () => {
           tasaCambio: pendingData.formData.tasaCambio,
         },
         productos: pendingData.products
-          .filter((p) => p.nombreDetected && p.nombreDetected.trim() !== "")
-          .map((p) => ({
-            nombreDetectado: p.nombreDetected.trim(),
-            precioUnitario: Number(p.precioUnitario),
-            cantidadDetectada: Number(p.cantidad),
-            unidadDetectada: p.unidad || "u",
+          .filter((product) => product.nombreDetected.trim() !== "")
+          .map((product) => ({
+            nombreDetectado: product.nombreDetected.trim(),
+            precioUnitario: Number(product.precioUnitario),
+            cantidadDetectada: Number(product.cantidad),
+            unidadDetectada: product.unidad || "u",
             descuentoDetectado: 0,
           })),
         ocrSource: scanData?.parsed?.source as OcrSource,
@@ -170,20 +172,19 @@ export const OcrInvoiceFlow = () => {
   };
 
   const totalBase = useMemo(() => {
-    if (!pendingData) return null;
+    if (!pendingData) {
+      return null;
+    }
 
     if (pendingData.formData.moneda === baseCurrency) {
       return pendingData.formData.totalPagar;
     }
 
-    if (!pendingData.formData.tasaCambio) {
-      return null;
-    }
-
-    return roundCurrency(
-      pendingData.formData.totalPagar * pendingData.formData.tasaCambio,
+    return calculateInvoiceBaseTotal(
+      pendingData.formData.totalPagar,
+      pendingData.formData.tasaCambio,
     );
-  }, [pendingData, baseCurrency]);
+  }, [baseCurrency, pendingData]);
 
   return (
     <>
@@ -206,8 +207,8 @@ export const OcrInvoiceFlow = () => {
               animate={{ opacity: 1, x: 0 }}
               initial={{ opacity: 0, x: 20 }}
             >
-              <div className="max-w-4xl mx-auto mb-4 space-y-4">
-                <div className="flex items-center justify-between bg-content1 p-4 rounded-xl border border-default-200 shadow-sm">
+              <div className="mx-auto mb-4 max-w-4xl space-y-4">
+                <div className="flex items-center justify-between rounded-xl border border-default-200 bg-content1 p-4 shadow-sm">
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold text-default-600">
                       {t("ocr.source.label")}:
@@ -220,8 +221,7 @@ export const OcrInvoiceFlow = () => {
 
                 {scanData.parsed.source === "fallback" && (
                   <Card className="border-none bg-warning-50 text-warning-700">
-                    <CardBody className="py-2 px-3 text-sm flex-row items-center gap-2">
-                      <span className="font-bold">⚠️</span>
+                    <CardBody className="flex-row items-center gap-2 px-3 py-2 text-sm">
                       {t("ocr.fallback_warning")}
                     </CardBody>
                   </Card>
@@ -229,8 +229,7 @@ export const OcrInvoiceFlow = () => {
 
                 {(scanData.parsed.source as string) === "error" && (
                   <Card className="border-none bg-danger-50 text-danger-700">
-                    <CardBody className="py-2 px-3 text-sm flex-row items-center gap-2">
-                      <span className="font-bold">❌</span>
+                    <CardBody className="flex-row items-center gap-2 px-3 py-2 text-sm">
                       {t("ocr.error_message")}
                     </CardBody>
                   </Card>
@@ -263,7 +262,7 @@ export const OcrInvoiceFlow = () => {
           </ModalHeader>
           <ModalBody>
             <p>{t("confirm.message")}</p>
-            <div className="bg-default-100 p-4 rounded-lg space-y-2 mt-2">
+            <div className="mt-2 space-y-2 rounded-lg bg-default-100 p-4">
               <div className="flex justify-between">
                 <span className="font-semibold">{t("confirm.products")}:</span>
                 <span>{pendingData?.products.length}</span>

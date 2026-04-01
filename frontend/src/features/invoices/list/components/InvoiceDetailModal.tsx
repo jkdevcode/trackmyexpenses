@@ -1,4 +1,4 @@
-import type { InvoiceDetailItem, OcrSource } from "../types";
+import type { InvoiceDetailItem, OcrSource } from "../../types";
 
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,27 +14,27 @@ import {
 import { Spinner } from "@heroui/spinner";
 import {
   Table,
-  TableHeader,
-  TableColumn,
   TableBody,
-  TableRow,
   TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
 } from "@heroui/table";
 
-import { useInvoiceDetailQuery } from "../hooks/useInvoicesQuery";
-import { formatCurrency, formatDate } from "../utils/formatters";
-import { getInvoiceItemUnitPrice } from "../utils/invoice-item";
-import { useInvoiceFilter } from "../hooks/useInvoiceFilter";
-
-import { OcrSourceBadge } from "./OcrSourceBadge";
-import { InvoiceSearchInput } from "./InvoiceSearchInput";
+import { InvoiceSearchInput } from "../../components/InvoiceSearchInput";
+import { OcrSourceBadge } from "../../components/OcrSourceBadge";
+import { PaginatedItems } from "../../components/PaginatedItems";
+import { useInvoiceFilter } from "../../hooks/useInvoiceFilter";
+import { useInvoiceDetailQuery } from "../../hooks/useInvoicesQuery";
+import {
+  getInvoiceBaseTotal,
+  getInvoiceCurrencies,
+} from "../../utils/currency";
+import { formatCurrency, formatDate } from "../../utils/formatters";
+import { getInvoiceItemUnitPrice } from "../../utils/invoice-item";
 
 import { useAppColorVariants } from "@/theme/app-color-variants";
-import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 import { useColorTheme } from "@/hooks/use-color-theme";
-
-const resolveCurrency = (value?: string | null) =>
-  normalizeCurrencyCode(value, DEFAULT_CURRENCY);
 
 const ASSETS_URL = import.meta.env.VITE_ASSETS_URL || "";
 
@@ -83,13 +83,13 @@ export const InvoiceDetailModal = ({
     }
   }, [isOpen, setFilterValue]);
 
-  const currency = resolveCurrency(detail?.moneda ?? detail?.monedaBase);
-  const baseCurrency = resolveCurrency(detail?.monedaBase ?? currency);
-  const showBase = currency !== baseCurrency;
-  const baseTotal =
-    detail?.totalPagarBase !== null && detail?.totalPagarBase !== undefined
-      ? detail?.totalPagarBase
-      : detail?.totalPagar;
+  const { currency, baseCurrency, showBase } = getInvoiceCurrencies(
+    detail?.moneda,
+    detail?.monedaBase,
+  );
+  const baseTotal = detail
+    ? getInvoiceBaseTotal(detail.totalPagar, detail.totalPagarBase)
+    : 0;
 
   return (
     <Modal isOpen={isOpen} scrollBehavior="inside" size="4xl" onClose={onClose}>
@@ -97,7 +97,7 @@ export const InvoiceDetailModal = ({
         <ModalHeader>{t("detail.title")}</ModalHeader>
         <ModalBody>
           {detailQuery.isLoading ? (
-            <div className="py-10 flex justify-center">
+            <div className="flex justify-center py-10">
               <Spinner color={appColor} />
             </div>
           ) : null}
@@ -108,7 +108,7 @@ export const InvoiceDetailModal = ({
 
           {!detailQuery.isLoading && !detailQuery.isError && detail ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+              <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
                 <p>
                   <span className="font-semibold">{t("detail.codigo")}:</span>{" "}
                   {detail.codigoFactura}
@@ -155,7 +155,7 @@ export const InvoiceDetailModal = ({
                 ) : null}
               </div>
 
-              <div className="flex justify-between items-center mt-6">
+              <div className="mt-6 flex items-center justify-between">
                 <h3 className="text-md font-semibold">
                   {t("detail.table.title", { defaultValue: "Productos" })}
                 </h3>
@@ -164,47 +164,59 @@ export const InvoiceDetailModal = ({
                   onValueChange={setFilterValue}
                 />
               </div>
-              <Table removeWrapper aria-label={t("detail.items_aria")}>
-                <TableHeader>
-                  <TableColumn>{t("detail.table.producto")}</TableColumn>
-                  <TableColumn>{t("detail.table.cantidad")}</TableColumn>
-                  <TableColumn>{t("detail.table.precioUnitario")}</TableColumn>
-                  <TableColumn>{t("detail.table.descuento")}</TableColumn>
-                  <TableColumn>{t("detail.table.precioTotal")}</TableColumn>
-                </TableHeader>
-                <TableBody items={filteredProductos}>
-                  {(item: InvoiceDetailItem) => {
-                    const key =
-                      item.id ??
-                      item.productoId ??
-                      `${item.productoNombre}-${item.cantidad}-${item.precioTotal}`;
-                    const productName =
-                      item.productoNombre ?? item.producto?.nombre ?? "-";
+              <PaginatedItems
+                items={filteredProductos}
+                itemsPerPage={10}
+                resetKey={filterValue}
+                renderList={(itemsContent, paginationContent) => (
+                  <Table
+                    removeWrapper
+                    aria-label={t("detail.items_aria")}
+                    bottomContent={paginationContent}
+                  >
+                    <TableHeader>
+                      <TableColumn>{t("detail.table.producto")}</TableColumn>
+                      <TableColumn>{t("detail.table.cantidad")}</TableColumn>
+                      <TableColumn>
+                        {t("detail.table.precioUnitario")}
+                      </TableColumn>
+                      <TableColumn>{t("detail.table.descuento")}</TableColumn>
+                      <TableColumn>{t("detail.table.precioTotal")}</TableColumn>
+                    </TableHeader>
+                    <TableBody>{itemsContent as any}</TableBody>
+                  </Table>
+                )}
+                renderItem={(item) => {
+                  const key =
+                    item.id ??
+                    item.productoId ??
+                    `${item.productoNombre}-${item.cantidad}-${item.precioTotal}`;
+                  const productName =
+                    item.productoNombre ?? item.producto?.nombre ?? "-";
 
-                    return (
-                      <TableRow key={String(key)}>
-                        <TableCell>{productName}</TableCell>
-                        <TableCell>{item.cantidad}</TableCell>
-                        <TableCell>
-                          {formatCurrency(
-                            getInvoiceItemUnitPrice(item),
-                            i18n.language,
-                            currency,
-                          )}
-                        </TableCell>
-                        <TableCell>{item.descuento ?? 0}%</TableCell>
-                        <TableCell>
-                          {formatCurrency(
-                            item.precioTotal,
-                            i18n.language,
-                            currency,
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  }}
-                </TableBody>
-              </Table>
+                  return (
+                    <TableRow key={String(key)}>
+                      <TableCell>{productName}</TableCell>
+                      <TableCell>{item.cantidad}</TableCell>
+                      <TableCell>
+                        {formatCurrency(
+                          getInvoiceItemUnitPrice(item),
+                          i18n.language,
+                          currency,
+                        )}
+                      </TableCell>
+                      <TableCell>{item.descuento ?? 0}%</TableCell>
+                      <TableCell>
+                        {formatCurrency(
+                          item.precioTotal,
+                          i18n.language,
+                          currency,
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }}
+              />
             </div>
           ) : null}
         </ModalBody>
@@ -213,11 +225,11 @@ export const InvoiceDetailModal = ({
             <Button variant="light" onPress={onClose}>
               {t("detail.close")}
             </Button>
-            {detail?.imagenUrl && (
+            {detail?.imagenUrl ? (
               <Button color={appColor} variant="flat" onPress={onImageOpen}>
                 {t("detail.view_image")}
               </Button>
-            )}
+            ) : null}
           </div>
           {detail ? (
             <div className="flex flex-col items-end">
@@ -228,14 +240,14 @@ export const InvoiceDetailModal = ({
               {showBase ? (
                 <p className="text-sm text-default-500">
                   {t("detail.total_base")}:{" "}
-                  {formatCurrency(baseTotal ?? 0, i18n.language, baseCurrency)}
+                  {formatCurrency(baseTotal, i18n.language, baseCurrency)}
                 </p>
               ) : null}
             </div>
           ) : null}
         </ModalFooter>
       </ModalContent>
-      {detail?.imagenUrl && (
+      {detail?.imagenUrl ? (
         <Modal
           backdrop="blur"
           isOpen={isImageOpen}
@@ -244,10 +256,10 @@ export const InvoiceDetailModal = ({
         >
           <ModalContent>
             <ModalHeader>{t("detail.view_image")}</ModalHeader>
-            <ModalBody className="p-1 overflow-auto max-h-[80vh] flex items-center bg-black/5">
+            <ModalBody className="flex max-h-[80vh] items-center overflow-auto bg-black/5 p-1">
               <img
                 alt="Invoice"
-                className="max-w-full h-auto rounded-lg shadow-lg"
+                className="h-auto max-w-full rounded-lg shadow-lg"
                 src={`${ASSETS_URL}${detail.imagenUrl}`}
               />
             </ModalBody>
@@ -256,7 +268,7 @@ export const InvoiceDetailModal = ({
             </ModalFooter>
           </ModalContent>
         </Modal>
-      )}
+      ) : null}
     </Modal>
   );
 };

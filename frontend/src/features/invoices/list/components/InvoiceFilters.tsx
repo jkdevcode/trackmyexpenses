@@ -1,4 +1,4 @@
-﻿import type { InvoicePeriod } from "../types";
+import type { InvoicePeriod } from "../../types";
 
 import { useTranslation } from "react-i18next";
 import { Select, SelectItem } from "@heroui/select";

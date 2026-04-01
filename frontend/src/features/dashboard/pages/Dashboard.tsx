@@ -7,6 +7,7 @@ import { RevenueChart } from "../components/RevenueChart";
 import { InvoicesTable } from "../components/InvoicesTable";
 import { AverageTicketChart } from "../components/AverageTicketChart";
 import { useDashboardData } from "../hooks/useDashboardData";
+
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 const Dashboard = () => {
@@ -17,7 +18,7 @@ const Dashboard = () => {
 
   usePageMeta({
     title: tMeta("dashboard.title"),
-    description: tMeta("dashboard.description")
+    description: tMeta("dashboard.description"),
   });
 
   return (

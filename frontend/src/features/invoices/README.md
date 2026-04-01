@@ -10,12 +10,13 @@ Feature de facturas: OCR, registro manual, listado, detalle y edicion.
 
 ## Main Files
 
-- **`components/OcrInvoiceFlow.tsx`**: Flujo upload -> edicion -> confirmacion con `ocrSource` y archivo original.
-- **`components/ManualInvoiceForm.tsx`**: Registro manual con productos del usuario, moneda y tasa de cambio.
-- **`components/InvoiceDetailModal.tsx`**: Visualiza detalle, imagen, moneda y metadata OCR de la factura.
-- **`components/InvoiceEditModal.tsx`**: Ajuste de items/snapshots persistidos en backend.
+- **`ocr/OcrInvoiceFlow.tsx`**: Flujo upload -> edicion -> confirmacion con `ocrSource` y archivo original.
+- **`manual/ManualInvoiceForm.tsx`**: Registro manual con productos del usuario, moneda y tasa de cambio.
+- **`list/components/InvoiceDetailModal.tsx`**: Visualiza detalle, imagen, moneda y metadata OCR de la factura.
+- **`list/components/InvoiceEditModal.tsx`**: Ajuste de items/snapshots persistidos en backend.
 - **`hooks/useInvoiceMutations.ts`**: Queries/mutations React Query.
 - **`services/invoiceService.ts`**: Requests API tipados, incluyendo multipart para OCR confirmado.
+- **`utils/invoice-api.ts`**: Mapeos DTO -> modelo para mantener `services/` enfocado en llamadas HTTP.
 
 ## Usage
 

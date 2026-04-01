@@ -10,13 +10,13 @@ import { addToast } from "@heroui/toast";
 import { useInvoicesQuery } from "../hooks/useInvoicesQuery";
 import { useDeleteInvoiceMutation } from "../hooks/useInvoiceMutations";
 import { useInvoiceFilter } from "../hooks/useInvoiceFilter";
+import { InvoiceSearchInput } from "../components/InvoiceSearchInput";
 
-import { InvoiceFilters } from "./InvoiceFilters";
-import { InvoiceTable } from "./InvoiceTable";
-import { InvoiceCardList } from "./InvoiceCardList";
-import { InvoiceDetailModal } from "./InvoiceDetailModal";
-import { InvoiceEditModal } from "./InvoiceEditModal";
-import { InvoiceSearchInput } from "./InvoiceSearchInput";
+import { InvoiceFilters } from "./components/InvoiceFilters";
+import { InvoiceTable } from "./components/InvoiceTable";
+import { InvoiceCardList } from "./components/InvoiceCardList";
+import { InvoiceDetailModal } from "./components/InvoiceDetailModal";
+import { InvoiceEditModal } from "./components/InvoiceEditModal";
 
 import { useColorTheme } from "@/hooks/use-color-theme";
 
@@ -166,6 +166,7 @@ export const InvoiceListView = () => {
           <div className="hidden md:block">
             <InvoiceTable
               invoices={invoices}
+              resetKey={filterValue}
               onDelete={handleDelete}
               onEdit={openEdit}
               onView={openDetail}
@@ -175,6 +176,7 @@ export const InvoiceListView = () => {
           <div className="block md:hidden">
             <InvoiceCardList
               invoices={invoices}
+              resetKey={filterValue}
               onDelete={handleDelete}
               onEdit={openEdit}
               onView={openDetail}

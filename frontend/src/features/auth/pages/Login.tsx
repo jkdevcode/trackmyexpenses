@@ -29,9 +29,13 @@ const LoginPage = () => {
   const { appColor } = useColorTheme();
 
   const { t: tMeta } = useTranslation("meta");
+
   usePageMeta({
     title: tMeta("login.title", "Login | TrackMyExpenses"),
-    description: tMeta("login.description", "Access your TrackMyExpenses account.")
+    description: tMeta(
+      "login.description",
+      "Access your TrackMyExpenses account.",
+    ),
   });
 
   const [isVisible, setIsVisible] = useState(false);

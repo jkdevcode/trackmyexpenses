@@ -44,7 +44,7 @@ const ProfilePage = () => {
 
   usePageMeta({
     title: tMeta("profile.title"),
-    description: tMeta("profile.description")
+    description: tMeta("profile.description"),
   });
 
   const ASSETS_URL = import.meta.env.VITE_ASSETS_URL;

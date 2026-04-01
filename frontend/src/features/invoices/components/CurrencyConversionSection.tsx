@@ -3,14 +3,13 @@ import { useTranslation } from "react-i18next";
 import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 
-import { formatCurrency } from "../../utils/formatters";
+import { calculateInvoiceBaseTotal } from "../utils/currency";
+import { formatCurrency } from "../utils/formatters";
 
 import { useAppColorVariants } from "@/theme/app-color-variants";
 import { useColorTheme } from "@/hooks/use-color-theme";
 
 type CurrencyConversionSectionProps = {
-  /*  errorMessage?: string;
-  isInvalid?: boolean; */
   moneda: string;
   monedaBase: string;
   total: number;
@@ -18,12 +17,7 @@ type CurrencyConversionSectionProps = {
   onChangeTasa: (value: number) => void;
 };
 
-const roundCurrency = (value: number) =>
-  Math.round((value + Number.EPSILON) * 100) / 100;
-
 export const CurrencyConversionSection = ({
-  /*  errorMessage,
-  isInvalid = false, */
   moneda,
   monedaBase,
   total,
@@ -42,10 +36,12 @@ export const CurrencyConversionSection = ({
 
   const rateIsValid = Number.isFinite(tasaCambio) && (tasaCambio ?? 0) > 0;
   const totalBase = useMemo(() => {
-    if (!rateIsValid) return null;
+    if (!rateIsValid) {
+      return null;
+    }
 
-    return roundCurrency(total * (tasaCambio ?? 0));
-  }, [rateIsValid, total, tasaCambio]);
+    return calculateInvoiceBaseTotal(total, tasaCambio);
+  }, [rateIsValid, tasaCambio, total]);
 
   const [inputValue, setInputValue] = useState(
     rateIsValid && tasaCambio ? String(tasaCambio) : "",
@@ -68,6 +64,7 @@ export const CurrencyConversionSection = ({
 
       return;
     }
+
     onChangeTasa(parsed);
   };
 
@@ -88,8 +85,6 @@ export const CurrencyConversionSection = ({
         <Input
           color={appColor}
           description={t("form.currency.rate_hint")}
-          /* errorMessage={errorMessage}
-          isInvalid={isInvalid} */
           label={t("form.currency.rate")}
           min={0.000001}
           step="0.000001"
@@ -109,7 +104,7 @@ export const CurrencyConversionSection = ({
             <p
               className={`text-lg font-semibold ${appColorVariants.textStrong}`}
             >
-              ≈ {formatCurrency(totalBase, i18n.language, normalizedBase)}
+              ~ {formatCurrency(totalBase, i18n.language, normalizedBase)}
             </p>
           </div>
         ) : (

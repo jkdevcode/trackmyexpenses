@@ -1,9 +1,9 @@
-import type { ScanResponse } from "../types";
+import type { ScanResponse } from "../../types";
 
 import { useTranslation } from "react-i18next";
 
-import { useInvoiceUpload } from "../hooks/useInvoiceUpload";
-import { INVOICE_UPLOAD_ACCEPT } from "../constants/upload";
+import { useInvoiceUpload } from "../../hooks/useInvoiceUpload";
+import { INVOICE_UPLOAD_ACCEPT } from "../../constants/upload";
 
 import { InvoiceUploadButton } from "./InvoiceUploadButton";
 import { InvoiceUploadDropzone } from "./InvoiceUploadDropzone";

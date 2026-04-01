@@ -18,7 +18,7 @@ const ReportsPage = () => {
 
   usePageMeta({
     title: tMeta("reports.title"),
-    description: tMeta("reports.description")
+    description: tMeta("reports.description"),
   });
 
   const [from, setFrom] = useState("");

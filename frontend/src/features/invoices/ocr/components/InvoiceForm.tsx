@@ -1,4 +1,4 @@
-import type { ParsedInvoice, ProductSuggestion } from "../types";
+import type { ParsedInvoice, ProductSuggestion } from "../../types";
 
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -17,13 +17,13 @@ import {
   type DateValue,
 } from "@internationalized/date";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 
-import { formatCurrency } from "../utils/formatters";
-
-import { InvoiceSummary } from "./InvoiceSummary";
-import { InvoiceItemsModal } from "./InvoiceItemsModal";
-import { CurrencyConversionSection } from "./factura/CurrencyConversionSection";
+import { PAYMENT_METHOD_OPTIONS } from "../../constants/payment-methods";
+import { useInvoiceExchangeRate } from "../../hooks/useInvoiceExchangeRate";
+import { formatCurrency } from "../../utils/formatters";
+import { InvoiceSummary } from "../../components/InvoiceSummary";
+import { InvoiceItemsModal } from "../../components/InvoiceItemsModal";
+import { CurrencyConversionSection } from "../../components/CurrencyConversionSection";
 
 import { getInvoiceSchema } from "@/schemas/invoice";
 import {
@@ -129,40 +129,24 @@ export const InvoiceForm = ({
   const showConversion = selectedCurrency !== baseCurrency;
   const rateIsValid = Number.isFinite(tasaCambio) && (tasaCambio ?? 0) > 0;
 
-  const exchangeRateQuery = useQuery({
-    queryKey: ["exchange-rate", baseCurrency],
-    queryFn: async () => {
-      const response = await window.fetch(
-        `https://api.exchangerate-api.com/v4/latest/${baseCurrency}`,
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch exchange rates");
-      }
-
-      return (await response.json()) as {
-        rates?: Record<string, number>;
-      };
-    },
+  const exchangeRateQuery = useInvoiceExchangeRate({
+    baseCurrency,
+    invoiceCurrency: selectedCurrency,
     enabled: showConversion && !rateIsValid,
-    staleTime: 1000 * 60 * 30,
   });
 
   useEffect(() => {
     if (!showConversion || rateIsValid) return;
-    if (!exchangeRateQuery.data?.rates) return;
+    const normalizedRate = exchangeRateQuery.data;
 
-    const apiRate = Number(exchangeRateQuery.data.rates[selectedCurrency]);
-
-    if (!Number.isFinite(apiRate) || apiRate <= 0) return;
-
-    // Backend expects base-per-invoice rate, so invert API rate.
-    const normalizedRate = 1 / apiRate;
-
-    if (Number.isFinite(normalizedRate) && normalizedRate > 0) {
+    if (
+      normalizedRate !== undefined &&
+      Number.isFinite(normalizedRate) &&
+      normalizedRate > 0
+    ) {
       setTasaCambio(normalizedRate);
     }
-  }, [exchangeRateQuery.data, rateIsValid, selectedCurrency, showConversion]);
+  }, [exchangeRateQuery.data, rateIsValid, showConversion]);
 
   useEffect(() => {
     if (itemErrors.size > 0 && products.length > 10) {
@@ -302,21 +286,11 @@ export const InvoiceForm = ({
                     variant="bordered"
                     onChange={(e) => field.onChange(e.target.value)}
                   >
-                    <SelectItem key="EFECTIVO">
-                      {t("common.cash", "Efectivo")}
-                    </SelectItem>
-                    <SelectItem key="TARJETA_CREDITO">
-                      {t("common.credit_card", "Tarjeta Credito")}
-                    </SelectItem>
-                    <SelectItem key="TARJETA_DEBITO">
-                      {t("common.debit_card", "Tarjeta Debito")}
-                    </SelectItem>
-                    <SelectItem key="TRANSFERENCIA">
-                      {t("common.transfer", "Transferencia")}
-                    </SelectItem>
-                    <SelectItem key="OTRO">
-                      {t("common.other", "Otro")}
-                    </SelectItem>
+                    {PAYMENT_METHOD_OPTIONS.map((option) => (
+                      <SelectItem key={option.key}>
+                        {t(option.labelKey, option.fallback)}
+                      </SelectItem>
+                    ))}
                   </Select>
                 )}
               />

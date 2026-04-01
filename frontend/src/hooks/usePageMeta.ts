@@ -12,17 +12,19 @@ export function usePageMeta({ title, description }: UsePageMetaProps = {}) {
   useEffect(() => {
     // Si no pasan título, usamos el default del namespace "meta"
     const nextTitle = title || t("default.title", "TrackMyExpenses");
-    
+
     // Si no pasan description, usamos el default
-    const nextDescription = description || t(
-      "default.description",
-      "Overview of your expenses, invoices and financial activity"
-    );
+    const nextDescription =
+      description ||
+      t(
+        "default.description",
+        "Overview of your expenses, invoices and financial activity",
+      );
 
     document.title = nextTitle;
 
     let metaDescription = document.querySelector('meta[name="description"]');
-    
+
     if (metaDescription) {
       metaDescription.setAttribute("content", nextDescription);
     } else {

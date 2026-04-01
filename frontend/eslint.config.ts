@@ -21,6 +21,7 @@ export default [
         React: "readonly",
         process: "readonly",
         Buffer: "readonly",
+        formatCurrency: "readonly",
         console: "readonly",
         HTMLElement: "readonly",
         Element: "readonly",
