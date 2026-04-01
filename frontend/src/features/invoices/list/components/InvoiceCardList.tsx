@@ -1,19 +1,18 @@
-import type { InvoiceSummaryItem } from "../types";
+import type { InvoiceSummaryItem } from "../../types";
 
 import { useTranslation } from "react-i18next";
 import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
 
-import { formatCurrency, formatDate } from "../utils/formatters";
-
-import { PaginatedItems } from "./PaginatedItems";
+import { PaginatedItems } from "../../components/PaginatedItems";
+import {
+  getInvoiceBaseTotal,
+  getInvoiceCurrencies,
+} from "../../utils/currency";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 
 import { useAppColorVariants } from "@/theme/app-color-variants";
-import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
 import { useColorTheme } from "@/hooks/use-color-theme";
-
-const resolveCurrency = (value?: string | null) =>
-  normalizeCurrencyCode(value, DEFAULT_CURRENCY);
 
 type InvoiceCardListProps = {
   invoices: InvoiceSummaryItem[];
@@ -46,19 +45,19 @@ export const InvoiceCardList = ({
         </div>
       )}
       renderItem={(invoice) => {
-        const currency = resolveCurrency(invoice.moneda ?? invoice.monedaBase);
-        const baseCurrency = resolveCurrency(invoice.monedaBase ?? currency);
-        const showBase = currency !== baseCurrency;
-        const baseTotal =
-          invoice.totalPagarBase !== null &&
-          invoice.totalPagarBase !== undefined
-            ? invoice.totalPagarBase
-            : invoice.totalPagar;
+        const { currency, baseCurrency, showBase } = getInvoiceCurrencies(
+          invoice.moneda,
+          invoice.monedaBase,
+        );
+        const baseTotal = getInvoiceBaseTotal(
+          invoice.totalPagar,
+          invoice.totalPagarBase,
+        );
 
         return (
           <Card key={invoice.id}>
             <CardBody className="space-y-2">
-              <div className="flex justify-between items-start gap-2">
+              <div className="flex items-start justify-between gap-2">
                 <div>
                   <p className="text-xs text-default-500">
                     {t("list.mobile.codigo")}

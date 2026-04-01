@@ -1,7 +1,6 @@
 import type { InvoiceDetailItem } from "../types";
 
-const roundCurrency = (value: number) =>
-  Math.round((value + Number.EPSILON) * 100) / 100;
+import { roundCurrency } from "./currency";
 
 export const getInvoiceItemUnitPrice = (item: InvoiceDetailItem): number => {
   const direct = Number(item.precioUnitario ?? item.producto?.precioUnitario);

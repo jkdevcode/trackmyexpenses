@@ -1,26 +1,25 @@
-import type { InvoiceSummaryItem } from "../types";
+import type { InvoiceSummaryItem } from "../../types";
 
 import { useTranslation } from "react-i18next";
 import { Button } from "@heroui/button";
 import {
   Table,
-  TableHeader,
-  TableColumn,
   TableBody,
-  TableRow,
   TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
 } from "@heroui/table";
 
-import { formatCurrency, formatDate } from "../utils/formatters";
+import { PaginatedItems } from "../../components/PaginatedItems";
+import {
+  getInvoiceBaseTotal,
+  getInvoiceCurrencies,
+} from "../../utils/currency";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 
-import { PaginatedItems } from "./PaginatedItems";
-
-import { EyeFilledIcon, EditIcon, DeleteIcon } from "@/components/ui/icons";
-import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
+import { DeleteIcon, EditIcon, EyeFilledIcon } from "@/components/ui/icons";
 import { useColorTheme } from "@/hooks/use-color-theme";
-
-const resolveCurrency = (value?: string | null) =>
-  normalizeCurrencyCode(value, DEFAULT_CURRENCY);
 
 type InvoiceTableProps = {
   invoices: InvoiceSummaryItem[];
@@ -62,15 +61,15 @@ export const InvoiceTable = ({
           <TableBody>{itemsContent as any}</TableBody>
         </Table>
       )}
-      renderItem={(invoice: InvoiceSummaryItem) => {
-        const currency = resolveCurrency(invoice.moneda ?? invoice.monedaBase);
-        const baseCurrency = resolveCurrency(invoice.monedaBase ?? currency);
-        const showBase = currency !== baseCurrency;
-        const baseTotal =
-          invoice.totalPagarBase !== null &&
-          invoice.totalPagarBase !== undefined
-            ? invoice.totalPagarBase
-            : invoice.totalPagar;
+      renderItem={(invoice) => {
+        const { currency, baseCurrency, showBase } = getInvoiceCurrencies(
+          invoice.moneda,
+          invoice.monedaBase,
+        );
+        const baseTotal = getInvoiceBaseTotal(
+          invoice.totalPagar,
+          invoice.totalPagarBase,
+        );
 
         return (
           <TableRow key={invoice.id}>
@@ -102,7 +101,7 @@ export const InvoiceTable = ({
                   variant="light"
                   onPress={() => onView(invoice.id)}
                 >
-                  <EyeFilledIcon className="text-lg text-default-400 pointer-events-none" />
+                  <EyeFilledIcon className="pointer-events-none text-lg text-default-400" />
                 </Button>
                 <Button
                   isIconOnly
@@ -112,7 +111,7 @@ export const InvoiceTable = ({
                   variant="light"
                   onPress={() => onEdit(invoice.id)}
                 >
-                  <EditIcon className="text-lg text-default-400 pointer-events-none" />
+                  <EditIcon className="pointer-events-none text-lg text-default-400" />
                 </Button>
                 <Button
                   isIconOnly
@@ -122,7 +121,7 @@ export const InvoiceTable = ({
                   variant="light"
                   onPress={() => onDelete(invoice.id)}
                 >
-                  <DeleteIcon className="text-lg pointer-events-none" />
+                  <DeleteIcon className="pointer-events-none text-lg" />
                 </Button>
               </div>
             </TableCell>

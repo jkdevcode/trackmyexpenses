@@ -8,17 +8,17 @@ import { useColorTheme } from "@/hooks/use-color-theme";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 const OcrInvoiceFlow = lazy(() =>
-  import("@/features/invoices/components/OcrInvoiceFlow").then((module) => ({
+  import("@/features/invoices/ocr/OcrInvoiceFlow").then((module) => ({
     default: module.OcrInvoiceFlow,
   })),
 );
 const ManualInvoiceForm = lazy(() =>
-  import("@/features/invoices/components/ManualInvoiceForm").then((module) => ({
+  import("@/features/invoices/manual/ManualInvoiceForm").then((module) => ({
     default: module.ManualInvoiceForm,
   })),
 );
 const InvoiceListView = lazy(() =>
-  import("@/features/invoices/components/InvoiceListView").then((module) => ({
+  import("@/features/invoices/list/InvoiceListView").then((module) => ({
     default: module.InvoiceListView,
   })),
 );
