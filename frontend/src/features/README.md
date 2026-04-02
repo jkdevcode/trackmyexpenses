@@ -12,8 +12,8 @@ Arquitectura vertical por dominio funcional del frontend.
 
 - **`auth/`**: Login, registro, guards y servicios de autenticacion.
 - **`dashboard/`**: KPIs, graficas y consumo agregado de facturas.
-- **`invoices/`**: OCR, formulario manual, listado, detalle y edicion de facturas.
-- **`reports/`**: Filtros por fecha y descarga de PDF.
+- **`invoices/`**: OCR, formulario manual, listado con busqueda/paginacion, detalle y edicion de facturas.
+- **`reports/`**: Filtros por fecha, validacion previa de datos y descarga de PDF.
 - **`settings/`**: Tema, idioma, color de acento y moneda base.
 - **`user/`**: Perfil y cambio de contrasena.
 - **`landing/`**: Pagina publica de presentacion del producto.
