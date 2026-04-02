@@ -1,10 +1,9 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Tabs, Tab } from "@heroui/tabs";
-import { Spinner } from "@heroui/spinner";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
-import { useColorTheme } from "@/hooks/use-color-theme";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 const OcrInvoiceFlow = lazy(() =>
@@ -29,7 +28,6 @@ const validTabs: InvoiceTabKey[] = ["ocr", "manual", "list"];
 export const NewInvoicePage = () => {
   const { t } = useTranslation(["invoices", "common"]);
   const { t: tMeta } = useTranslation("meta");
-  const { appColor } = useColorTheme();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab") as InvoiceTabKey | null;
@@ -86,10 +84,7 @@ export const NewInvoicePage = () => {
             <div className="pt-4">
               <Suspense
                 fallback={
-                  <div className="py-8 text-center text-default-500">
-                    <Spinner color={appColor} size="lg" />
-                    {t("common:loading.basic")}
-                  </div>
+                  <LoadingSpinner message={t("common:loading.basic")} />
                 }
               >
                 <OcrInvoiceFlow />
@@ -102,9 +97,7 @@ export const NewInvoicePage = () => {
             <div className="pt-4">
               <Suspense
                 fallback={
-                  <div className="py-8 text-center text-default-500">
-                    {t("common:loading.basic")}
-                  </div>
+                  <LoadingSpinner message={t("common:loading.basic")} />
                 }
               >
                 <ManualInvoiceForm />
@@ -117,9 +110,7 @@ export const NewInvoicePage = () => {
             <div className="pt-4">
               <Suspense
                 fallback={
-                  <div className="py-8 text-center text-default-500">
-                    {t("common:loading.basic")}
-                  </div>
+                  <LoadingSpinner message={t("common:loading.basic")} />
                 }
               >
                 <InvoiceListView />
