@@ -1,7 +1,9 @@
+export type InvoiceUnit = "u" | "kg" | "g";
+
 export interface ProductSuggestion {
   nombreDetected: string;
   cantidad: number;
-  unidad: "u" | "kg" | "g";
+  unidad: InvoiceUnit;
   precioUnitario: number;
   precioTotal: number;
   productId?: number;
@@ -56,7 +58,7 @@ export interface ConfirmFacturaDto {
     nombreDetectado: string;
     precioUnitario: number;
     cantidadDetectada: number;
-    unidadDetectada?: string;
+    unidadDetectada?: InvoiceUnit;
     pesoDetectado?: number;
     descuentoDetectado?: number;
   }[];
@@ -76,7 +78,7 @@ export interface CreateInvoiceWithFileDto {
     nombreDetectado: string;
     precioUnitario: number;
     cantidadDetectada: number;
-    unidadDetectada?: string;
+    unidadDetectada?: InvoiceUnit;
     descuentoDetectado?: number;
   }[];
   ocrSource?: OcrSource;
@@ -93,6 +95,7 @@ export interface CreateFacturaDto {
   items: {
     productoId: number;
     cantidad: number;
+    unidad?: InvoiceUnit;
     descuento?: number;
   }[];
 }
@@ -105,6 +108,7 @@ export interface UpdateFacturaDto {
   items?: {
     productoId: number;
     cantidad?: number;
+    unidad?: InvoiceUnit;
     descuento?: number;
     precioUnitario?: number;
   }[];
@@ -142,7 +146,7 @@ export interface InvoiceDetailItem {
   id?: number;
   productoId?: number;
   cantidad: number;
-  unidad?: string | null;
+  unidad?: InvoiceUnit | null;
   descuento?: number | null;
   precioUnitario?: number | null;
   precioTotal: number;

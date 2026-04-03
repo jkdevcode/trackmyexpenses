@@ -1,4 +1,4 @@
-import type { InvoiceDetail, PaymentMethod } from "../../types";
+import type { InvoiceDetail, InvoiceUnit, PaymentMethod } from "../../types";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,6 +11,10 @@ import {
   calculateInvoiceItemTotal,
   getInvoiceItemUnitPrice,
 } from "../../utils/invoice-item";
+import {
+  isValidInvoiceQuantity,
+  normalizeInvoiceUnit,
+} from "../../utils/invoice-quantity";
 import { resolveInvoiceCurrency } from "../../utils/currency";
 
 import { scrollToFirstError } from "@/utils/scrollToFirstError";
@@ -26,6 +30,7 @@ export type InvoiceEditItemState = {
   productoId: number;
   nombre: string;
   cantidad: number;
+  unidad: InvoiceUnit;
   descuento: number;
   precioUnitario: string;
   precioTotal: number;
@@ -53,6 +58,7 @@ const mapDetailToEditItems = (detail: InvoiceDetail): InvoiceEditItemState[] =>
     productoId: item.productoId ?? item.producto?.id ?? 0,
     nombre: item.productoNombre ?? item.producto?.nombre ?? "",
     cantidad: item.cantidad,
+    unidad: normalizeInvoiceUnit(item.unidad),
     descuento: item.descuento ?? 0,
     precioUnitario: String(getInvoiceItemUnitPrice(item)),
     precioTotal: item.precioTotal,
@@ -61,6 +67,7 @@ const mapDetailToEditItems = (detail: InvoiceDetail): InvoiceEditItemState[] =>
 const hasInvalidEditedItem = (
   items: Array<{
     cantidad: number;
+    unidad?: string;
     descuento?: number;
     precioUnitario: number;
   }>,
@@ -69,8 +76,7 @@ const hasInvalidEditedItem = (
     (item) =>
       !Number.isFinite(item.precioUnitario) ||
       item.precioUnitario <= 0 ||
-      !Number.isFinite(item.cantidad) ||
-      item.cantidad <= 0 ||
+      !isValidInvoiceQuantity(item.cantidad, item.unidad) ||
       (item.descuento !== undefined &&
         (!Number.isFinite(item.descuento) ||
           item.descuento < 0 ||
@@ -164,7 +170,7 @@ export const useInvoiceEditForm = ({
 
   const updateItemField = (
     productoId: number,
-    field: "cantidad" | "descuento" | "precioUnitario",
+    field: "cantidad" | "descuento" | "precioUnitario" | "unidad",
     value: string,
   ) => {
     setItemErrors((prev) => {
@@ -187,6 +193,8 @@ export const useInvoiceEditForm = ({
 
         if (field === "precioUnitario") {
           next.precioUnitario = value;
+        } else if (field === "unidad") {
+          next.unidad = normalizeInvoiceUnit(value);
         } else {
           const parsed = Number(value);
 
@@ -234,6 +242,7 @@ export const useInvoiceEditForm = ({
       const parsedItems = items.map((item) => ({
         productoId: item.productoId,
         cantidad: item.cantidad,
+        unidad: item.unidad,
         descuento: item.descuento,
         precioUnitario: Number(item.precioUnitario),
       }));

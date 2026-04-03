@@ -3,9 +3,15 @@ import type { ManualInvoiceItem } from "../types";
 import { useTranslation } from "react-i18next";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
+import { Select, SelectItem } from "@heroui/select";
 
 import { PaginatedItems } from "../../components/PaginatedItems";
 import { formatCurrency } from "../../utils/formatters";
+import {
+  getInvoiceQuantityMin,
+  getInvoiceQuantityStep,
+  INVOICE_UNITS,
+} from "../../utils/invoice-quantity";
 
 interface ManualInvoiceItemsTableProps {
   items: ManualInvoiceItem[];
@@ -19,7 +25,7 @@ interface ManualInvoiceItemsTableProps {
   appColor: any;
   updateItemField: (
     productoId: number,
-    field: "cantidad" | "descuento",
+    field: "cantidad" | "descuento" | "unidad",
     value: string,
   ) => void;
   handleRemoveItem: (productoId: number) => void;
@@ -66,6 +72,9 @@ export const ManualInvoiceItemsTable = ({
                         {t("manual.items.columns.cantidad")}
                       </th>
                       <th className="py-2 pr-2">
+                        {t("manual.items.columns.unidad")}
+                      </th>
+                      <th className="py-2 pr-2">
                         {t("manual.items.columns.precioUnitario")}
                       </th>
                       <th className="py-2 pr-2">
@@ -102,8 +111,9 @@ export const ManualInvoiceItemsTable = ({
                   <td className="py-2 pr-2">
                     <Input
                       className="max-w-[120px]"
-                      min={1}
+                      min={getInvoiceQuantityMin(item.unidad)}
                       size="sm"
+                      step={getInvoiceQuantityStep(item.unidad)}
                       type="number"
                       value={String(item.cantidad)}
                       variant="bordered"
@@ -111,6 +121,25 @@ export const ManualInvoiceItemsTable = ({
                         updateItemField(item.productoId, "cantidad", value)
                       }
                     />
+                  </td>
+                  <td className="py-2 pr-2">
+                    <Select
+                      className="max-w-[120px]"
+                      selectedKeys={[item.unidad]}
+                      size="sm"
+                      variant="bordered"
+                      onChange={(event) =>
+                        updateItemField(
+                          item.productoId,
+                          "unidad",
+                          event.target.value,
+                        )
+                      }
+                    >
+                      {INVOICE_UNITS.map((unit) => (
+                        <SelectItem key={unit}>{unit}</SelectItem>
+                      ))}
+                    </Select>
                   </td>
                   <td className="py-2 pr-2">
                     {formatCurrency(item.precioUnitario, i18n.language, moneda)}
@@ -145,8 +174,8 @@ export const ManualInvoiceItemsTable = ({
                 </tr>
                 {rowError ? (
                   <tr key={`${item.productoId}-error`}>
-                    <td className="text-danger text-xs pb-2 pl-1" colSpan={6}>
-                      ⚠ {rowError}
+                    <td className="text-danger text-xs pb-2 pl-1" colSpan={7}>
+                      {rowError}
                     </td>
                   </tr>
                 ) : null}

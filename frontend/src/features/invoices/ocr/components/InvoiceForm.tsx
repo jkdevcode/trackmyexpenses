@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { PAYMENT_METHOD_OPTIONS } from "../../constants/payment-methods";
 import { useInvoiceExchangeRate } from "../../hooks/useInvoiceExchangeRate";
 import { formatCurrency } from "../../utils/formatters";
+import { isValidInvoiceQuantity } from "../../utils/invoice-quantity";
 import { InvoiceSummary } from "../../components/InvoiceSummary";
 import { InvoiceItemsModal } from "../../components/InvoiceItemsModal";
 import { CurrencyConversionSection } from "../../components/CurrencyConversionSection";
@@ -170,6 +171,21 @@ export const InvoiceForm = ({
         description: t("form.currency.rate_required"),
         color: "danger",
       });
+
+      return;
+    }
+
+    if (
+      products.some(
+        (product) => !isValidInvoiceQuantity(product.cantidad, product.unidad),
+      )
+    ) {
+      addToast({
+        title: t("toast.error"),
+        description: t("manual.validation.cantidad_invalid"),
+        color: "danger",
+      });
+      onOpen();
 
       return;
     }
@@ -421,7 +437,7 @@ export const InvoiceForm = ({
                   >
                     <div className="flex justify-between gap-3">
                       <span>
-                        {p.cantidad} x {p.nombreDetected}
+                        {p.cantidad} {p.unidad} x {p.nombreDetected}
                       </span>
                       <span>
                         {formatCurrency(

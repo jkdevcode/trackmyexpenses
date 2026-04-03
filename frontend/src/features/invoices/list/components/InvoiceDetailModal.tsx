@@ -197,7 +197,9 @@ export const InvoiceDetailModal = ({
                   return (
                     <TableRow key={String(key)}>
                       <TableCell>{productName}</TableCell>
-                      <TableCell>{item.cantidad}</TableCell>
+                      <TableCell>
+                        {item.cantidad} {item.unidad ?? "u"}
+                      </TableCell>
                       <TableCell>
                         {formatCurrency(
                           getInvoiceItemUnitPrice(item),

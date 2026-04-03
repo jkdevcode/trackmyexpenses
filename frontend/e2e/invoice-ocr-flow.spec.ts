@@ -48,10 +48,10 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
           productos: [
             {
               nombreDetected: "Milk",
-              cantidad: 2,
-              unidad: "u",
+              cantidad: 1.5,
+              unidad: "kg",
               precioUnitario: 4500,
-              precioTotal: 9000,
+              precioTotal: 6750,
             },
             {
               nombreDetected: "Bread",
@@ -84,6 +84,11 @@ test("full OCR invoice flow: upload and confirm", async ({ page }) => {
 
   await page.route("**/facturas/ocr/create", async (route) => {
     if (route.request().method() === "POST") {
+      const body = route.request().postData() ?? "";
+
+      expect(body).toContain('"cantidadDetectada":1.5');
+      expect(body).toContain('"unidadDetectada":"kg"');
+
       await route.fulfill({
         status: 201,
         contentType: "application/json",
