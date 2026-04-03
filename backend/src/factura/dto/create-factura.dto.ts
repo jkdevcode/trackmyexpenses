@@ -1,21 +1,31 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { isValidFacturaCantidad } from '../factura.domain';
 
-const facturaItemSchema = z.object({
-  productoId: z
-    .number()
-    .int({ message: 'productoId debe ser un entero' })
-    .positive({ message: 'productoId debe ser mayor a 0' }),
-  cantidad: z
-    .number()
-    .int({ message: 'cantidad debe ser un entero' })
-    .positive({ message: 'cantidad debe ser mayor a 0' }),
-  descuento: z
-    .number()
-    .min(0, { message: 'descuento no puede ser negativo' })
-    .max(100, { message: 'descuento no puede ser mayor a 100' })
-    .optional(),
-});
+const facturaItemSchema = z
+  .object({
+    productoId: z
+      .number()
+      .int({ message: 'productoId debe ser un entero' })
+      .positive({ message: 'productoId debe ser mayor a 0' }),
+    cantidad: z.number().positive({ message: 'cantidad debe ser mayor a 0' }),
+    unidad: z.enum(['u', 'kg', 'g']).optional().default('u'),
+    descuento: z
+      .number()
+      .min(0, { message: 'descuento no puede ser negativo' })
+      .max(100, { message: 'descuento no puede ser mayor a 100' })
+      .optional(),
+  })
+  .superRefine((item, ctx) => {
+    if (!isValidFacturaCantidad(item.cantidad, item.unidad)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['cantidad'],
+        message:
+          'cantidad debe ser un entero positivo, excepto cuando la unidad es kg',
+      });
+    }
+  });
 
 const createFacturaSchema = z.object({
   metodoPago: z.enum([

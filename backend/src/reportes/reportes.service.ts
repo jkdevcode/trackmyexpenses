@@ -158,7 +158,8 @@ export class ReportesService {
         const nombre =
           item.productoNombre ?? item.producto?.nombre ?? 'Producto sin nombre';
         const key = nombre.trim() === '' ? 'Producto sin nombre' : nombre;
-        totals.set(key, (totals.get(key) ?? 0) + item.cantidad);
+        const cantidad = this.decimalToNumber(item.cantidad);
+        totals.set(key, (totals.get(key) ?? 0) + cantidad);
       }
     }
 
