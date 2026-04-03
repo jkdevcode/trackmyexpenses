@@ -1,4 +1,4 @@
-import type { PaymentMethod } from "../../types";
+import type { InvoiceUnit, PaymentMethod } from "../../types";
 
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,6 +19,11 @@ import { PaginatedItems } from "../../components/PaginatedItems";
 import { PAYMENT_METHOD_OPTIONS } from "../../constants/payment-methods";
 import { useInvoiceFilter } from "../../hooks/useInvoiceFilter";
 import { formatCurrency } from "../../utils/formatters";
+import {
+  getInvoiceQuantityMin,
+  getInvoiceQuantityStep,
+  INVOICE_UNITS,
+} from "../../utils/invoice-quantity";
 import { useInvoiceEditForm } from "../hooks/useInvoiceEditForm";
 
 import { useColorTheme } from "@/hooks/use-color-theme";
@@ -215,7 +220,8 @@ export const InvoiceEditModal = ({
                             </p>
                             <p className="text-xs text-default-500">
                               {t("detail.table.cantidad")}: {item.cantidad}{" "}
-                              {t("detail.table.descuento")}: {item.descuento}%
+                              {item.unidad} {t("detail.table.descuento")}:{" "}
+                              {item.descuento}%
                             </p>
                           </div>
                           <p className="text-sm font-semibold">
@@ -226,14 +232,14 @@ export const InvoiceEditModal = ({
                             )}
                           </p>
                         </div>
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                           <Input
                             color={appColor}
                             errorMessage={rowError}
                             isInvalid={Boolean(rowError)}
                             label={t("detail.table.cantidad")}
-                            min={1}
-                            step="1"
+                            min={getInvoiceQuantityMin(item.unidad)}
+                            step={getInvoiceQuantityStep(item.unidad)}
                             type="number"
                             value={String(item.cantidad)}
                             variant="bordered"
@@ -245,6 +251,27 @@ export const InvoiceEditModal = ({
                               )
                             }
                           />
+                          <Select
+                            color={appColor}
+                            errorMessage={rowError}
+                            isInvalid={Boolean(rowError)}
+                            label={t("detail.table.unidad", {
+                              defaultValue: "Unidad",
+                            })}
+                            selectedKeys={[item.unidad]}
+                            variant="bordered"
+                            onChange={(event) =>
+                              updateItemField(
+                                item.productoId,
+                                "unidad",
+                                event.target.value as InvoiceUnit,
+                              )
+                            }
+                          >
+                            {INVOICE_UNITS.map((unit) => (
+                              <SelectItem key={unit}>{unit}</SelectItem>
+                            ))}
+                          </Select>
                           <Input
                             color={appColor}
                             errorMessage={rowError}

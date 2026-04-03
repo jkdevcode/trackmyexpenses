@@ -18,10 +18,16 @@ import {
 } from "@heroui/table";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
+import { Select, SelectItem } from "@heroui/select";
 import { useTranslation } from "react-i18next";
 
 import { formatCurrency } from "../utils/formatters";
 import { useInvoiceFilter } from "../hooks/useInvoiceFilter";
+import {
+  getInvoiceQuantityMin,
+  getInvoiceQuantityStep,
+  INVOICE_UNITS,
+} from "../utils/invoice-quantity";
 
 import { InvoiceSearchInput } from "./InvoiceSearchInput";
 import { PaginatedItems } from "./PaginatedItems";
@@ -176,7 +182,9 @@ export const InvoiceItemsModal = ({
                   <TableCell>
                     <Input
                       className="w-20"
+                      min={getInvoiceQuantityMin(item.unidad)}
                       size="sm"
+                      step={getInvoiceQuantityStep(item.unidad)}
                       type="number"
                       value={item.cantidad.toString()}
                       variant="underlined"
@@ -186,15 +194,19 @@ export const InvoiceItemsModal = ({
                     />
                   </TableCell>
                   <TableCell>
-                    <Input
-                      className="w-16"
+                    <Select
+                      className="w-20"
+                      selectedKeys={[item.unidad]}
                       size="sm"
-                      value={item.unidad}
                       variant="underlined"
-                      onChange={(e) =>
-                        handleUpdate(item, "unidad", e.target.value)
+                      onChange={(event) =>
+                        handleUpdate(item, "unidad", event.target.value)
                       }
-                    />
+                    >
+                      {INVOICE_UNITS.map((unit) => (
+                        <SelectItem key={unit}>{unit}</SelectItem>
+                      ))}
+                    </Select>
                   </TableCell>
                   <TableCell>
                     <Input

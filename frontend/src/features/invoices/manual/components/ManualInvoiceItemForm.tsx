@@ -1,7 +1,16 @@
+import type { InvoiceUnit } from "../../types";
+
 import { Autocomplete, AutocompleteItem } from "@heroui/autocomplete";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
+import { Select, SelectItem } from "@heroui/select";
 import { useTranslation } from "react-i18next";
+
+import {
+  getInvoiceQuantityMin,
+  getInvoiceQuantityStep,
+  INVOICE_UNITS,
+} from "../../utils/invoice-quantity";
 
 interface ManualInvoiceItemFormProps {
   appColor: any;
@@ -14,6 +23,8 @@ interface ManualInvoiceItemFormProps {
   setIsCreateProductOpen: (open: boolean) => void;
   itemCantidad: string;
   setItemCantidad: (val: string) => void;
+  itemUnidad: InvoiceUnit;
+  setItemUnidad: (val: InvoiceUnit) => void;
   itemDescuento: string;
   setItemDescuento: (val: string) => void;
   handleAddItem: () => void;
@@ -33,6 +44,8 @@ export const ManualInvoiceItemForm = ({
   setIsCreateProductOpen,
   itemCantidad,
   setItemCantidad,
+  itemUnidad,
+  setItemUnidad,
   itemDescuento,
   setItemDescuento,
   handleAddItem,
@@ -77,17 +90,28 @@ export const ManualInvoiceItemForm = ({
         )}
       </Autocomplete>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <Input
           color={appColor}
           label={t("manual.items.cantidad")}
-          min={1}
-          step="1"
+          min={getInvoiceQuantityMin(itemUnidad)}
+          step={getInvoiceQuantityStep(itemUnidad)}
           type="number"
           value={itemCantidad}
           variant="bordered"
           onValueChange={setItemCantidad}
         />
+        <Select
+          color={appColor}
+          label={t("manual.items.unidad")}
+          selectedKeys={[itemUnidad]}
+          variant="bordered"
+          onChange={(event) => setItemUnidad(event.target.value as InvoiceUnit)}
+        >
+          {INVOICE_UNITS.map((unit) => (
+            <SelectItem key={unit}>{unit}</SelectItem>
+          ))}
+        </Select>
         <Input
           color={appColor}
           label={t("manual.items.descuento")}

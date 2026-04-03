@@ -10,7 +10,7 @@
 
   "FACTURA_ITEMS_EMPTY": "Debes agregar al menos un producto.",
   "FACTURA_ITEM_PRODUCTO_ID_INVALID": "Este item tiene una referencia de producto invalida.",
-  "FACTURA_ITEM_CANTIDAD_INVALID": "La cantidad debe ser un numero entero positivo.",
+  "FACTURA_ITEM_CANTIDAD_INVALID": "La cantidad debe ser mayor a 0 y solo puede tener decimales cuando la unidad es kg.",
   "FACTURA_ITEM_DESCUENTO_INVALID": "El descuento debe estar entre 0 y 100.",
   "FACTURA_ITEM_PRECIO_INVALID": "El precio unitario debe ser mayor a 0.",
   "FACTURA_ITEM_DUPLICATE": "Este producto aparece mas de una vez.",
@@ -28,7 +28,7 @@
   "FACTURA_OCR_INVALID_PAYLOAD": "Revisa los datos de la factura e intenta nuevamente.",
   "FACTURA_OCR_ITEM_NAME_MISSING": "No se pudo detectar el nombre del producto.",
   "FACTURA_OCR_ITEM_PRECIO_INVALID": "No se pudo detectar el precio. Por favor ingresalo manualmente.",
-  "FACTURA_OCR_ITEM_CANTIDAD_INVALID": "No se pudo detectar la cantidad. Por favor ingresala manualmente.",
+  "FACTURA_OCR_ITEM_CANTIDAD_INVALID": "La cantidad debe ser mayor a 0 y solo puede tener decimales cuando la unidad es kg.",
 
   "FACTURA_NOT_FOUND": "Factura no encontrada.",
   "FACTURA_PRODUCTO_NOT_FOUND": "Producto no encontrado en esta factura.",

@@ -5,6 +5,8 @@ import type {
   ProductCatalogItem,
 } from "../types";
 
+import { normalizeInvoiceUnit } from "./invoice-quantity";
+
 type ApiProductoDto = {
   id: number | string;
   nombre: string;
@@ -182,7 +184,10 @@ export const mapInvoiceDetailResponse = (
           ? Number(item.productoId)
           : undefined,
       cantidad: Number(item?.cantidad ?? 0),
-      unidad: item?.unidad ?? null,
+      unidad:
+        item?.unidad !== undefined && item?.unidad !== null
+          ? normalizeInvoiceUnit(String(item.unidad))
+          : null,
       descuento:
         item?.descuento !== undefined && item?.descuento !== null
           ? Number(item.descuento)

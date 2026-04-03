@@ -10,7 +10,7 @@
 
   "FACTURA_ITEMS_EMPTY": "You must add at least one product.",
   "FACTURA_ITEM_PRODUCTO_ID_INVALID": "Item has an invalid product reference.",
-  "FACTURA_ITEM_CANTIDAD_INVALID": "Quantity must be a positive whole number.",
+  "FACTURA_ITEM_CANTIDAD_INVALID": "Quantity must be greater than 0 and can only use decimals when the unit is kg.",
   "FACTURA_ITEM_DESCUENTO_INVALID": "Discount must be between 0 and 100.",
   "FACTURA_ITEM_PRECIO_INVALID": "Unit price must be greater than 0.",
   "FACTURA_ITEM_DUPLICATE": "This product appears more than once.",
@@ -28,7 +28,7 @@
   "FACTURA_OCR_INVALID_PAYLOAD": "Review the invoice data and try again.",
   "FACTURA_OCR_ITEM_NAME_MISSING": "Product name could not be detected.",
   "FACTURA_OCR_ITEM_PRECIO_INVALID": "Price could not be detected for this item. Please enter it manually.",
-  "FACTURA_OCR_ITEM_CANTIDAD_INVALID": "Quantity could not be detected. Please enter it manually.",
+  "FACTURA_OCR_ITEM_CANTIDAD_INVALID": "Quantity must be greater than 0 and can only use decimals when the unit is kg.",
 
   "FACTURA_NOT_FOUND": "Invoice not found.",
   "FACTURA_PRODUCTO_NOT_FOUND": "Product not found in this invoice.",

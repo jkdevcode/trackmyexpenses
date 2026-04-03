@@ -1,4 +1,4 @@
-import type { PaymentMethod } from "../../types";
+import type { InvoiceUnit, PaymentMethod } from "../../types";
 
 export type { PaymentMethod } from "../../types";
 
@@ -16,6 +16,7 @@ export type ManualInvoiceItem = {
   nombre: string;
   precioUnitario: number;
   cantidad: number;
+  unidad: InvoiceUnit;
   descuento?: number;
   subtotal: number;
 };

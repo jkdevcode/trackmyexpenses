@@ -25,6 +25,7 @@ export const ManualInvoiceForm = () => {
     itemErrors,
     selectedProductId,
     itemCantidad,
+    itemUnidad,
     itemDescuento,
     isCreateProductOpen,
     totalCalculado,
@@ -45,6 +46,7 @@ export const ManualInvoiceForm = () => {
     setIsCreateProductOpen,
     setSelectedProductId,
     setItemCantidad,
+    setItemUnidad,
     setItemDescuento,
     setInputText,
   } = useManualInvoiceForm();
@@ -70,12 +72,14 @@ export const ManualInvoiceForm = () => {
             handleAddItem={handleAddItem}
             isLoadingProducts={isLoadingProducts}
             itemCantidad={itemCantidad}
+            itemUnidad={itemUnidad}
             itemDescuento={itemDescuento}
             productOptions={productOptions}
             selectedProductId={selectedProductId}
             setInputText={setInputText}
             setIsCreateProductOpen={setIsCreateProductOpen}
             setItemCantidad={setItemCantidad}
+            setItemUnidad={setItemUnidad}
             setItemDescuento={setItemDescuento}
             setSelectedProductId={setSelectedProductId}
           />

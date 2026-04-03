@@ -16,6 +16,10 @@ import {
 } from "../../hooks/useInvoiceMutations";
 import { useInvoiceErrorToast } from "../../hooks/useInvoiceErrorToast";
 import { calculateInvoiceItemTotal } from "../../utils/invoice-item";
+import {
+  DEFAULT_INVOICE_UNIT,
+  isValidInvoiceQuantity,
+} from "../../utils/invoice-quantity";
 import { formatCurrency } from "../../utils/formatters";
 
 import { scrollToFirstError } from "@/utils/scrollToFirstError";
@@ -59,6 +63,7 @@ export const useManualInvoiceForm = () => {
   const [items, setItems] = useState<ManualInvoiceItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [itemCantidad, setItemCantidad] = useState<string>("1");
+  const [itemUnidad, setItemUnidad] = useState(DEFAULT_INVOICE_UNIT);
   const [itemDescuento, setItemDescuento] = useState<string>("");
   const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
   const [inputText, setInputText] = useState("");
@@ -148,8 +153,7 @@ export const useManualInvoiceForm = () => {
 
     const invalidItem = items.find(
       (item) =>
-        !Number.isFinite(item.cantidad) ||
-        item.cantidad <= 0 ||
+        !isValidInvoiceQuantity(item.cantidad, item.unidad) ||
         (item.descuento !== undefined &&
           (!Number.isFinite(item.descuento) ||
             item.descuento < 0 ||
@@ -174,7 +178,7 @@ export const useManualInvoiceForm = () => {
       return;
     }
 
-    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+    if (!isValidInvoiceQuantity(cantidad, itemUnidad)) {
       setFormError(t("manual.validation.cantidad_invalid"));
 
       return;
@@ -218,6 +222,7 @@ export const useManualInvoiceForm = () => {
         nombre: selectedProduct.nombre,
         precioUnitario: selectedProduct.precioUnitario,
         cantidad,
+        unidad: itemUnidad,
         descuento,
         subtotal,
       },
@@ -225,17 +230,16 @@ export const useManualInvoiceForm = () => {
     clearFieldError("items");
     setSelectedProductId("");
     setItemCantidad("1");
+    setItemUnidad(DEFAULT_INVOICE_UNIT);
     setItemDescuento("");
     setFormError("");
   };
 
   const updateItemField = (
     productoId: number,
-    field: "cantidad" | "descuento",
+    field: "cantidad" | "descuento" | "unidad",
     value: string,
   ) => {
-    const parsed = Number(value);
-
     setItemErrors((prev) => {
       const next = new Map(prev);
 
@@ -249,10 +253,17 @@ export const useManualInvoiceForm = () => {
       prev.map((item) => {
         if (item.productoId !== productoId) return item;
 
-        const next = {
-          ...item,
-          [field]: Number.isFinite(parsed) ? parsed : item[field],
-        } as ManualInvoiceItem;
+        const next = { ...item };
+
+        if (field === "unidad") {
+          next.unidad = value as ManualInvoiceItem["unidad"];
+        } else {
+          const parsed = Number(value);
+
+          if (Number.isFinite(parsed)) {
+            next[field] = parsed;
+          }
+        }
 
         next.subtotal = calculateInvoiceItemTotal(
           next.precioUnitario,
@@ -315,6 +326,7 @@ export const useManualInvoiceForm = () => {
       items: items.map((item) => ({
         productoId: item.productoId,
         cantidad: item.cantidad,
+        unidad: item.unidad,
         descuento: item.descuento,
       })),
     };
@@ -376,6 +388,7 @@ export const useManualInvoiceForm = () => {
     itemErrors,
     selectedProductId,
     itemCantidad,
+    itemUnidad,
     itemDescuento,
     isCreateProductOpen,
     inputText,
@@ -406,6 +419,7 @@ export const useManualInvoiceForm = () => {
     setIsCreateProductOpen,
     setSelectedProductId,
     setItemCantidad,
+    setItemUnidad,
     setItemDescuento,
     setInputText,
   };
