@@ -82,7 +82,8 @@ export type UpdateFacturaRecordInput = {
 export type FacturaProductoRecord = {
   id: number;
   productoId: number;
-  cantidad: number;
+  cantidad: unknown;
+  unidad: string | null;
   descuento: unknown;
   precioUnitario: unknown;
   precioTotal: unknown;
@@ -92,6 +93,7 @@ export type UpdateFacturaProductoSnapshotInput = {
   facturaId: number;
   productoId: number;
   cantidad: number;
+  unidad?: string | null;
   descuento: number;
   precioUnitario: number;
   precioTotal: number;
@@ -117,7 +119,8 @@ export interface FacturaRepositoryTx {
     id: number;
     facturaId: number;
     productoId: number;
-    cantidad: number;
+    cantidad: unknown;
+    unidad: string | null;
     descuento: unknown;
     precioUnitario: unknown;
     precioTotal: unknown;

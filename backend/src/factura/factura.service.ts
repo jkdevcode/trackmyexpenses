@@ -23,6 +23,7 @@ import {
   calculateSpendingTrend,
   FacturaDomainValidationError,
   getPeriodWindow,
+  normalizeFacturaUnidad,
   normalizeCurrencyCode,
   normalizeAndValidateOcrItem,
   mergeOcrDuplicates,
@@ -487,6 +488,9 @@ export class FacturaService {
               item.cantidad !== undefined
                 ? item.cantidad
                 : Number(current.cantidad);
+            const unidad = normalizeFacturaUnidad(
+              item.unidad ?? current.unidad,
+            );
             const descuento =
               item.descuento !== undefined
                 ? item.descuento
@@ -515,6 +519,16 @@ export class FacturaService {
               );
             }
 
+            assertValidFacturaItems([
+              {
+                productoId: item.productoId,
+                cantidad,
+                unidad,
+                descuento,
+                precioUnitario: precioUnitarioFinal,
+              },
+            ]);
+
             const nuevoPrecioTotal = calculateDiscountedTotal(
               precioUnitarioFinal,
               cantidad,
@@ -527,6 +541,7 @@ export class FacturaService {
               facturaId,
               productoId: item.productoId,
               cantidad,
+              unidad,
               descuento,
               precioUnitario: precioUnitarioFinal,
               precioTotal: nuevoPrecioTotal,
@@ -677,7 +692,19 @@ export class FacturaService {
 
     const precioUnitario =
       dto.precioUnitario ?? Number(producto.precioUnitario);
+    const unidad = normalizeFacturaUnidad(dto.unidad);
     const descuento = dto.descuento || 0;
+
+    assertValidFacturaItems([
+      {
+        productoId: dto.productoId,
+        cantidad: dto.cantidad,
+        unidad,
+        descuento,
+        precioUnitario,
+      },
+    ]);
+
     const precioTotal = calculateDiscountedTotal(
       precioUnitario,
       dto.cantidad,
@@ -738,6 +765,7 @@ export class FacturaService {
           facturaId,
           productoId: dto.productoId,
           cantidad: dto.cantidad,
+          unidad,
           descuento,
           precioUnitario,
           precioTotal,

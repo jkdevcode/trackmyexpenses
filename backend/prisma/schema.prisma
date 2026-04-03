@@ -70,7 +70,7 @@ model FacturaProducto {
   id             Int       @id @default(autoincrement())
   facturaId      Int
   productoId     Int
-  cantidad       Int
+  cantidad       Decimal   @db.Decimal(10,3)
   unidad         String?
   descuento      Decimal?  @db.Decimal(5,2) // porcentaje, ej: 10.00
   precioUnitario Decimal?  @db.Decimal(10,2)

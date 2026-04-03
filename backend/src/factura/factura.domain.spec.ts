@@ -35,7 +35,7 @@ describe('factura.domain', () => {
     it('should validate valid factura items', () => {
       expect(() =>
         assertValidFacturaItems([
-          { productoId: 1, cantidad: 2, descuento: 10 },
+          { productoId: 1, cantidad: 1.5, unidad: 'kg', descuento: 10 },
           { productoId: 2, cantidad: 1 },
         ]),
       ).not.toThrow();
@@ -50,6 +50,14 @@ describe('factura.domain', () => {
     it('should throw on invalid cantidad', () => {
       expect(() =>
         assertValidFacturaItems([{ productoId: 1, cantidad: 0 }]),
+      ).toThrow(FacturaDomainValidationError);
+    });
+
+    it('should reject decimal cantidad when unidad is not kg', () => {
+      expect(() =>
+        assertValidFacturaItems([
+          { productoId: 1, cantidad: 1.5, unidad: 'u' },
+        ]),
       ).toThrow(FacturaDomainValidationError);
     });
 
@@ -113,17 +121,18 @@ describe('factura.domain', () => {
     it('should normalize valid OCR item', () => {
       const result = normalizeAndValidateOcrItem({
         nombreDetectado: '  leche entera ',
-        cantidadDetectada: '2',
+        cantidadDetectada: '1.5',
+        unidadDetectada: 'kg',
         descuentoDetectado: '5',
         precioUnitario: '4000',
       });
 
       expect(result).toEqual({
         nombreDetectado: 'LECHE ENTERA',
-        cantidad: 2,
+        cantidad: 1.5,
         descuento: 5,
         precioUnitario: 4000,
-        unidad: 'u',
+        unidad: 'kg',
       });
     });
 
@@ -152,7 +161,8 @@ describe('factura.domain', () => {
       expect(() =>
         normalizeAndValidateOcrItem({
           nombreDetectado: 'PAN',
-          cantidadDetectada: 0,
+          cantidadDetectada: 1.5,
+          unidadDetectada: 'u',
           precioUnitario: 1000,
         }),
       ).toThrow(FacturaDomainValidationError);

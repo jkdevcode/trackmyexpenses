@@ -87,7 +87,7 @@ describe('FacturaService', () => {
     const dto = {
       metodoPago: 'EFECTIVO',
       lugarCompra: 'TIENDA',
-      items: [{ productoId: 1, cantidad: 2, descuento: 0 }],
+      items: [{ productoId: 1, cantidad: 1.5, unidad: 'kg', descuento: 0 }],
     };
 
     const result = await service.create(5, dto as any);
@@ -98,7 +98,8 @@ describe('FacturaService', () => {
     expect(tx.createFacturaProducto).toHaveBeenCalledWith(
       expect.objectContaining({
         productoId: 1,
-        cantidad: 2,
+        cantidad: 1.5,
+        unidad: 'kg',
       }),
     );
     expect(result).toEqual({
@@ -343,7 +344,8 @@ describe('FacturaService', () => {
 
     const result = await service.addProducto(1, 50, {
       productoId: 1,
-      cantidad: 2,
+      cantidad: 1.5,
+      unidad: 'kg',
       descuento: 10,
     } as any);
 
@@ -354,13 +356,14 @@ describe('FacturaService', () => {
       expect.objectContaining({
         facturaId: 50,
         productoId: 1,
-        precioTotal: 18000,
+        unidad: 'kg',
+        precioTotal: 13500,
       }),
     );
     expect(tx.updateFacturaTotalAndGetDetails).toHaveBeenCalledWith(
       50,
-      18000,
-      18000,
+      13500,
+      13500,
     );
     expect(result).toEqual(
       expect.objectContaining({
@@ -432,10 +435,11 @@ describe('FacturaService', () => {
         {
           id: 1,
           productoId: 10,
-          cantidad: 2,
+          cantidad: 1.5,
+          unidad: 'kg',
           descuento: 10,
           precioUnitario: 1500,
-          precioTotal: 3000,
+          precioTotal: 2025,
         },
       ]),
       updateFacturaProductoSnapshot: jest.fn(),
@@ -449,24 +453,25 @@ describe('FacturaService', () => {
 
     const result = await service.update(5, 88, {
       metodoPago: 'EFECTIVO',
-      items: [{ productoId: 10, precioUnitario: 2000 }],
+      items: [{ productoId: 10, cantidad: 1.75, precioUnitario: 2000 }],
     } as any);
 
     expect(tx.findFacturaProductosByFacturaId).toHaveBeenCalledWith(88);
     expect(tx.updateFacturaProductoSnapshot).toHaveBeenCalledWith({
       facturaId: 88,
       productoId: 10,
-      cantidad: 2,
+      cantidad: 1.75,
+      unidad: 'kg',
       descuento: 10,
       precioUnitario: 2000,
-      precioTotal: 3600,
+      precioTotal: 3150,
     });
     expect(tx.updateFactura).toHaveBeenCalledWith(
       88,
       expect.objectContaining({
         metodoPago: 'EFECTIVO',
-        totalPagar: 3600,
-        totalPagarBase: 3600,
+        totalPagar: 3150,
+        totalPagarBase: 3150,
       }),
     );
     expect(result).toEqual({

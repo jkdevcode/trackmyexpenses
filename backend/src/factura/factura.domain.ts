@@ -11,6 +11,28 @@ export type FacturaItemInput = {
   precioUnitario?: number;
 };
 
+export const FACTURA_UNITS = ['u', 'kg', 'g'] as const;
+export type FacturaUnidad = (typeof FACTURA_UNITS)[number];
+
+export function normalizeFacturaUnidad(unit?: string | null): FacturaUnidad {
+  return FACTURA_UNITS.includes(unit as FacturaUnidad)
+    ? (unit as FacturaUnidad)
+    : 'u';
+}
+
+export function isValidFacturaCantidad(
+  cantidad: number,
+  unidad?: string | null,
+): boolean {
+  if (!Number.isFinite(cantidad) || cantidad <= 0) {
+    return false;
+  }
+
+  return normalizeFacturaUnidad(unidad) === 'kg'
+    ? true
+    : Number.isInteger(cantidad);
+}
+
 export type OcrProductoInput = {
   nombreDetectado?: string;
   cantidadDetectada?: string | number;
@@ -91,14 +113,18 @@ export function assertValidFacturaItems(items: FacturaItemInput[]): void {
       );
     }
 
-    if (!Number.isInteger(item.cantidad) || item.cantidad <= 0) {
+    if (!isValidFacturaCantidad(item.cantidad, item.unidad)) {
       throw new FacturaDomainValidationError(
         FACTURA_ERROR_CODES.ITEM_CANTIDAD_INVALID,
         [
           {
             field: `items[${index}].cantidad`,
             code: FACTURA_ERROR_CODES.ITEM_CANTIDAD_INVALID,
-            meta: { index, productoId: item.productoId },
+            meta: {
+              index,
+              productoId: item.productoId,
+              unidad: normalizeFacturaUnidad(item.unidad),
+            },
           },
         ],
       );
@@ -167,6 +193,7 @@ export function normalizeAndValidateOcrItem(
   const cantidad = Number(item.cantidadDetectada);
   const descuento = Number(item.descuentoDetectado || 0);
   const precioUnitario = Number(item.precioUnitario);
+  const unidad = normalizeFacturaUnidad(item.unidadDetectada);
 
   if (!nombreDetectado) {
     throw new FacturaDomainValidationError(
@@ -181,14 +208,14 @@ export function normalizeAndValidateOcrItem(
     );
   }
 
-  if (!Number.isFinite(cantidad) || cantidad <= 0) {
+  if (!isValidFacturaCantidad(cantidad, unidad)) {
     throw new FacturaDomainValidationError(
       FACTURA_ERROR_CODES.OCR_ITEM_CANTIDAD_INVALID,
       [
         {
           field: `items[${index}].cantidad`,
           code: FACTURA_ERROR_CODES.OCR_ITEM_CANTIDAD_INVALID,
-          meta: { index, productName: nombreDetectado },
+          meta: { index, productName: nombreDetectado, unidad },
         },
       ],
     );
@@ -212,7 +239,7 @@ export function normalizeAndValidateOcrItem(
     cantidad,
     descuento,
     precioUnitario,
-    unidad: item.unidadDetectada || 'u',
+    unidad,
   };
 }
 
