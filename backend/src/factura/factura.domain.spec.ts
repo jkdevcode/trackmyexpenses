@@ -5,6 +5,7 @@ import {
   calculateSpendingTrend,
   FacturaDomainValidationError,
   getPeriodWindow,
+  normalizeFacturaDate,
   normalizeAndValidateOcrItem,
   roundCurrency,
 } from './factura.domain';
@@ -175,35 +176,148 @@ describe('factura.domain', () => {
     });
   });
 
+  describe('normalizeFacturaDate', () => {
+    it('should normalize ISO datetime values to UTC day boundaries', () => {
+      expect(
+        normalizeFacturaDate('2026-03-06T18:45:00.000Z').toISOString(),
+      ).toBe('2026-03-06T00:00:00.000Z');
+    });
+
+    it('should preserve the calendar day for offset-aware inputs', () => {
+      expect(
+        normalizeFacturaDate('2026-03-06T00:00:00.000-05:00').toISOString(),
+      ).toBe('2026-03-06T00:00:00.000Z');
+    });
+  });
+
   describe('getPeriodWindow', () => {
     const now = new Date('2026-03-06T15:30:00.000Z');
 
-    it('should build day window', () => {
+    it('should build day window in UTC', () => {
       const result = getPeriodWindow('day', now);
 
-      expect(result.startDate.getHours()).toBe(0);
-      expect(result.startDate.getMinutes()).toBe(0);
-      expect(result.startDate.getDate()).toBe(6);
-      expect(result.prevStartDate.getDate()).toBe(5);
+      expect(result.startDate.toISOString()).toBe('2026-03-06T00:00:00.000Z');
+      expect(result.endDate.toISOString()).toBe('2026-03-06T23:59:59.999Z');
+      expect(result.prevStartDate.toISOString()).toBe(
+        '2026-03-05T00:00:00.000Z',
+      );
+      expect(result.prevEndDate.toISOString()).toBe('2026-03-05T23:59:59.999Z');
     });
 
-    it('should build month window by default', () => {
+    it('should build a full month window in UTC by default', () => {
       const result = getPeriodWindow('month', now);
 
-      expect(result.startDate.getDate()).toBe(1);
-      expect(result.prevEndDate.getDate()).toBe(28);
-      expect(result.prevEndDate.getHours()).toBe(23);
-      expect(result.prevEndDate.getMinutes()).toBe(59);
+      expect(result.startDate.toISOString()).toBe('2026-03-01T00:00:00.000Z');
+      expect(result.endDate.toISOString()).toBe('2026-03-31T23:59:59.999Z');
+      expect(result.prevStartDate.toISOString()).toBe(
+        '2026-02-01T00:00:00.000Z',
+      );
+      expect(result.prevEndDate.toISOString()).toBe('2026-02-28T23:59:59.999Z');
     });
 
-    it('should build year window', () => {
+    it('should build a full year window in UTC', () => {
       const result = getPeriodWindow('year', now);
 
-      expect(result.startDate.getMonth()).toBe(0);
-      expect(result.startDate.getDate()).toBe(1);
-      expect(result.prevStartDate.getFullYear()).toBe(2025);
-      expect(result.prevStartDate.getMonth()).toBe(0);
-      expect(result.prevStartDate.getDate()).toBe(1);
+      expect(result.startDate.toISOString()).toBe('2026-01-01T00:00:00.000Z');
+      expect(result.endDate.toISOString()).toBe('2026-12-31T23:59:59.999Z');
+      expect(result.prevStartDate.toISOString()).toBe(
+        '2025-01-01T00:00:00.000Z',
+      );
+      expect(result.prevEndDate.toISOString()).toBe('2025-12-31T23:59:59.999Z');
+    });
+
+    it('should build a full week window in UTC', () => {
+      const result = getPeriodWindow('week', now);
+
+      expect(result.startDate.toISOString()).toBe('2026-03-02T00:00:00.000Z');
+      expect(result.endDate.toISOString()).toBe('2026-03-08T23:59:59.999Z');
+      expect(result.prevStartDate.toISOString()).toBe(
+        '2026-02-23T00:00:00.000Z',
+      );
+      expect(result.prevEndDate.toISOString()).toBe('2026-03-01T23:59:59.999Z');
+    });
+
+    it('should build a custom UTC window and a previous range with matching length', () => {
+      const result = getPeriodWindow('custom', now, {
+        startDate: '2026-03-10',
+        endDate: '2026-03-12',
+      });
+
+      expect(result.startDate.toISOString()).toBe('2026-03-10T00:00:00.000Z');
+      expect(result.endDate.toISOString()).toBe('2026-03-12T23:59:59.999Z');
+      expect(result.prevStartDate.toISOString()).toBe(
+        '2026-03-07T00:00:00.000Z',
+      );
+      expect(result.prevEndDate.toISOString()).toBe('2026-03-09T23:59:59.999Z');
+    });
+
+    it('should reject missing custom range boundaries', () => {
+      expect(() => getPeriodWindow('custom', now)).toThrow(
+        FacturaDomainValidationError,
+      );
+
+      try {
+        getPeriodWindow('custom', now);
+        fail('Expected custom range required validation error');
+      } catch (error) {
+        expect(error).toMatchObject({
+          code: FACTURA_ERROR_CODES.DATE_RANGE_REQUIRED,
+          details: [
+            expect.objectContaining({
+              field: 'startDate',
+              code: FACTURA_ERROR_CODES.DATE_RANGE_REQUIRED,
+            }),
+            expect.objectContaining({
+              field: 'endDate',
+              code: FACTURA_ERROR_CODES.DATE_RANGE_REQUIRED,
+            }),
+          ],
+        });
+      }
+    });
+
+    it('should reject invalid custom range dates', () => {
+      try {
+        getPeriodWindow('custom', now, {
+          startDate: '2026-02-30',
+          endDate: '2026-03-01',
+        });
+        fail('Expected invalid custom range date error');
+      } catch (error) {
+        expect(error).toMatchObject({
+          code: FACTURA_ERROR_CODES.DATE_RANGE_INVALID,
+          details: [
+            expect.objectContaining({
+              field: 'startDate',
+              code: FACTURA_ERROR_CODES.DATE_RANGE_INVALID,
+            }),
+          ],
+        });
+      }
+    });
+
+    it('should reject reversed custom ranges', () => {
+      try {
+        getPeriodWindow('custom', now, {
+          startDate: '2026-03-12',
+          endDate: '2026-03-10',
+        });
+        fail('Expected invalid custom range order error');
+      } catch (error) {
+        expect(error).toMatchObject({
+          code: FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
+          details: [
+            expect.objectContaining({
+              field: 'startDate',
+              code: FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
+            }),
+            expect.objectContaining({
+              field: 'endDate',
+              code: FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
+            }),
+          ],
+        });
+      }
     });
   });
 

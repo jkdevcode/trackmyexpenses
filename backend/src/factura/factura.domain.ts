@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { PeriodFilter } from './factura.types';
+import { CustomPeriodRange, PeriodFilter } from './factura.types';
 import { AppError, type AppErrorDetail } from '../common/errors/app.error';
 import { FACTURA_ERROR_CODES } from './errors/factura-error-codes';
 
@@ -47,6 +47,9 @@ export type PeriodWindow = {
   prevStartDate: Date;
   prevEndDate: Date;
 };
+
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 export class FacturaDomainValidationError extends AppError {
   constructor(code: string, details?: AppErrorDetail[]) {
@@ -296,54 +299,237 @@ export function assertValidCurrencyCode(code: string): void {
   }
 }
 
+function buildUtcDate(
+  year: number,
+  month: number,
+  day: number,
+  hours = 0,
+  minutes = 0,
+  seconds = 0,
+  milliseconds = 0,
+): Date {
+  return new Date(
+    Date.UTC(year, month, day, hours, minutes, seconds, milliseconds),
+  );
+}
+
+function invalidDateRangeError(
+  field: 'startDate' | 'endDate',
+  value: string,
+): FacturaDomainValidationError {
+  return new FacturaDomainValidationError(
+    FACTURA_ERROR_CODES.DATE_RANGE_INVALID,
+    [
+      {
+        field,
+        code: FACTURA_ERROR_CODES.DATE_RANGE_INVALID,
+        meta: { value },
+      },
+    ],
+  );
+}
+
+function cloneDate(date: Date): Date {
+  return new Date(date.getTime());
+}
+
+function startOfUtcDay(date: Date): Date {
+  return buildUtcDate(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+  );
+}
+
+function endOfUtcDay(date: Date): Date {
+  return buildUtcDate(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    23,
+    59,
+    59,
+    999,
+  );
+}
+
+function addUtcDays(date: Date, amount: number): Date {
+  const next = cloneDate(date);
+
+  next.setUTCDate(next.getUTCDate() + amount);
+
+  return next;
+}
+
+function addUtcMonths(date: Date, amount: number): Date {
+  const next = cloneDate(date);
+
+  next.setUTCMonth(next.getUTCMonth() + amount);
+
+  return next;
+}
+
+function startOfUtcWeek(date: Date): Date {
+  const startDate = startOfUtcDay(date);
+  const weekday = startDate.getUTCDay();
+  const diff = weekday === 0 ? -6 : 1 - weekday;
+
+  return addUtcDays(startDate, diff);
+}
+
+function endOfUtcWeek(date: Date): Date {
+  return endOfUtcDay(addUtcDays(startOfUtcWeek(date), 6));
+}
+
+function startOfUtcMonth(date: Date): Date {
+  return buildUtcDate(date.getUTCFullYear(), date.getUTCMonth(), 1);
+}
+
+function endOfUtcMonth(date: Date): Date {
+  return buildUtcDate(
+    date.getUTCFullYear(),
+    date.getUTCMonth() + 1,
+    0,
+    23,
+    59,
+    59,
+    999,
+  );
+}
+
+function startOfUtcYear(date: Date): Date {
+  return buildUtcDate(date.getUTCFullYear(), 0, 1);
+}
+
+function endOfUtcYear(date: Date): Date {
+  return buildUtcDate(date.getUTCFullYear(), 11, 31, 23, 59, 59, 999);
+}
+
+function parseUtcDateOnly(value: string, field: 'startDate' | 'endDate'): Date {
+  if (!DATE_ONLY_PATTERN.test(value)) {
+    throw invalidDateRangeError(field, value);
+  }
+
+  const [year, month, day] = value.split('-').map(Number);
+  const parsedDate = buildUtcDate(year, month - 1, day);
+
+  if (
+    parsedDate.getUTCFullYear() !== year ||
+    parsedDate.getUTCMonth() !== month - 1 ||
+    parsedDate.getUTCDate() !== day
+  ) {
+    throw invalidDateRangeError(field, value);
+  }
+
+  return parsedDate;
+}
+
+function getCustomPeriodWindow(range?: CustomPeriodRange): PeriodWindow {
+  const startDateInput = range?.startDate?.trim();
+  const endDateInput = range?.endDate?.trim();
+
+  if (!startDateInput || !endDateInput) {
+    const missingFields: Array<'startDate' | 'endDate'> = [];
+    if (!startDateInput) missingFields.push('startDate');
+    if (!endDateInput) missingFields.push('endDate');
+
+    throw new FacturaDomainValidationError(
+      FACTURA_ERROR_CODES.DATE_RANGE_REQUIRED,
+      missingFields.map((field) => ({
+        field,
+        code: FACTURA_ERROR_CODES.DATE_RANGE_REQUIRED,
+      })),
+    );
+  }
+
+  const startDate = startOfUtcDay(
+    parseUtcDateOnly(startDateInput, 'startDate'),
+  );
+  const endDate = endOfUtcDay(parseUtcDateOnly(endDateInput, 'endDate'));
+
+  if (startDate.getTime() > endDate.getTime()) {
+    throw new FacturaDomainValidationError(
+      FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
+      [
+        {
+          field: 'startDate',
+          code: FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
+          meta: { startDate: startDateInput, endDate: endDateInput },
+        },
+        {
+          field: 'endDate',
+          code: FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
+          meta: { startDate: startDateInput, endDate: endDateInput },
+        },
+      ],
+    );
+  }
+
+  const totalDays =
+    Math.round(
+      (startOfUtcDay(endDate).getTime() - startDate.getTime()) / DAY_IN_MS,
+    ) + 1;
+  const prevEndDate = endOfUtcDay(addUtcDays(startDate, -1));
+  const prevStartDate = startOfUtcDay(addUtcDays(startDate, -totalDays));
+
+  return { startDate, endDate, prevStartDate, prevEndDate };
+}
+
+export function normalizeFacturaDate(value: string | Date): Date {
+  const parsedDate = value instanceof Date ? cloneDate(value) : new Date(value);
+
+  return startOfUtcDay(parsedDate);
+}
+
 export function getPeriodWindow(
   period: PeriodFilter,
   now = new Date(),
+  range?: CustomPeriodRange,
 ): PeriodWindow {
-  const startDate = new Date(now);
-  const endDate = new Date(now);
-  const prevStartDate = new Date(now);
-  const prevEndDate = new Date(now);
+  if (period === 'custom') {
+    return getCustomPeriodWindow(range);
+  }
 
-  startDate.setHours(0, 0, 0, 0);
-  endDate.setHours(23, 59, 59, 999);
+  const currentDate = cloneDate(now);
+
+  let startDate = startOfUtcDay(currentDate);
+  let endDate = endOfUtcDay(currentDate);
+  let prevStartDate = startOfUtcDay(addUtcDays(currentDate, -1));
+  let prevEndDate = endOfUtcDay(addUtcDays(currentDate, -1));
 
   switch (period) {
     case 'day':
-      prevStartDate.setDate(now.getDate() - 1);
-      prevStartDate.setHours(0, 0, 0, 0);
-      prevEndDate.setDate(now.getDate() - 1);
-      prevEndDate.setHours(23, 59, 59, 999);
       break;
     case 'week': {
-      const day = now.getDay();
-      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      startDate.setDate(diff);
-
-      prevStartDate.setTime(startDate.getTime());
-      prevStartDate.setDate(startDate.getDate() - 7);
-      prevEndDate.setTime(prevStartDate.getTime());
-      prevEndDate.setDate(prevStartDate.getDate() + 6);
-      prevEndDate.setHours(23, 59, 59, 999);
+      startDate = startOfUtcWeek(currentDate);
+      endDate = endOfUtcWeek(currentDate);
+      prevStartDate = addUtcDays(startDate, -7);
+      prevEndDate = addUtcDays(endDate, -7);
       break;
     }
-    case 'year':
-      startDate.setMonth(0, 1);
+    case 'year': {
+      const previousYearDate = buildUtcDate(
+        currentDate.getUTCFullYear() - 1,
+        0,
+        1,
+      );
 
-      prevStartDate.setFullYear(now.getFullYear() - 1, 0, 1);
-      prevStartDate.setHours(0, 0, 0, 0);
-      prevEndDate.setFullYear(now.getFullYear() - 1, 11, 31);
-      prevEndDate.setHours(23, 59, 59, 999);
+      startDate = startOfUtcYear(currentDate);
+      endDate = endOfUtcYear(currentDate);
+      prevStartDate = startOfUtcYear(previousYearDate);
+      prevEndDate = endOfUtcYear(previousYearDate);
       break;
+    }
     case 'month':
-    default:
-      startDate.setDate(1);
+    default: {
+      const previousMonthDate = addUtcMonths(startOfUtcMonth(currentDate), -1);
 
-      prevStartDate.setMonth(now.getMonth() - 1, 1);
-      prevStartDate.setHours(0, 0, 0, 0);
-      prevEndDate.setDate(0);
-      prevEndDate.setHours(23, 59, 59, 999);
+      startDate = startOfUtcMonth(currentDate);
+      endDate = endOfUtcMonth(currentDate);
+      prevStartDate = startOfUtcMonth(previousMonthDate);
+      prevEndDate = endOfUtcMonth(previousMonthDate);
       break;
+    }
   }
 
   return { startDate, endDate, prevStartDate, prevEndDate };

@@ -140,6 +140,9 @@ describe('FacturaController (e2e)', () => {
         expect(res.body.pagination.total).toBe(1);
       });
 
-    expect(facturaService.findAll).toHaveBeenCalledWith(42, 'month', 1, 20);
+    expect(facturaService.findAll).toHaveBeenCalledWith(42, 'month', 1, 20, {
+      startDate: undefined,
+      endDate: undefined,
+    });
   });
 });

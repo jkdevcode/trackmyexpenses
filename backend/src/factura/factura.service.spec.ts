@@ -318,6 +318,32 @@ describe('FacturaService', () => {
     expect(result.pagination).toEqual({ page: 2, limit: 5, total: 1 });
   });
 
+  it('should apply custom ranges when listing facturas', async () => {
+    repo.findFacturasByUserAndRange.mockResolvedValue([
+      { id: 9, usuarioId: 12 },
+    ]);
+    repo.countFacturasByUserAndRange.mockResolvedValue(1);
+    repo.countFacturasByUser.mockResolvedValue(5);
+    repo.sumTotalPagarByUserAndRange
+      .mockResolvedValueOnce(18000)
+      .mockResolvedValueOnce(9000);
+
+    await service.findAll(12, 'custom', 1, 20, {
+      startDate: '2026-03-10',
+      endDate: '2026-03-12',
+    });
+
+    expect(repo.findFacturasByUserAndRange).toHaveBeenCalledWith(
+      12,
+      {
+        startDate: new Date('2026-03-10T00:00:00.000Z'),
+        endDate: new Date('2026-03-12T23:59:59.999Z'),
+      },
+      1,
+      20,
+    );
+  });
+
   it('should add producto to factura', async () => {
     repo.findFacturaCurrencyByUser.mockResolvedValue({
       id: 50,
@@ -534,6 +560,29 @@ describe('FacturaService', () => {
     expect(cache.set).toHaveBeenCalledWith(
       'factura:stats:3:week',
       result.stats,
+      600000,
+    );
+  });
+
+  it('should include the custom range in the stats cache key', async () => {
+    cache.get.mockResolvedValue(null);
+    repo.countFacturasByUserAndRange.mockResolvedValue(1);
+    repo.sumTotalPagarByUserAndRange
+      .mockResolvedValueOnce(5000)
+      .mockResolvedValueOnce(2500);
+    repo.countFacturasByUser.mockResolvedValue(6);
+
+    await service.getStats(3, 'custom', {
+      startDate: '2026-03-10',
+      endDate: '2026-03-12',
+    });
+
+    expect(cache.get).toHaveBeenCalledWith(
+      'factura:stats:3:custom:2026-03-10:2026-03-12',
+    );
+    expect(cache.set).toHaveBeenCalledWith(
+      'factura:stats:3:custom:2026-03-10:2026-03-12',
+      expect.any(Object),
       600000,
     );
   });

@@ -190,6 +190,10 @@ export class FacturaController {
       query.period,
       query.page,
       query.limit,
+      {
+        startDate: query.startDate,
+        endDate: query.endDate,
+      },
     );
   }
 
@@ -199,7 +203,10 @@ export class FacturaController {
     @Request() req: RequestWithUser,
     @Query() query: GetFacturasQueryDto,
   ) {
-    return this.facturaService.getStats(req.user.id, query.period);
+    return this.facturaService.getStats(req.user.id, query.period, {
+      startDate: query.startDate,
+      endDate: query.endDate,
+    });
   }
 
   @Get(':id')

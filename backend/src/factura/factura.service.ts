@@ -12,7 +12,7 @@ import { CreateOcrFacturaDto } from './dto/create-ocr-factura.dto';
 import { UpdateFacturaDto } from './dto/update-factura.dto';
 import { Logger } from 'nestjs-pino';
 import { AppError } from '../common/errors/app.error';
-import { PeriodFilter } from './factura.types';
+import { CustomPeriodRange, PeriodFilter } from './factura.types';
 import { RequestContext } from '../common/context/request-context';
 import {
   assertValidFacturaItems,
@@ -23,6 +23,7 @@ import {
   calculateSpendingTrend,
   FacturaDomainValidationError,
   getPeriodWindow,
+  normalizeFacturaDate,
   normalizeFacturaUnidad,
   normalizeCurrencyCode,
   normalizeAndValidateOcrItem,
@@ -55,6 +56,21 @@ type CurrencyInfo = {
   tasaCambioFuente: string | null;
   tasaCambioFecha: Date | null;
 };
+
+function buildStatsCacheKey(
+  userId: number,
+  period: PeriodFilter,
+  range?: CustomPeriodRange,
+): string {
+  if (period !== 'custom') {
+    return `factura:stats:${userId}:${period}`;
+  }
+
+  const startDate = range?.startDate?.trim() || 'missing-start';
+  const endDate = range?.endDate?.trim() || 'missing-end';
+
+  return `factura:stats:${userId}:${period}:${startDate}:${endDate}`;
+}
 
 type CreateFacturaItemInput = {
   productoId: number;
@@ -126,7 +142,7 @@ export class FacturaService {
             lugarCompra: dto.lugarCompra || 'Comercio Desconocido',
             nitProveedor: dto.nitProveedor,
             fechaHoraCompra: dto.fechaHoraCompra
-              ? new Date(dto.fechaHoraCompra)
+              ? normalizeFacturaDate(dto.fechaHoraCompra)
               : undefined,
             items: dto.items,
             moneda: dto.moneda,
@@ -339,10 +355,11 @@ export class FacturaService {
     period: PeriodFilter = 'month',
     page = 1,
     limit = 20,
+    range?: CustomPeriodRange,
   ) {
     try {
       const { startDate, endDate, prevStartDate, prevEndDate } =
-        getPeriodWindow(period);
+        getPeriodWindow(period, new Date(), range);
 
       const [facturas, total, stats] = await Promise.all([
         this.repo.findFacturasByUserAndRange(
@@ -374,6 +391,10 @@ export class FacturaService {
         stats,
       };
     } catch (error: unknown) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
       this.logger.error({
         msg: 'Error al obtener facturas',
         requestId: RequestContext.getRequestId(),
@@ -459,7 +480,9 @@ export class FacturaService {
           updateData.nitProveedor = dto.nitProveedor || null;
         }
         if (dto.fechaHoraCompra !== undefined) {
-          updateData.fechaHoraCompra = new Date(dto.fechaHoraCompra);
+          updateData.fechaHoraCompra = normalizeFacturaDate(
+            dto.fechaHoraCompra,
+          );
         }
 
         const existingItems =
@@ -637,8 +660,12 @@ export class FacturaService {
     }
   }
 
-  async getStats(userId: number, period: PeriodFilter = 'month') {
-    const cacheKey = `factura:stats:${userId}:${period}`;
+  async getStats(
+    userId: number,
+    period: PeriodFilter = 'month',
+    range?: CustomPeriodRange,
+  ) {
+    const cacheKey = buildStatsCacheKey(userId, period, range);
     const cached = await this.cacheManager.get<FacturaStats>(cacheKey);
     if (cached) {
       return {
@@ -648,8 +675,11 @@ export class FacturaService {
       };
     }
 
-    const { startDate, endDate, prevStartDate, prevEndDate } =
-      getPeriodWindow(period);
+    const { startDate, endDate, prevStartDate, prevEndDate } = getPeriodWindow(
+      period,
+      new Date(),
+      range,
+    );
 
     const stats = await this.calculateStats(
       userId,
@@ -867,7 +897,8 @@ export class FacturaService {
       metodoPago: input.metodoPago,
       lugarCompra: input.lugarCompra,
       nitProveedor: input.nitProveedor,
-      fechaHoraCompra: input.fechaHoraCompra ?? new Date(),
+      fechaHoraCompra:
+        input.fechaHoraCompra ?? normalizeFacturaDate(new Date()),
       totalPagar,
       moneda: currencyInfo.moneda,
       monedaBase: currencyInfo.monedaBase,
@@ -956,7 +987,7 @@ export class FacturaService {
       metodoPago: dto.factura.metodoPago,
       lugarCompra: dto.factura.lugarCompra,
       nitProveedor: dto.factura.nitProveedor,
-      fechaHoraCompra: new Date(dto.factura.fechaHoraCompra),
+      fechaHoraCompra: normalizeFacturaDate(dto.factura.fechaHoraCompra),
       items,
       moneda: dto.factura.moneda,
       tasaCambio: dto.factura.tasaCambio,
