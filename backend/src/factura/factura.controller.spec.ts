@@ -174,7 +174,10 @@ describe('FacturaController', () => {
 
     const result = await controller.findAll(req, query as any);
 
-    expect(facturaService.findAll).toHaveBeenCalledWith(20, 'month', 1, 20);
+    expect(facturaService.findAll).toHaveBeenCalledWith(20, 'month', 1, 20, {
+      startDate: undefined,
+      endDate: undefined,
+    });
     expect(result).toEqual({ status: 200, facturas: [] });
   });
 
