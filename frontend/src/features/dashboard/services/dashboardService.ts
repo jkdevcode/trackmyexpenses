@@ -1,9 +1,8 @@
-import type {
-  DashboardStats,
-  DateFilterType,
-  ExpenseData,
-  Invoice,
-} from "../types";
+import type { DashboardStats, ExpenseData, Invoice } from "../types";
+import type { InvoiceFilter } from "../../invoices/types";
+
+import { getInvoiceMonthIndex } from "../../invoices/utils/formatters";
+import { buildInvoiceFilterSearchParams } from "../../invoices/utils/invoice-filters";
 
 import axiosClient from "@/lib/axiosClient";
 
@@ -37,11 +36,20 @@ interface DashboardViewModel {
   recentInvoices: Invoice[];
 }
 
+const getChartAnchorDate = (filter: InvoiceFilter): Date => {
+  if (filter.period !== "custom" || !filter.endDate) {
+    return new Date();
+  }
+
+  return new Date(`${filter.endDate}T00:00:00.000Z`);
+};
+
 export const getDashboardData = async (
-  filter: DateFilterType,
+  filter: InvoiceFilter,
 ): Promise<DashboardViewModel> => {
+  const query = buildInvoiceFilterSearchParams(filter).toString();
   const [facturasRes, productosRes] = await Promise.all([
-    axiosClient.get<DashboardFacturasResponse>(`/facturas?period=${filter}`),
+    axiosClient.get<DashboardFacturasResponse>(`/facturas?${query}`),
     axiosClient.get<DashboardProductosResponse>("/productos"),
   ]);
 
@@ -56,7 +64,6 @@ export const getDashboardData = async (
     total: Number(f.totalPagar),
     itemCount: 0,
     status: "processed",
-    rawDate: new Date(String(f.fechaHoraCompra)),
     moneda: f.moneda ? String(f.moneda) : null,
     monedaBase: f.monedaBase ? String(f.monedaBase) : null,
     totalPagarBase:
@@ -65,9 +72,7 @@ export const getDashboardData = async (
         : null,
   }));
 
-  invoices.sort(
-    (a, b) => (b.rawDate?.getTime() || 0) - (a.rawDate?.getTime() || 0),
-  );
+  invoices.sort((a, b) => b.date.localeCompare(a.date));
 
   const stats: DashboardStats = {
     totalInvoices: apiStats.totalInvoices || 0,
@@ -93,19 +98,20 @@ export const getDashboardData = async (
   ];
   const chartMap = new Map<number, number>();
   const countMap = new Map<number, number>();
+  const chartAnchorDate = getChartAnchorDate(filter);
 
   for (let i = 5; i >= 0; i--) {
-    const d = new Date();
+    const d = new Date(chartAnchorDate.getTime());
 
-    d.setMonth(d.getMonth() - i);
-    chartMap.set(d.getMonth(), 0);
-    countMap.set(d.getMonth(), 0);
+    d.setUTCMonth(d.getUTCMonth() - i);
+    chartMap.set(d.getUTCMonth(), 0);
+    countMap.set(d.getUTCMonth(), 0);
   }
 
   invoices.forEach((inv) => {
-    if (!inv.rawDate) return;
+    const month = getInvoiceMonthIndex(inv.date);
 
-    const month = inv.rawDate.getMonth();
+    if (month === null) return;
 
     if (!chartMap.has(month)) return;
 

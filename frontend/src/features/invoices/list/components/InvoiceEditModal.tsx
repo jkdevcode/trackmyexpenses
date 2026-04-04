@@ -18,7 +18,11 @@ import { InvoiceSearchInput } from "../../components/InvoiceSearchInput";
 import { PaginatedItems } from "../../components/PaginatedItems";
 import { PAYMENT_METHOD_OPTIONS } from "../../constants/payment-methods";
 import { useInvoiceFilter } from "../../hooks/useInvoiceFilter";
-import { formatCurrency } from "../../utils/formatters";
+import {
+  formatCurrency,
+  formatInvoiceQuantity,
+  formatPercent,
+} from "../../utils/formatters";
 import {
   getInvoiceQuantityMin,
   getInvoiceQuantityStep,
@@ -219,9 +223,14 @@ export const InvoiceEditModal = ({
                               {item.nombre}
                             </p>
                             <p className="text-xs text-default-500">
-                              {t("detail.table.cantidad")}: {item.cantidad}{" "}
+                              {t("detail.table.cantidad")}:{" "}
+                              {formatInvoiceQuantity(
+                                item.cantidad,
+                                item.unidad,
+                                i18n.language,
+                              )}{" "}
                               {item.unidad} {t("detail.table.descuento")}:{" "}
-                              {item.descuento}%
+                              {formatPercent(item.descuento, i18n.language)}
                             </p>
                           </div>
                           <p className="text-sm font-semibold">

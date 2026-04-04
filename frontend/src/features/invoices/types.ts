@@ -128,7 +128,18 @@ export type PaymentMethod =
   | "TRANSFERENCIA"
   | "OTRO";
 
-export type InvoicePeriod = "day" | "week" | "month" | "year";
+export type InvoicePeriod = "day" | "week" | "month" | "year" | "custom";
+
+export type DateRange = {
+  startDate: string;
+  endDate: string;
+};
+
+export interface InvoiceFilter {
+  period: InvoicePeriod;
+  startDate?: string;
+  endDate?: string;
+}
 
 export interface InvoiceSummaryItem {
   id: number;

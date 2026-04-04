@@ -20,7 +20,11 @@ import {
   DEFAULT_INVOICE_UNIT,
   isValidInvoiceQuantity,
 } from "../../utils/invoice-quantity";
-import { formatCurrency } from "../../utils/formatters";
+import {
+  formatCurrency,
+  getTodayDateInputValue,
+  toInvoiceUtcIsoString,
+} from "../../utils/formatters";
 
 import { scrollToFirstError } from "@/utils/scrollToFirstError";
 import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
@@ -29,7 +33,7 @@ import { useSession } from "@/contexts/session-context";
 const CREATE_PRODUCT_KEY = "__create__";
 
 const initialState: ManualInvoiceFormState = {
-  fecha: new Date().toISOString().split("T")[0],
+  fecha: getTodayDateInputValue(),
   metodoPago: "EFECTIVO",
   lugarCompra: "",
   nitProveedor: "",
@@ -316,7 +320,7 @@ export const useManualInvoiceForm = () => {
 
     const payload: CreateFacturaDto = {
       fechaHoraCompra: form.fecha
-        ? new Date(form.fecha).toISOString()
+        ? toInvoiceUtcIsoString(form.fecha)
         : undefined,
       metodoPago: form.metodoPago,
       lugarCompra: form.lugarCompra.trim(),

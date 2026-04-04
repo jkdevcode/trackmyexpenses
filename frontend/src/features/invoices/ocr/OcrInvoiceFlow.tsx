@@ -23,7 +23,7 @@ import { useTranslation } from "react-i18next";
 
 import { OcrSourceBadge } from "../components/OcrSourceBadge";
 import { calculateInvoiceBaseTotal } from "../utils/currency";
-import { formatCurrency } from "../utils/formatters";
+import { formatCurrency, toInvoiceUtcIsoString } from "../utils/formatters";
 
 import { InvoiceForm, type InvoiceFormValues } from "./components/InvoiceForm";
 import { InvoiceUpload } from "./components/InvoiceUpload";
@@ -121,9 +121,9 @@ export const OcrInvoiceFlow = () => {
 
       const payload: CreateInvoiceWithFileDto = {
         factura: {
-          fechaHoraCompra: new Date(
+          fechaHoraCompra: toInvoiceUtcIsoString(
             pendingData.formData.fechaHoraCompra,
-          ).toISOString(),
+          ),
           metodoPago: pendingData.formData
             .metodoPago as CreateInvoiceWithFileDto["factura"]["metodoPago"],
           lugarCompra: pendingData.formData.lugarCompra.trim(),

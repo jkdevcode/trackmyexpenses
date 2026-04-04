@@ -16,6 +16,10 @@ import {
   normalizeInvoiceUnit,
 } from "../../utils/invoice-quantity";
 import { resolveInvoiceCurrency } from "../../utils/currency";
+import {
+  toInvoiceDateInputValue,
+  toInvoiceUtcIsoString,
+} from "../../utils/formatters";
 
 import { scrollToFirstError } from "@/utils/scrollToFirstError";
 
@@ -36,9 +40,6 @@ export type InvoiceEditItemState = {
   precioTotal: number;
 };
 
-const toDateInputValue = (value: string) =>
-  value ? new Date(value).toISOString().split("T")[0] : "";
-
 const initialFormState: InvoiceEditFormState = {
   metodoPago: "EFECTIVO",
   lugarCompra: "",
@@ -50,7 +51,7 @@ const mapDetailToForm = (detail: InvoiceDetail): InvoiceEditFormState => ({
   metodoPago: detail.metodoPago,
   lugarCompra: detail.lugarCompra ?? "",
   nitProveedor: detail.nitProveedor ?? "",
-  fechaHoraCompra: toDateInputValue(detail.fechaHoraCompra),
+  fechaHoraCompra: toInvoiceDateInputValue(detail.fechaHoraCompra),
 });
 
 const mapDetailToEditItems = (detail: InvoiceDetail): InvoiceEditItemState[] =>
@@ -267,7 +268,7 @@ export const useInvoiceEditForm = ({
           lugarCompra: form.lugarCompra.trim(),
           nitProveedor: form.nitProveedor.trim() || undefined,
           fechaHoraCompra: form.fechaHoraCompra
-            ? new Date(form.fechaHoraCompra).toISOString()
+            ? toInvoiceUtcIsoString(form.fechaHoraCompra)
             : undefined,
           ...(parsedItems.length > 0 ? { items: parsedItems } : {}),
         },

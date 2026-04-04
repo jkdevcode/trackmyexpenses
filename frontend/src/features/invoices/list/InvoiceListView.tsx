@@ -1,5 +1,3 @@
-import type { InvoicePeriod } from "../types";
-
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
@@ -7,6 +5,7 @@ import { Card, CardBody } from "@heroui/card";
 import { Spinner } from "@heroui/spinner";
 import { addToast } from "@heroui/toast";
 
+import { useInvoiceFilters } from "../hooks/useInvoiceFilters";
 import { useInvoicesQuery } from "../hooks/useInvoicesQuery";
 import { useDeleteInvoiceMutation } from "../hooks/useInvoiceMutations";
 import { useInvoiceFilter } from "../hooks/useInvoiceFilter";
@@ -25,7 +24,8 @@ export const InvoiceListView = () => {
   const queryClient = useQueryClient();
   const { appColor } = useColorTheme();
 
-  const [period, setPeriod] = useState<InvoicePeriod>("month");
+  const { filter, dateRangeValue, setDateRangeValue, setPeriod } =
+    useInvoiceFilters({ period: "month" });
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(
     null,
   );
@@ -39,7 +39,7 @@ export const InvoiceListView = () => {
     "skeleton-5",
   ];
 
-  const invoicesQuery = useInvoicesQuery(period);
+  const invoicesQuery = useInvoicesQuery(filter);
   const deleteMutation = useDeleteInvoiceMutation();
 
   const {
@@ -123,8 +123,13 @@ export const InvoiceListView = () => {
             />
           </div>
 
-          <div className="flex items-center gap-3 md:ml-auto">
-            <InvoiceFilters period={period} onPeriodChange={setPeriod} />
+          <div className="flex items-start gap-3 md:ml-auto">
+            <InvoiceFilters
+              dateRangeValue={dateRangeValue}
+              filter={filter}
+              onDateRangeChange={setDateRangeValue}
+              onPeriodChange={setPeriod}
+            />
             {invoicesQuery.isFetching && <Spinner color={appColor} size="sm" />}
           </div>
         </div>

@@ -4,6 +4,12 @@ import { Card, CardBody } from "@heroui/card";
 import { useTranslation } from "react-i18next";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 
+import {
+  formatCurrency,
+  formatNumber,
+  formatPercent,
+} from "../../invoices/utils/formatters";
+
 import { useAppColorVariants } from "@/theme/app-color-variants";
 
 interface StatsCardsProps {
@@ -30,41 +36,49 @@ export const StatsCards = ({ stats, loading }: StatsCardsProps) => {
   const { t } = useTranslation("dashboard");
   const appColorVariants = useAppColorVariants();
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
   const cards = [
     {
       key: "total_invoices",
-      value: stats?.totalInvoices,
+      value: stats
+        ? formatNumber(stats.totalInvoices, "es-CO", {
+            maximumFractionDigits: 0,
+          })
+        : "...",
       label: t("stats.total_invoices"),
       icon: "📄", // Replace with actual icon component if desired
     },
     {
       key: "total_products",
-      value: stats?.totalProducts,
+      value: stats
+        ? formatNumber(stats.totalProducts, "es-CO", {
+            maximumFractionDigits: 0,
+          })
+        : "...",
       label: t("stats.total_products"),
       icon: "📦",
     },
     {
       key: "total_spent",
-      value: stats ? formatCurrency(stats.totalSpent) : "...",
+      value: stats ? formatCurrency(stats.totalSpent, "es-CO", "COP") : "...",
       label: t("stats.total_spent"),
       icon: "💰",
       highlight: true,
     },
     {
       key: "current_period",
-      value: stats?.currentPeriodInvoices,
+      value: stats
+        ? formatNumber(stats.currentPeriodInvoices, "es-CO", {
+            maximumFractionDigits: 0,
+          })
+        : "...",
       label: t("stats.current_period"),
-      subLabel: stats?.spendingTrend
-        ? `+${stats.spendingTrend}% ${t("stats.vs_last_period")}`
-        : "",
+      subLabel:
+        stats && stats.spendingTrend !== 0
+          ? `${stats.spendingTrend > 0 ? "+" : ""}${formatPercent(
+              stats.spendingTrend,
+              "es-CO",
+            )} ${t("stats.vs_last_period")}`
+          : "",
       icon: "📅",
       trend: true,
     },
