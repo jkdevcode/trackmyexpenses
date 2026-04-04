@@ -13,8 +13,16 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 const Dashboard = () => {
   const { t } = useTranslation("dashboard");
   const { t: tMeta } = useTranslation("meta");
-  const { filter, setFilter, stats, chartData, recentInvoices, loading } =
-    useDashboardData();
+  const {
+    dateRangeValue,
+    filter,
+    setDateRangeValue,
+    setPeriod,
+    stats,
+    chartData,
+    recentInvoices,
+    loading,
+  } = useDashboardData();
 
   usePageMeta({
     title: tMeta("dashboard.title"),
@@ -29,7 +37,12 @@ const Dashboard = () => {
           <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-default-500">{t("subtitle")}</p>
         </div>
-        <DateFilter filter={filter} onChange={setFilter} />
+        <DateFilter
+          dateRangeValue={dateRangeValue}
+          filter={filter}
+          onDateRangeChange={setDateRangeValue}
+          onPeriodChange={setPeriod}
+        />
       </div>
 
       {/* Stats Section */}

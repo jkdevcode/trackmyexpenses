@@ -30,7 +30,13 @@ import {
   getInvoiceBaseTotal,
   getInvoiceCurrencies,
 } from "../../utils/currency";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import {
+  formatCurrency,
+  formatDate,
+  formatInvoiceQuantity,
+  formatNumber,
+  formatPercent,
+} from "../../utils/formatters";
 import { getInvoiceItemUnitPrice } from "../../utils/invoice-item";
 
 import { useAppColorVariants } from "@/theme/app-color-variants";
@@ -150,7 +156,9 @@ export const InvoiceDetailModal = ({
                     <span className="font-semibold">
                       {t("detail.tasaCambio")}:
                     </span>{" "}
-                    {detail.tasaCambio}
+                    {formatNumber(detail.tasaCambio, i18n.language, {
+                      maximumFractionDigits: 6,
+                    })}
                   </p>
                 ) : null}
               </div>
@@ -198,7 +206,12 @@ export const InvoiceDetailModal = ({
                     <TableRow key={String(key)}>
                       <TableCell>{productName}</TableCell>
                       <TableCell>
-                        {item.cantidad} {item.unidad ?? "u"}
+                        {formatInvoiceQuantity(
+                          item.cantidad,
+                          item.unidad,
+                          i18n.language,
+                        )}{" "}
+                        {item.unidad ?? "u"}
                       </TableCell>
                       <TableCell>
                         {formatCurrency(
@@ -207,7 +220,9 @@ export const InvoiceDetailModal = ({
                           currency,
                         )}
                       </TableCell>
-                      <TableCell>{item.descuento ?? 0}%</TableCell>
+                      <TableCell>
+                        {formatPercent(item.descuento ?? 0, i18n.language)}
+                      </TableCell>
                       <TableCell>
                         {formatCurrency(
                           item.precioTotal,

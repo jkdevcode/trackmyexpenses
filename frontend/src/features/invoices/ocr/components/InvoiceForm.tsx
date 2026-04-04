@@ -20,7 +20,11 @@ import { useTranslation } from "react-i18next";
 
 import { PAYMENT_METHOD_OPTIONS } from "../../constants/payment-methods";
 import { useInvoiceExchangeRate } from "../../hooks/useInvoiceExchangeRate";
-import { formatCurrency } from "../../utils/formatters";
+import {
+  formatCurrency,
+  formatInvoiceQuantity,
+  toInvoiceDateInputValue,
+} from "../../utils/formatters";
 import { isValidInvoiceQuantity } from "../../utils/invoice-quantity";
 import { InvoiceSummary } from "../../components/InvoiceSummary";
 import { InvoiceItemsModal } from "../../components/InvoiceItemsModal";
@@ -57,16 +61,14 @@ export interface InvoiceFormValues {
 }
 
 const safeParseDate = (dateString?: string | null): DateValue => {
-  if (!dateString) return today(getLocalTimeZone());
-  try {
-    const isoStr = dateString.split("T")[0];
+  const normalizedDate = toInvoiceDateInputValue(dateString);
 
-    // parseDate expects strictly YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}$/.test(isoStr)) {
-      return parseDate(isoStr);
+  if (normalizedDate) {
+    try {
+      return parseDate(normalizedDate);
+    } catch {
+      // Ignore parse errors from DateValue
     }
-  } catch {
-    // Ignore parse errors from DateValue
   }
 
   return today(getLocalTimeZone());
@@ -437,7 +439,12 @@ export const InvoiceForm = ({
                   >
                     <div className="flex justify-between gap-3">
                       <span>
-                        {p.cantidad} {p.unidad} x {p.nombreDetected}
+                        {formatInvoiceQuantity(
+                          p.cantidad,
+                          p.unidad,
+                          i18n.language,
+                        )}{" "}
+                        {p.unidad ?? "u"} x {p.nombreDetected}
                       </span>
                       <span>
                         {formatCurrency(

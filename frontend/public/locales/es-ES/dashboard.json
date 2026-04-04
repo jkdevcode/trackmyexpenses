@@ -12,7 +12,9 @@
     "day": "Día",
     "week": "Semana",
     "month": "Mes",
-    "year": "Año"
+    "year": "Año",
+    "custom": "Personalizado",
+    "custom_range": "Rango personalizado"
   },
   "charts": {
     "revenue_title": "Gastos por Mes",

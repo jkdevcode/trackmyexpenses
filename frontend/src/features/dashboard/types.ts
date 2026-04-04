@@ -1,5 +1,3 @@
-export type DateFilterType = "day" | "week" | "month" | "year";
-
 export interface DashboardStats {
   totalInvoices: number;
   totalProducts: number;
@@ -21,7 +19,6 @@ export interface Invoice {
   total: number;
   itemCount: number;
   status: "processed" | "pending" | "error";
-  rawDate?: Date;
   moneda?: string | null;
   monedaBase?: string | null;
   totalPagarBase?: number | null;

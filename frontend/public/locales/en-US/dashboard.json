@@ -12,7 +12,9 @@
     "day": "Day",
     "week": "Week",
     "month": "Month",
-    "year": "Year"
+    "year": "Year",
+    "custom": "Custom",
+    "custom_range": "Custom Range"
   },
   "charts": {
     "revenue_title": "Expenses by Month",

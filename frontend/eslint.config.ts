@@ -24,6 +24,7 @@ export default [
         formatCurrency: "readonly",
         console: "readonly",
         HTMLElement: "readonly",
+        URLSearchParams: "readonly",
         Element: "readonly",
         HTMLDivElement: "readonly",
         HTMLInputElement: "readonly",

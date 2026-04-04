@@ -3,7 +3,7 @@ import type {
   CreateFacturaDto,
   CreateInvoiceWithFileDto,
   InvoiceDetail,
-  InvoicePeriod,
+  InvoiceFilter,
   InvoiceSummaryItem,
   ProductCatalogItem,
   ScanResponse,
@@ -22,6 +22,7 @@ import {
   mapInvoicesResponse,
   mapProductsResponse,
 } from "../utils/invoice-api";
+import { buildInvoiceFilterSearchParams } from "../utils/invoice-filters";
 
 import axiosClient from "@/lib/axiosClient";
 
@@ -160,10 +161,11 @@ export const createProductRequest = async (payload: {
 };
 
 export const getInvoicesRequest = async (
-  period: InvoicePeriod,
+  filter: InvoiceFilter,
 ): Promise<InvoiceSummaryItem[]> => {
+  const query = buildInvoiceFilterSearchParams(filter).toString();
   const response = await axiosClient.get<InvoicesApiResponse>(
-    `/facturas?period=${period}`,
+    `/facturas?${query}`,
   );
 
   return mapInvoicesResponse(response.data);
