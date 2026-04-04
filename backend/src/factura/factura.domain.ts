@@ -442,7 +442,9 @@ function getCustomPeriodWindow(range?: CustomPeriodRange): PeriodWindow {
     );
   }
 
-  const startDate = startOfUtcDay(parseUtcDateOnly(startDateInput, 'startDate'));
+  const startDate = startOfUtcDay(
+    parseUtcDateOnly(startDateInput, 'startDate'),
+  );
   const endDate = endOfUtcDay(parseUtcDateOnly(endDateInput, 'endDate'));
 
   if (startDate.getTime() > endDate.getTime()) {
@@ -536,7 +538,7 @@ export function getPeriodWindow(
 export function calculateSpendingTrend(
   totalSpending: number,
   prevTotalSpending: number,
- ): number {
+): number {
   if (prevTotalSpending > 0) {
     const trend =
       ((totalSpending - prevTotalSpending) / prevTotalSpending) * 100;
