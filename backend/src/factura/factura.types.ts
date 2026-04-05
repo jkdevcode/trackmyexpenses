@@ -1,6 +1,1 @@
-export type PeriodFilter = 'week' | 'month' | 'year' | 'all' | 'custom';
-
-export type CustomPeriodRange = {
-  startDate?: string | null;
-  endDate?: string | null;
-};
+export * from '../common/types/periods';

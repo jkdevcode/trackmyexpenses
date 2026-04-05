@@ -33,8 +33,7 @@ export class ReportesController {
   ) {
     const pdfBuffer = await this.reportesService.generateFacturasReport(
       req.user.id,
-      query.from,
-      query.to,
+      query,
     );
 
     res.setHeader('Content-Type', 'application/pdf');
@@ -49,10 +48,6 @@ export class ReportesController {
     @Request() req: RequestWithUser,
     @Query() query: GetReportesQueryDto,
   ) {
-    return this.reportesService.checkFacturasReport(
-      req.user.id,
-      query.from,
-      query.to,
-    );
+    return this.reportesService.checkFacturasReport(req.user.id, query);
   }
 }
