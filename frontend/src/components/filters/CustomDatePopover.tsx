@@ -11,15 +11,14 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { InvoiceDateRangePicker } from "../../features/invoices/components/InvoiceDateRangePicker";
-
-import { CalendarIcon } from "@/components/ui/icons";
-import { useColorTheme } from "@/hooks/use-color-theme";
-
 import {
   formatRange,
   getPresetRanges,
   rangesEqual,
 } from "../../features/invoices/utils/date-periods";
+
+import { CalendarIcon } from "@/components/ui/icons";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 // ---------------------------------------------------------------------------
 // Types

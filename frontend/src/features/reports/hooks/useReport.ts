@@ -55,7 +55,9 @@ export const useReport = () => {
         const link = document.createElement("a");
 
         link.href = objectUrl;
-        const dateLabel = startDate && endDate ? `${startDate}_a_${endDate}` : period;
+        const dateLabel =
+          startDate && endDate ? `${startDate}_a_${endDate}` : period;
+
         link.download = `reporte-${dateLabel}.pdf`;
         document.body.appendChild(link);
         link.click();
