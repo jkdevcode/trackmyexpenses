@@ -17,7 +17,20 @@
     "week": "Semana",
     "month": "Mes",
     "year": "Año",
-    "custom": "Rango personalizado"
+    "custom": "Personalizado",
+    "custom_range": "Rango personalizado",
+    "custom_trigger": "Rango personalizado",
+    "apply": "Aplicar",
+    "cancel": "Cancelar",
+    "clear_dates": "Limpiar fechas",
+    "applied_flash": "✓ Aplicado",
+    "today": "Hoy",
+    "last_7_days": "Últimos 7 días",
+    "last_30_days": "Últimos 30 días",
+    "this_month": "Este mes",
+    "last_3_months": "Últimos 3 meses",
+    "last_6_months": "Últimos 6 meses",
+    "active_range": "{{start}} – {{end}}"
   },
   "validation": {
     "precioUnitario_invalid": "El precio unitario debe ser mayor a 0."

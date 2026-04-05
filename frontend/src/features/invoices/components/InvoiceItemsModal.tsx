@@ -211,7 +211,7 @@ export const InvoiceItemsModal = ({
                   <TableCell>
                     <Input
                       className="w-28"
-                      size="sm"
+                      size="md"
                       startContent={currencyCode ? `${currencyCode} ` : "$"}
                       type="number"
                       value={item.precioUnitario.toString()}

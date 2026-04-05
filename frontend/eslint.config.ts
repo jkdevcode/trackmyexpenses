@@ -25,6 +25,8 @@ export default [
         console: "readonly",
         HTMLElement: "readonly",
         URLSearchParams: "readonly",
+        MediaQueryListEvent: "readonly",
+        clearTimeout: "readonly",
         Element: "readonly",
         HTMLDivElement: "readonly",
         HTMLInputElement: "readonly",

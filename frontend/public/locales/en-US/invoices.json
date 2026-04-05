@@ -17,7 +17,20 @@
     "week": "Week",
     "month": "Month",
     "year": "Year",
-    "custom": "Custom Range"
+    "custom": "Custom",
+    "custom_range": "Custom Range",
+    "custom_trigger": "Custom range",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "clear_dates": "Clear dates",
+    "applied_flash": "✓ Applied",
+    "today": "Today",
+    "last_7_days": "Last 7 days",
+    "last_30_days": "Last 30 days",
+    "this_month": "This month",
+    "last_3_months": "Last 3 months",
+    "last_6_months": "Last 6 months",
+    "active_range": "{{start}} – {{end}}"
   },
   "validation": {
     "precioUnitario_invalid": "Unit price must be greater than 0."
