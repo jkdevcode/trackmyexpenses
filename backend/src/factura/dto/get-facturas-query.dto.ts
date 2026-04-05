@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 const getFacturasQuerySchema = z.object({
   period: z
-    .enum(['day', 'week', 'month', 'year', 'custom'])
+    .enum(['week', 'month', 'year', 'all', 'custom'])
     .optional()
     .default('month'),
   startDate: z.string().optional(),

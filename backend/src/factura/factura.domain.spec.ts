@@ -193,17 +193,6 @@ describe('factura.domain', () => {
   describe('getPeriodWindow', () => {
     const now = new Date('2026-03-06T15:30:00.000Z');
 
-    it('should build day window in UTC', () => {
-      const result = getPeriodWindow('day', now);
-
-      expect(result.startDate.toISOString()).toBe('2026-03-06T00:00:00.000Z');
-      expect(result.endDate.toISOString()).toBe('2026-03-06T23:59:59.999Z');
-      expect(result.prevStartDate.toISOString()).toBe(
-        '2026-03-05T00:00:00.000Z',
-      );
-      expect(result.prevEndDate.toISOString()).toBe('2026-03-05T23:59:59.999Z');
-    });
-
     it('should build a full month window in UTC by default', () => {
       const result = getPeriodWindow('month', now);
 

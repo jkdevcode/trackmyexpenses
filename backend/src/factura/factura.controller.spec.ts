@@ -181,6 +181,19 @@ describe('FacturaController', () => {
     expect(result).toEqual({ status: 200, facturas: [] });
   });
 
+  it('GET /facturas should forward the all period without range params', async () => {
+    const req = { user: { id: 20 } } as any;
+    const query = { period: 'all', page: 1, limit: 20 };
+    facturaService.findAll.mockResolvedValue({ status: 200, facturas: [] });
+
+    await controller.findAll(req, query as any);
+
+    expect(facturaService.findAll).toHaveBeenCalledWith(20, 'all', 1, 20, {
+      startDate: undefined,
+      endDate: undefined,
+    });
+  });
+
   it('PUT /facturas/:id should call service.update', async () => {
     const req = { user: { id: 10 } } as any;
     const dto = {

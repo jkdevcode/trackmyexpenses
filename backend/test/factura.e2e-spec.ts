@@ -145,4 +145,27 @@ describe('FacturaController (e2e)', () => {
       endDate: undefined,
     });
   });
+
+  it('GET /facturas should accept the all period', async () => {
+    facturaService.findAll.mockResolvedValue({
+      status: 200,
+      message: 'Facturas obtenidas exitosamente',
+      data: [{ id: 2 }],
+      facturas: [{ id: 2 }],
+      pagination: { page: 1, limit: 20, total: 1 },
+      stats: {
+        currentPeriodInvoices: 1,
+        totalSpending: 25000,
+        spendingTrend: 0,
+        totalInvoices: 1,
+      },
+    });
+
+    await request(app.getHttpServer()).get('/facturas?period=all').expect(200);
+
+    expect(facturaService.findAll).toHaveBeenCalledWith(42, 'all', 1, 20, {
+      startDate: undefined,
+      endDate: undefined,
+    });
+  });
 });

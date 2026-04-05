@@ -481,8 +481,10 @@ export function normalizeFacturaDate(value: string | Date): Date {
   return startOfUtcDay(parsedDate);
 }
 
+type BoundedPeriodFilter = Exclude<PeriodFilter, 'all'>;
+
 export function getPeriodWindow(
-  period: PeriodFilter,
+  period: BoundedPeriodFilter,
   now = new Date(),
   range?: CustomPeriodRange,
 ): PeriodWindow {
@@ -492,45 +494,38 @@ export function getPeriodWindow(
 
   const currentDate = cloneDate(now);
 
-  let startDate = startOfUtcDay(currentDate);
-  let endDate = endOfUtcDay(currentDate);
-  let prevStartDate = startOfUtcDay(addUtcDays(currentDate, -1));
-  let prevEndDate = endOfUtcDay(addUtcDays(currentDate, -1));
+  if (period === 'week') {
+    const startDate = startOfUtcWeek(currentDate);
+    const endDate = endOfUtcWeek(currentDate);
 
-  switch (period) {
-    case 'day':
-      break;
-    case 'week': {
-      startDate = startOfUtcWeek(currentDate);
-      endDate = endOfUtcWeek(currentDate);
-      prevStartDate = addUtcDays(startDate, -7);
-      prevEndDate = addUtcDays(endDate, -7);
-      break;
-    }
-    case 'year': {
-      const previousYearDate = buildUtcDate(
-        currentDate.getUTCFullYear() - 1,
-        0,
-        1,
-      );
-
-      startDate = startOfUtcYear(currentDate);
-      endDate = endOfUtcYear(currentDate);
-      prevStartDate = startOfUtcYear(previousYearDate);
-      prevEndDate = endOfUtcYear(previousYearDate);
-      break;
-    }
-    case 'month':
-    default: {
-      const previousMonthDate = addUtcMonths(startOfUtcMonth(currentDate), -1);
-
-      startDate = startOfUtcMonth(currentDate);
-      endDate = endOfUtcMonth(currentDate);
-      prevStartDate = startOfUtcMonth(previousMonthDate);
-      prevEndDate = endOfUtcMonth(previousMonthDate);
-      break;
-    }
+    return {
+      startDate,
+      endDate,
+      prevStartDate: addUtcDays(startDate, -7),
+      prevEndDate: addUtcDays(endDate, -7),
+    };
   }
+
+  if (period === 'year') {
+    const previousYearDate = buildUtcDate(
+      currentDate.getUTCFullYear() - 1,
+      0,
+      1,
+    );
+
+    return {
+      startDate: startOfUtcYear(currentDate),
+      endDate: endOfUtcYear(currentDate),
+      prevStartDate: startOfUtcYear(previousYearDate),
+      prevEndDate: endOfUtcYear(previousYearDate),
+    };
+  }
+
+  const previousMonthDate = addUtcMonths(startOfUtcMonth(currentDate), -1);
+  const startDate = startOfUtcMonth(currentDate);
+  const endDate = endOfUtcMonth(currentDate);
+  const prevStartDate = startOfUtcMonth(previousMonthDate);
+  const prevEndDate = endOfUtcMonth(previousMonthDate);
 
   return { startDate, endDate, prevStartDate, prevEndDate };
 }
