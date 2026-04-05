@@ -358,6 +358,26 @@ export class FacturaService {
     range?: CustomPeriodRange,
   ) {
     try {
+      if (period === 'all') {
+        const [facturas, stats] = await Promise.all([
+          this.repo.findFacturasByUser(userId, page, limit),
+          this.calculateAllTimeStats(userId),
+        ]);
+
+        return {
+          status: 200,
+          message: 'Facturas obtenidas exitosamente',
+          data: facturas,
+          facturas,
+          pagination: {
+            page,
+            limit,
+            total: stats.totalInvoices,
+          },
+          stats,
+        };
+      }
+
       const { startDate, endDate, prevStartDate, prevEndDate } =
         getPeriodWindow(period, new Date(), range);
 
@@ -672,6 +692,18 @@ export class FacturaService {
         status: 200,
         message: 'Estadisticas obtenidas exitosamente (cache)',
         stats: cached,
+      };
+    }
+
+    if (period === 'all') {
+      const stats = await this.calculateAllTimeStats(userId);
+
+      await this.cacheManager.set(cacheKey, stats, 600000);
+
+      return {
+        status: 200,
+        message: 'Estadisticas obtenidas exitosamente',
+        stats,
       };
     }
 
@@ -1020,6 +1052,20 @@ export class FacturaService {
       currentPeriodInvoices: currentPeriodCount,
       totalSpending,
       spendingTrend: calculateSpendingTrend(totalSpending, prevTotalSpending),
+      totalInvoices,
+    };
+  }
+
+  private async calculateAllTimeStats(userId: number): Promise<FacturaStats> {
+    const [totalInvoices, totalSpending] = await Promise.all([
+      this.repo.countFacturasByUser(userId),
+      this.repo.sumTotalPagarByUser(userId),
+    ]);
+
+    return {
+      currentPeriodInvoices: totalInvoices,
+      totalSpending,
+      spendingTrend: 0,
       totalInvoices,
     };
   }

@@ -42,6 +42,22 @@ export class PrismaFacturaRepository implements FacturaRepository {
     );
   }
 
+  async findFacturasByUser(userId: number, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    return await this.prisma.factura.findMany({
+      where: {
+        usuarioId: userId,
+      },
+      orderBy: {
+        fechaHoraCompra: 'desc',
+      },
+      skip,
+      take: limit,
+      select: FACTURA_LIST_SELECT,
+    });
+  }
+
   async findFacturasByUserAndRange(
     userId: number,
     range: FacturaStatsDateRange,
@@ -180,6 +196,18 @@ export class PrismaFacturaRepository implements FacturaRepository {
 
   async countFacturasByUser(userId: number) {
     return await this.prisma.factura.count({ where: { usuarioId: userId } });
+  }
+
+  async sumTotalPagarByUser(userId: number) {
+    const result = await this.prisma.$queryRaw<
+      Array<{ total: Prisma.Decimal | null }>
+    >`
+      SELECT COALESCE(SUM(COALESCE(totalPagarBase, totalPagar)), 0) AS total
+      FROM Factura
+      WHERE usuarioId = ${userId}
+    `;
+
+    return Number(result[0]?.total ?? 0);
   }
 
   async sumTotalPagarByUserAndRange(

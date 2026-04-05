@@ -18,9 +18,11 @@ describe('FacturaService', () => {
     findFacturaIdByUser: jest.Mock;
     findFacturaCurrencyByUser: jest.Mock;
     findProductoById: jest.Mock;
+    findFacturasByUser: jest.Mock;
     findFacturasByUserAndRange: jest.Mock;
     countFacturasByUserAndRange: jest.Mock;
     countFacturasByUser: jest.Mock;
+    sumTotalPagarByUser: jest.Mock;
     sumTotalPagarByUserAndRange: jest.Mock;
     findFacturaDetailByUser: jest.Mock;
     findFacturaProductosByFacturaId: jest.Mock;
@@ -37,9 +39,11 @@ describe('FacturaService', () => {
       findFacturaIdByUser: jest.fn(),
       findFacturaCurrencyByUser: jest.fn(),
       findProductoById: jest.fn(),
+      findFacturasByUser: jest.fn(),
       findFacturasByUserAndRange: jest.fn(),
       countFacturasByUserAndRange: jest.fn(),
       countFacturasByUser: jest.fn(),
+      sumTotalPagarByUser: jest.fn(),
       sumTotalPagarByUserAndRange: jest.fn(),
       findFacturaDetailByUser: jest.fn(),
       findFacturaProductosByFacturaId: jest.fn(),
@@ -344,6 +348,25 @@ describe('FacturaService', () => {
     );
   });
 
+  it('should return all invoices without date filtering when period is all', async () => {
+    repo.findFacturasByUser.mockResolvedValue([{ id: 7, usuarioId: 12 }]);
+    repo.countFacturasByUser.mockResolvedValue(4);
+    repo.sumTotalPagarByUser.mockResolvedValue(28000);
+
+    const result = await service.findAll(12, 'all', 1, 20);
+
+    expect(repo.findFacturasByUser).toHaveBeenCalledWith(12, 1, 20);
+    expect(repo.findFacturasByUserAndRange).not.toHaveBeenCalled();
+    expect(result.facturas).toEqual([{ id: 7, usuarioId: 12 }]);
+    expect(result.pagination).toEqual({ page: 1, limit: 20, total: 4 });
+    expect(result.stats).toEqual({
+      currentPeriodInvoices: 4,
+      totalSpending: 28000,
+      spendingTrend: 0,
+      totalInvoices: 4,
+    });
+  });
+
   it('should add producto to factura', async () => {
     repo.findFacturaCurrencyByUser.mockResolvedValue({
       id: 50,
@@ -585,6 +608,29 @@ describe('FacturaService', () => {
       expect.any(Object),
       600000,
     );
+  });
+
+  it('should compute and cache all-time stats on getStats cache miss', async () => {
+    cache.get.mockResolvedValue(null);
+    repo.countFacturasByUser.mockResolvedValue(9);
+    repo.sumTotalPagarByUser.mockResolvedValue(45000);
+
+    const result = await service.getStats(3, 'all');
+
+    expect(result.message).toBe('Estadisticas obtenidas exitosamente');
+    expect(result.stats).toEqual({
+      currentPeriodInvoices: 9,
+      totalSpending: 45000,
+      spendingTrend: 0,
+      totalInvoices: 9,
+    });
+    expect(cache.get).toHaveBeenCalledWith('factura:stats:3:all');
+    expect(cache.set).toHaveBeenCalledWith(
+      'factura:stats:3:all',
+      result.stats,
+      600000,
+    );
+    expect(repo.countFacturasByUserAndRange).not.toHaveBeenCalled();
   });
 
   it('should throw InternalServerErrorException when findAll fails unexpectedly', async () => {

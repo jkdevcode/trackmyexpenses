@@ -1,4 +1,4 @@
-export type PeriodFilter = 'day' | 'week' | 'month' | 'year' | 'custom';
+export type PeriodFilter = 'week' | 'month' | 'year' | 'all' | 'custom';
 
 export type CustomPeriodRange = {
   startDate?: string | null;

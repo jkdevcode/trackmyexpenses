@@ -154,6 +154,11 @@ export interface FacturaRepositoryTx {
 
 export interface FacturaRepository {
   transaction<T>(callback: (tx: FacturaRepositoryTx) => Promise<T>): Promise<T>;
+  findFacturasByUser(
+    userId: number,
+    page: number,
+    limit: number,
+  ): Promise<FacturaListItem[]>;
   findFacturasByUserAndRange(
     userId: number,
     range: FacturaStatsDateRange,
@@ -194,6 +199,7 @@ export interface FacturaRepository {
   } | null>;
   findUsuarioMonedaBase(userId: number): Promise<string | null>;
   countFacturasByUser(userId: number): Promise<number>;
+  sumTotalPagarByUser(userId: number): Promise<number>;
   sumTotalPagarByUserAndRange(
     userId: number,
     range: FacturaStatsDateRange,

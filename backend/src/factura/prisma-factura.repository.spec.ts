@@ -58,6 +58,33 @@ describe('PrismaFacturaRepository', () => {
     expect(result).toEqual([{ id: 1 }]);
   });
 
+  it('should map findFacturasByUser query params correctly', async () => {
+    prisma.factura.findMany.mockResolvedValue([{ id: 2 }]);
+
+    const result = await repository.findFacturasByUser(7, 3, 10);
+
+    expect(prisma.factura.findMany).toHaveBeenCalledWith({
+      where: {
+        usuarioId: 7,
+      },
+      orderBy: { fechaHoraCompra: 'desc' },
+      skip: 20,
+      take: 10,
+      select: expect.any(Object),
+    });
+    expect(result).toEqual([{ id: 2 }]);
+  });
+
+  it('should convert all-time aggregate totalPagar to number', async () => {
+    prisma.$queryRaw.mockResolvedValue([
+      { total: new Prisma.Decimal('9876.54') },
+    ]);
+
+    const result = await repository.sumTotalPagarByUser(1);
+
+    expect(result).toBe(9876.54);
+  });
+
   it('should convert aggregate totalPagar to number', async () => {
     prisma.$queryRaw.mockResolvedValue([
       { total: new Prisma.Decimal('12345.67') },
