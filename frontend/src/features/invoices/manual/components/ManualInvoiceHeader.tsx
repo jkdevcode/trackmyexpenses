@@ -2,6 +2,13 @@ import type { ManualInvoiceFormState, PaymentMethod } from "../types";
 
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
+import { DatePicker } from "@heroui/date-picker";
+import {
+  parseDate,
+  getLocalTimeZone,
+  today,
+  type DateValue,
+} from "@internationalized/date";
 import { useTranslation } from "react-i18next";
 
 import { PAYMENT_METHOD_OPTIONS } from "../../constants/payment-methods";
@@ -17,6 +24,18 @@ interface ManualInvoiceHeaderProps {
   setTasaCambio: (value: string) => void;
   showConversion: boolean;
 }
+
+const safeParseDate = (dateString?: string | null): DateValue => {
+  if (dateString) {
+    try {
+      return parseDate(dateString);
+    } catch {
+      // Ignore parse errors from DateValue
+    }
+  }
+
+  return today(getLocalTimeZone());
+};
 
 export const ManualInvoiceHeader = ({
   form,
@@ -36,16 +55,18 @@ export const ManualInvoiceHeader = ({
           fieldErrors.has("fechaHoraCompra") ? "fechaHoraCompra" : undefined
         }
       >
-        <Input
+        <DatePicker
+          isRequired
           color={appColor}
           errorMessage={fieldErrors.get("fechaHoraCompra")}
           isInvalid={fieldErrors.has("fechaHoraCompra")}
-          isRequired
           label={t("manual.fecha")}
-          type="date"
-          value={form.fecha}
+          maxValue={today(getLocalTimeZone())}
+          value={safeParseDate(form.fecha)}
           variant="bordered"
-          onValueChange={(value) => updateField("fecha", value)}
+          onChange={(date: DateValue | null) =>
+            updateField("fecha", date ? date.toString() : "")
+          }
         />
       </div>
 
