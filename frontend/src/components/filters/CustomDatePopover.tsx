@@ -6,7 +6,6 @@ import { Divider } from "@heroui/divider";
 import { Modal, ModalBody, ModalContent, ModalFooter } from "@heroui/modal";
 import { Popover, PopoverContent, PopoverTrigger } from "@heroui/popover";
 import { useDisclosure } from "@heroui/use-disclosure";
-import { getLocalTimeZone, startOfMonth, today } from "@internationalized/date";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,67 +15,11 @@ import { InvoiceDateRangePicker } from "../../features/invoices/components/Invoi
 import { CalendarIcon } from "@/components/ui/icons";
 import { useColorTheme } from "@/hooks/use-color-theme";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const tz = getLocalTimeZone();
-
-/** Compute preset ranges using @internationalized/date helpers */
-function getPresetRanges(): Record<string, InvoiceDateRangeValue> {
-  const todayDate = today(tz);
-
-  // Last 7 days: 6 days back → today
-  const last7Start = todayDate.subtract({ days: 6 });
-
-  // Last 30 days: 29 days back → today
-  const last30Start = todayDate.subtract({ days: 29 });
-
-  // Last 3 months: first day of 3 months ago → today
-  const last3MonthsStart = startOfMonth(todayDate.subtract({ months: 2 }));
-
-  // Last 6 months
-  const last6MonthsStart = startOfMonth(todayDate.subtract({ months: 5 }));
-
-  // Last 1 year
-  const last1YearStart = startOfMonth(todayDate.subtract({ months: 11 }));
-
-  return {
-    today: { start: todayDate, end: todayDate },
-    last_7_days: { start: last7Start, end: todayDate },
-    last_30_days: { start: last30Start, end: todayDate },
-    last_3_months: { start: last3MonthsStart, end: todayDate },
-    last_6_months: { start: last6MonthsStart, end: todayDate },
-    last_1_year: { start: last1YearStart, end: todayDate },
-  };
-}
-
-/** Format a committed value into "Apr 1 – Apr 30" style */
-function formatRange(value: InvoiceDateRangeValue): string {
-  if (!value) return "";
-  const fmt = (d: { month: number; day: number; year: number }) =>
-    new Date(d.year, d.month - 1, d.day).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    });
-  const start = fmt(value.start);
-  const end = fmt(value.end);
-
-  return start === end ? start : `${start} – ${end}`;
-}
-
-/** True if two InvoiceDateRangeValues represent the same interval */
-function rangesEqual(
-  a: InvoiceDateRangeValue,
-  b: InvoiceDateRangeValue,
-): boolean {
-  if (!a || !b) return false;
-
-  return (
-    a.start.toString() === b.start.toString() &&
-    a.end.toString() === b.end.toString()
-  );
-}
+import {
+  formatRange,
+  getPresetRanges,
+  rangesEqual,
+} from "../../features/invoices/utils/date-periods";
 
 // ---------------------------------------------------------------------------
 // Types
