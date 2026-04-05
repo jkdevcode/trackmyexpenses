@@ -32,22 +32,22 @@ function getPresetRanges(): Record<string, InvoiceDateRangeValue> {
   // Last 30 days: 29 days back → today
   const last30Start = todayDate.subtract({ days: 29 });
 
-  // This month: first day of month → today
-  const thisMonthStart = startOfMonth(todayDate);
-
   // Last 3 months: first day of 3 months ago → today
   const last3MonthsStart = startOfMonth(todayDate.subtract({ months: 2 }));
 
   // Last 6 months
   const last6MonthsStart = startOfMonth(todayDate.subtract({ months: 5 }));
 
+  // Last 1 year
+  const last1YearStart = startOfMonth(todayDate.subtract({ months: 11 }));
+
   return {
     today: { start: todayDate, end: todayDate },
     last_7_days: { start: last7Start, end: todayDate },
     last_30_days: { start: last30Start, end: todayDate },
-    this_month: { start: thisMonthStart, end: todayDate },
     last_3_months: { start: last3MonthsStart, end: todayDate },
     last_6_months: { start: last6MonthsStart, end: todayDate },
+    last_1_year: { start: last1YearStart, end: todayDate },
   };
 }
 
@@ -85,23 +85,17 @@ function rangesEqual(
 export interface CustomDatePopoverProps {
   /**
    * The committed date range coming from the parent filter state.
-   * `null` means no custom range is active.
+   * When the active period is not custom, this keeps the last selected range.
    */
   value: InvoiceDateRangeValue;
   /** Called when a preset is clicked (immediate commit) or Apply is pressed. */
   onChange: (value: InvoiceDateRangeValue) => void;
   /**
    * Called when the user presses "Clear dates".
-   * The parent should nullify the custom range while staying in custom mode.
    */
   onClearDates: () => void;
   /** True when the parent period === "custom". Controls trigger visual state. */
   isCustomActive: boolean;
-  /**
-   * Called when the trigger is clicked while isCustomActive === false.
-   * Should call the parent's setPeriod("custom").
-   */
-  onRequestCustom: () => void;
   translationNamespace: "dashboard" | "invoices";
   /**
    * When true, renders a full-page dark scrim behind the popover.
@@ -119,7 +113,6 @@ export const CustomDatePopover = ({
   onChange,
   onClearDates,
   isCustomActive,
-  onRequestCustom,
   translationNamespace,
   showBackdrop = false,
 }: CustomDatePopoverProps) => {
@@ -127,8 +120,8 @@ export const CustomDatePopover = ({
   const { appColor } = useColorTheme();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // Local draft — only used when the user is manually adjusting the calendar
-  const [draftValue, setDraftValue] = useState<InvoiceDateRangeValue>(value);
+  // Local draft used while the user is manually adjusting the calendar.
+  const [draftValue, setDraftValue] = useState<InvoiceDateRangeValue>(null);
 
   // "✓ Applied" flash state after a preset is clicked
   const [appliedFlash, setAppliedFlash] = useState(false);
@@ -148,13 +141,6 @@ export const CustomDatePopover = ({
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // Sync draft whenever the popover opens or when committed value changes externally
-  useEffect(() => {
-    if (isOpen) {
-      setDraftValue(value);
-    }
-  }, [isOpen, value]);
-
   // Cleanup flash timer on unmount
   useEffect(() => {
     return () => {
@@ -162,24 +148,22 @@ export const CustomDatePopover = ({
     };
   }, []);
 
-  // Close popover automatically when the user switches away from the custom period
-  // (e.g. by clicking a Day / Week / Month / Year tab)
+  const wasCustomActiveRef = useRef(isCustomActive);
+
+  // Close the popover if the active filter leaves custom mode while open.
   useEffect(() => {
-    if (!isCustomActive && isOpen) {
+    if (wasCustomActiveRef.current && !isCustomActive && isOpen) {
       onClose();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCustomActive]);
+    wasCustomActiveRef.current = isCustomActive;
+  }, [isCustomActive, isOpen, onClose]);
 
   // ---------------------------------------------------------------------------
   // Handlers
   // ---------------------------------------------------------------------------
 
   const handleTriggerClick = () => {
-    if (!isCustomActive) {
-      onRequestCustom();
-    }
-    // Always open — HeroUI's onOpenChange handles closing when clicking outside
+    setDraftValue(value);
     onOpen();
   };
 
@@ -221,9 +205,9 @@ export const CustomDatePopover = ({
     "today",
     "last_7_days",
     "last_30_days",
-    "this_month",
     "last_3_months",
     "last_6_months",
+    "last_1_year",
   ] as const;
 
   const presetRanges = getPresetRanges();
@@ -235,8 +219,8 @@ export const CustomDatePopover = ({
   const triggerLabel = appliedFlash
     ? t("filters.applied_flash")
     : hasActiveRange
-      ? formattedRange
-      : t("filters.custom_trigger");
+      ? `${t("filters.range_trigger")}: ${formattedRange}`
+      : t("filters.range_trigger");
 
   // Trigger color/variant
   const triggerVariant = hasActiveRange
@@ -254,7 +238,7 @@ export const CustomDatePopover = ({
       {/* Presets */}
       <div>
         <p className="text-xs font-semibold text-default-500 uppercase tracking-wide mb-2">
-          {t("filters.custom_trigger")}
+          {t("filters.custom_range")}
         </p>
         <div className="grid grid-cols-2 gap-2">
           {presets.map((key) => {
@@ -442,6 +426,7 @@ export const CustomDatePopover = ({
             placement="bottom-end"
             onOpenChange={(open) => {
               if (open) {
+                setDraftValue(value);
                 onOpen();
               } else {
                 handleCancel();

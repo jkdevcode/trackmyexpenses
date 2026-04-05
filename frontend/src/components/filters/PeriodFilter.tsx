@@ -25,10 +25,10 @@ interface PeriodFilterProps {
 /** The static period granularity tabs — "custom" is intentionally excluded.
  *  Custom date range control lives in the separate CustomDatePopover below. */
 const PERIOD_TABS: Exclude<InvoicePeriod, "custom">[] = [
-  "day",
   "week",
   "month",
   "year",
+  "all",
 ];
 
 export const PeriodFilter = ({
@@ -46,7 +46,7 @@ export const PeriodFilter = ({
 
   return (
     <div className="flex flex-row flex-wrap items-center justify-between w-full gap-4">
-      {/* LEFT: Period granularity tabs: Day / Week / Month / Year */}
+      {/* LEFT: Visible period tabs */}
       <div className="flex items-center gap-2 bg-content2/50 p-1 rounded-lg overflow-x-auto min-w-0">
         {PERIOD_TABS.map((period) => (
           <Button
@@ -74,14 +74,7 @@ export const PeriodFilter = ({
           translationNamespace={translationNamespace}
           value={dateRangeValue}
           onChange={onDateRangeChange}
-          onClearDates={() => {
-            onDateRangeChange(null);
-            // Revert to default period when clearing a custom range
-            if (isCustomActive) {
-              onChange("month");
-            }
-          }}
-          onRequestCustom={() => onChange("custom")}
+          onClearDates={() => onDateRangeChange(null)}
         />
       </div>
     </div>

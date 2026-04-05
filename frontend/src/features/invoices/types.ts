@@ -128,7 +128,7 @@ export type PaymentMethod =
   | "TRANSFERENCIA"
   | "OTRO";
 
-export type InvoicePeriod = "day" | "week" | "month" | "year" | "custom";
+export type InvoicePeriod = "week" | "month" | "year" | "all" | "custom";
 
 export type DateRange = {
   startDate: string;

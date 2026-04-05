@@ -13,9 +13,11 @@
     "week": "Week",
     "month": "Month",
     "year": "Year",
+    "all": "All",
     "custom": "Custom",
     "custom_range": "Custom Range",
     "custom_trigger": "Custom range",
+    "range_trigger": "Range",
     "apply": "Apply",
     "cancel": "Cancel",
     "clear_dates": "Clear dates",
@@ -23,9 +25,9 @@
     "today": "Today",
     "last_7_days": "Last 7 days",
     "last_30_days": "Last 30 days",
-    "this_month": "This month",
     "last_3_months": "Last 3 months",
     "last_6_months": "Last 6 months",
+    "last_1_year": "Last 1 year",
     "active_range": "{{start}} – {{end}}"
   },
   "charts": {
