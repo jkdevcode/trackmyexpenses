@@ -8,6 +8,13 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PdfService } from './pdf.service';
 import { RequestContext } from '../common/context/request-context';
+import {
+  getPeriodWindow,
+  endOfUtcDay,
+  startOfUtcDay,
+} from '../common/utils/date-periods';
+import { PeriodFilter } from '../common/types/periods';
+import { GetReportesQueryDto } from './dto/get-reportes-query.dto';
 
 type FacturaWithProductos = Prisma.FacturaGetPayload<{
   include: {
@@ -34,19 +41,22 @@ export class ReportesService {
 
   async generateFacturasReport(
     userId: number,
-    from: string,
-    to: string,
+    query: GetReportesQueryDto,
   ): Promise<Buffer> {
-    const { fromDate, toDate } = this.parseDateRange(from, to);
+    const { startDate, endDate, isAllTime } = this.resolveFinalRange(query);
 
     try {
       const facturas = await this.prisma.factura.findMany({
         where: {
           usuarioId: userId,
-          fechaHoraCompra: {
-            gte: fromDate,
-            lte: toDate,
-          },
+          ...(isAllTime
+            ? {}
+            : {
+                fechaHoraCompra: {
+                  gte: startDate,
+                  lte: endDate,
+                },
+              }),
         },
         include: {
           productos: {
@@ -76,8 +86,9 @@ export class ReportesService {
         totalFacturas,
         totalGastado,
         productosTop,
-        from,
-        to,
+        from: this.formatDate(startDate),
+        to: this.formatDate(endDate),
+        isAllTime,
         currencySummary,
         hasMixedCurrencies: this.hasMixedCurrencies(facturas),
       });
@@ -97,57 +108,76 @@ export class ReportesService {
 
   async checkFacturasReport(
     userId: number,
-    from: string,
-    to: string,
+    query: GetReportesQueryDto,
   ): Promise<{ hasData: boolean; count: number }> {
-    const { fromDate, toDate } = this.parseDateRange(from, to);
+    const { startDate, endDate, isAllTime } = this.resolveFinalRange(query);
 
     const count = await this.prisma.factura.count({
       where: {
         usuarioId: userId,
-        fechaHoraCompra: {
-          gte: fromDate,
-          lte: toDate,
-        },
+        ...(isAllTime
+          ? {}
+          : {
+              fechaHoraCompra: {
+                gte: startDate,
+                lte: endDate,
+              },
+            }),
       },
     });
 
     return { hasData: count > 0, count };
   }
 
+  private resolveFinalRange(query: GetReportesQueryDto): {
+    startDate: Date;
+    endDate: Date;
+    isAllTime: boolean;
+  } {
+    // 1. Priority: Period system
+    if (query.period) {
+      if (query.period === 'all') {
+        return {
+          startDate: new Date(0), // Placeholder for oldest record
+          endDate: new Date(),
+          isAllTime: true,
+        };
+      }
+
+      const window = getPeriodWindow(query.period, new Date(), {
+        startDate: query.startDate,
+        endDate: query.endDate,
+      });
+
+      return {
+        startDate: window.startDate,
+        endDate: window.endDate,
+        isAllTime: false,
+      };
+    }
+
+    // 2. Fallback: Legacy from/to system
+    if (query.from && query.to) {
+      return {
+        ...this.parseDateRange(query.from, query.to),
+        isAllTime: false,
+      };
+    }
+
+    throw new BadRequestException(
+      'Debe proporcionar un periodo o un rango de fechas (from/to)',
+    );
+  }
+
   private parseDateRange(from: string, to: string) {
-    const fromDate = this.parseDateOnly(from, false);
-    const toDate = this.parseDateOnly(to, true);
+    const fromDate = startOfUtcDay(new Date(from));
+    const toDate = endOfUtcDay(new Date(to));
 
     if (fromDate >= toDate) {
       throw new BadRequestException('La fecha "from" debe ser menor que "to"');
     }
 
-    return { fromDate, toDate };
-  }
-
-  private parseDateOnly(value: string, endOfDay: boolean) {
-    const [year, month, day] = value.split('-').map((part) => Number(part));
-
-    if (!year || !month || !day) {
-      throw new BadRequestException('Fecha invalida');
-    }
-
-    const date = new Date(
-      year,
-      month - 1,
-      day,
-      endOfDay ? 23 : 0,
-      endOfDay ? 59 : 0,
-      endOfDay ? 59 : 0,
-      endOfDay ? 999 : 0,
-    );
-
-    if (Number.isNaN(date.getTime())) {
-      throw new BadRequestException('Fecha invalida');
-    }
-
-    return date;
+    return { startDate: fromDate, endDate: toDate };
   }
 
   private getTopProductos(facturas: FacturaWithProductos[]): ProductoTop[] {
@@ -237,6 +267,7 @@ export class ReportesService {
     productosTop,
     from,
     to,
+    isAllTime,
     currencySummary,
     hasMixedCurrencies,
   }: {
@@ -246,6 +277,7 @@ export class ReportesService {
     productosTop: ProductoTop[];
     from: string;
     to: string;
+    isAllTime: boolean;
     currencySummary: string;
     hasMixedCurrencies: boolean;
   }) {
@@ -314,9 +346,7 @@ export class ReportesService {
   </head>
   <body>
     <h1>Reporte de gastos</h1>
-    <p>Rango: <strong>${this.escapeHtml(from)}</strong> a <strong>${this.escapeHtml(
-      to,
-    )}</strong></p>
+    <p>Rango: <strong>${isAllTime ? 'Todo el tiempo' : `${this.escapeHtml(from)} a ${this.escapeHtml(to)}`}</strong></p>
     <div class="summary">
       <div class="summary-card">
         Total gastado

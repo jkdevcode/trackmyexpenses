@@ -252,14 +252,12 @@ describe('factura.domain', () => {
         expect(error).toMatchObject({
           code: FACTURA_ERROR_CODES.DATE_RANGE_REQUIRED,
           details: [
-            expect.objectContaining({
-              field: 'startDate',
+            {
               code: FACTURA_ERROR_CODES.DATE_RANGE_REQUIRED,
-            }),
-            expect.objectContaining({
-              field: 'endDate',
-              code: FACTURA_ERROR_CODES.DATE_RANGE_REQUIRED,
-            }),
+              meta: {
+                missingFields: ['startDate', 'endDate'],
+              },
+            },
           ],
         });
       }
@@ -296,14 +294,13 @@ describe('factura.domain', () => {
         expect(error).toMatchObject({
           code: FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
           details: [
-            expect.objectContaining({
-              field: 'startDate',
+            {
               code: FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
-            }),
-            expect.objectContaining({
-              field: 'endDate',
-              code: FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
-            }),
+              meta: {
+                startDate: '2026-03-12',
+                endDate: '2026-03-10',
+              },
+            },
           ],
         });
       }
