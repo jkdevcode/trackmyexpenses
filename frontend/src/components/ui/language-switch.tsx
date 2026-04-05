@@ -28,7 +28,6 @@ import { Tooltip } from "@heroui/tooltip";
 
 import { type AvailableLanguage } from "@/i18n";
 import { type IconSvgProps } from "@/types";
-
 import { useAppColorVariants } from "@/theme/app-color-variants";
 
 interface LanguageSwitchProps {
