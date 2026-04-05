@@ -28,6 +28,7 @@ import { Tooltip } from "@heroui/tooltip";
 
 import { type AvailableLanguage } from "@/i18n";
 import { type IconSvgProps } from "@/types";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 
 interface LanguageSwitchProps {
   /**
@@ -91,6 +92,7 @@ export const LanguageSwitch: FC<LanguageSwitchProps> = ({
   const [language, setLanguage] = useState<string>(
     localStorage.getItem("preferredLanguage") || i18n.language,
   );
+  const appColorVariants = useAppColorVariants();
 
   /**
    * Update document direction based on language
@@ -149,6 +151,10 @@ export const LanguageSwitch: FC<LanguageSwitchProps> = ({
     // use the last part of the language code or the whole code
     return lng.split("-")[1] || lng;
   };
+  const textColorClass =
+    appColorVariants.text === "text-default-700"
+      ? "text-primary"
+      : appColorVariants.text;
 
   return (
     <Tooltip content={t("language")} delay={750}>
@@ -172,7 +178,7 @@ export const LanguageSwitch: FC<LanguageSwitchProps> = ({
                 >
                   <button
                     key={languageIdentifier.code}
-                    className={`${isSelected ? "text-primary" : "text-default-600"} w-full flex items-center justify-between`}
+                    className={`${isSelected ? textColorClass : "text-default-600"} w-full flex items-center justify-between`}
                     type="button"
                     onClick={() => changeLanguage(languageIdentifier.code)}
                   >

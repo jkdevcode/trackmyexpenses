@@ -23,7 +23,7 @@ export const useReport = () => {
   const [info, setInfo] = useState<string | null>(null);
 
   const downloadReport = useCallback(
-    async (from: string, to: string) => {
+    async (period: string, startDate?: string, endDate?: string) => {
       const apiUrl = import.meta.env.VITE_API_URL;
 
       setLoading(true);
@@ -33,8 +33,9 @@ export const useReport = () => {
       try {
         const url = new URL(`${apiUrl}/reportes/facturas`);
 
-        url.searchParams.set("from", from);
-        url.searchParams.set("to", to);
+        url.searchParams.set("period", period);
+        if (startDate) url.searchParams.set("startDate", startDate);
+        if (endDate) url.searchParams.set("endDate", endDate);
 
         const token = getAuthToken();
         const response = await axiosClient.get(url.toString(), {
@@ -54,7 +55,10 @@ export const useReport = () => {
         const link = document.createElement("a");
 
         link.href = objectUrl;
-        link.download = `reporte-${from}_a_${to}.pdf`;
+        const dateLabel =
+          startDate && endDate ? `${startDate}_a_${endDate}` : period;
+
+        link.download = `reporte-${dateLabel}.pdf`;
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -76,17 +80,26 @@ export const useReport = () => {
   };
 };
 
-export const useCheckReportData = (from: string, to: string) => {
+export const useCheckReportData = (
+  period: string,
+  startDate?: string,
+  endDate?: string,
+) => {
   return useQuery({
-    queryKey: ["report-check", from, to],
+    queryKey: ["report-check", period, startDate, endDate],
     queryFn: async () => {
-      if (!from || !to) return { hasData: false, count: 0 };
+      if (!period) return { hasData: false, count: 0 };
+      const params = new URLSearchParams({ period });
+
+      if (startDate) params.set("startDate", startDate);
+      if (endDate) params.set("endDate", endDate);
+
       const response = await axiosClient.get(
-        `/reportes/facturas/check?from=${from}&to=${to}`,
+        `/reportes/facturas/check?${params.toString()}`,
       );
 
       return response.data as { hasData: boolean; count: number };
     },
-    enabled: Boolean(from && to),
+    enabled: Boolean(period),
   });
 };

@@ -5,8 +5,8 @@
     "description": "Select a date range to generate the PDF."
   },
   "filters": {
-    "from": "From",
-    "to": "To"
+    "all_time": "All time",
+    "range_label": "Report for:"
   },
   "actions": {
     "generate": "Generate report"
