@@ -11,6 +11,7 @@ import {
 } from "../utils/invoice-filters";
 
 export type InvoiceDateRangeValue = PickerDateRange | null;
+type StoredInvoiceDateRange = DateRange | null;
 
 const toPickerDate = (value?: string): PickerDateRange["start"] | null => {
   if (!isValidDateInputValue(value)) {
@@ -24,62 +25,109 @@ const toPickerDate = (value?: string): PickerDateRange["start"] | null => {
   }
 };
 
+const normalizeStoredDateRange = (
+  range?: Partial<DateRange> | null,
+): DateRange => {
+  const normalized = normalizeInvoiceFilter({
+    period: "custom",
+    startDate: range?.startDate,
+    endDate: range?.endDate,
+  });
+
+  return {
+    startDate: normalized.startDate ?? getDefaultInvoiceDateRange().startDate,
+    endDate: normalized.endDate ?? getDefaultInvoiceDateRange().endDate,
+  };
+};
+
+const getStoredDateRange = (filter: InvoiceFilter): StoredInvoiceDateRange => {
+  if (filter.period !== "custom") {
+    return null;
+  }
+
+  return normalizeStoredDateRange({
+    startDate: filter.startDate,
+    endDate: filter.endDate,
+  });
+};
+
 export const useInvoiceFilters = (
   initialFilter: InvoiceFilter = { period: "month" },
 ) => {
-  const [filter, setFilter] = useState<InvoiceFilter>(() =>
-    normalizeInvoiceFilter(initialFilter),
+  const normalizedInitialFilter = normalizeInvoiceFilter(initialFilter);
+  const [filter, setFilterState] = useState<InvoiceFilter>(
+    normalizedInitialFilter,
   );
+  const [lastCustomRange, setLastCustomRange] =
+    useState<StoredInvoiceDateRange>(() =>
+      getStoredDateRange(normalizedInitialFilter),
+    );
 
   const dateRangeValue = useMemo<InvoiceDateRangeValue>(() => {
-    if (filter.period !== "custom") {
-      return null;
-    }
-
-    const start = toPickerDate(filter.startDate);
-    const end = toPickerDate(filter.endDate);
+    const storedRange = lastCustomRange ?? getDefaultInvoiceDateRange();
+    const start = toPickerDate(storedRange.startDate);
+    const end = toPickerDate(storedRange.endDate);
 
     if (!start || !end) {
       return null;
     }
 
     return { start, end };
-  }, [filter.endDate, filter.period, filter.startDate]);
+  }, [lastCustomRange]);
+
+  const setFilter = (nextFilter: InvoiceFilter) => {
+    const normalizedFilter = normalizeInvoiceFilter(nextFilter);
+
+    setFilterState(normalizedFilter);
+
+    if (normalizedFilter.period === "custom") {
+      setLastCustomRange(
+        normalizeStoredDateRange({
+          startDate: normalizedFilter.startDate,
+          endDate: normalizedFilter.endDate,
+        }),
+      );
+    }
+  };
 
   const setPeriod = (period: InvoicePeriod) => {
-    setFilter((currentFilter) => {
-      if (period !== "custom") {
-        return { period };
-      }
+    if (period !== "custom") {
+      setFilter({ period });
 
-      if (currentFilter.period === "custom") {
-        return normalizeInvoiceFilter(currentFilter);
-      }
+      return;
+    }
 
-      return {
-        period: "custom",
-        ...getDefaultInvoiceDateRange(),
-      };
+    const restoredRange =
+      filter.period === "custom"
+        ? normalizeStoredDateRange({
+            startDate: filter.startDate,
+            endDate: filter.endDate,
+          })
+        : normalizeStoredDateRange(lastCustomRange);
+
+    setFilter({
+      period: "custom",
+      ...restoredRange,
     });
   };
 
   const setDateRange = (range: DateRange | null) => {
     if (!range) {
-      setFilter({
-        period: "custom",
-        ...getDefaultInvoiceDateRange(),
-      });
+      setLastCustomRange(null);
+
+      if (filter.period === "custom") {
+        setFilterState({ period: "month" });
+      }
 
       return;
     }
 
-    setFilter(
-      normalizeInvoiceFilter({
-        period: "custom",
-        startDate: range.startDate,
-        endDate: range.endDate,
-      }),
-    );
+    const normalizedRange = normalizeStoredDateRange(range);
+
+    setFilter({
+      period: "custom",
+      ...normalizedRange,
+    });
   };
 
   const setDateRangeValue = (value: InvoiceDateRangeValue) => {

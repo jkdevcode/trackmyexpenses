@@ -111,27 +111,29 @@ export const InvoiceListView = () => {
   };
 
   return (
-    <div className="space-y-4 min-h-[520px]">
-      <div className="flex flex-col gap-3">
-        <h2 className="text-xl font-semibold">{t("list.title")}</h2>
+    <div className="space-y-6 min-h-[520px]">
+      <div className="flex flex-col gap-6">
+        <h2 className="text-2xl font-bold tracking-tight">{t("list.title")}</h2>
 
-        <div className="flex flex-col md:flex-row md:items-center w-full gap-3">
-          <div className="w-full md:max-w-md">
-            <InvoiceSearchInput
-              value={filterValue}
-              onValueChange={setFilterValue}
-            />
-          </div>
-
-          <div className="flex items-start gap-3 md:ml-auto">
+        {/* Row 2: Date Filters (Full width, Tabs left, Custom right) */}
+        <div className="flex items-center gap-3 w-full">
+          <div className="flex-1">
             <InvoiceFilters
               dateRangeValue={dateRangeValue}
               filter={filter}
               onDateRangeChange={setDateRangeValue}
               onPeriodChange={setPeriod}
             />
-            {invoicesQuery.isFetching && <Spinner color={appColor} size="sm" />}
           </div>
+          {invoicesQuery.isFetching && <Spinner color={appColor} size="sm" />}
+        </div>
+
+        {/* Row 3: Search Input */}
+        <div className="w-full md:max-w-xl">
+          <InvoiceSearchInput
+            value={filterValue}
+            onValueChange={setFilterValue}
+          />
         </div>
       </div>
 
