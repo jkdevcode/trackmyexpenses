@@ -1,7 +1,12 @@
 import { Prisma } from '@prisma/client';
-import { CustomPeriodRange, PeriodFilter } from './factura.types';
+import { CustomPeriodRange, PeriodFilter, PeriodWindow } from './factura.types';
 import { AppError, type AppErrorDetail } from '../common/errors/app.error';
 import { FACTURA_ERROR_CODES } from './errors/factura-error-codes';
+import {
+  getPeriodWindow as getSharedPeriodWindow,
+  normalizeFacturaDate as normalizeSharedFacturaDate,
+  PeriodResolutionError,
+} from '../common/utils/date-periods';
 
 export type FacturaItemInput = {
   productoId: number;
@@ -40,16 +45,6 @@ export type OcrProductoInput = {
   precioUnitario?: string | number;
   unidadDetectada?: string;
 };
-
-export type PeriodWindow = {
-  startDate: Date;
-  endDate: Date;
-  prevStartDate: Date;
-  prevEndDate: Date;
-};
-
-const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 export class FacturaDomainValidationError extends AppError {
   constructor(code: string, details?: AppErrorDetail[]) {
@@ -299,235 +294,32 @@ export function assertValidCurrencyCode(code: string): void {
   }
 }
 
-function buildUtcDate(
-  year: number,
-  month: number,
-  day: number,
-  hours = 0,
-  minutes = 0,
-  seconds = 0,
-  milliseconds = 0,
-): Date {
-  return new Date(
-    Date.UTC(year, month, day, hours, minutes, seconds, milliseconds),
-  );
-}
-
-function invalidDateRangeError(
-  field: 'startDate' | 'endDate',
-  value: string,
+function facturaPeriodErrorFactory(
+  err: PeriodResolutionError,
 ): FacturaDomainValidationError {
-  return new FacturaDomainValidationError(
-    FACTURA_ERROR_CODES.DATE_RANGE_INVALID,
-    [
-      {
-        field,
-        code: FACTURA_ERROR_CODES.DATE_RANGE_INVALID,
-        meta: { value },
-      },
-    ],
-  );
-}
+  const code =
+    err.code in FACTURA_ERROR_CODES
+      ? FACTURA_ERROR_CODES[err.code as keyof typeof FACTURA_ERROR_CODES]
+      : err.code;
+  const detail: AppErrorDetail = {
+    code,
+    ...(err.field ? { field: err.field } : {}),
+    ...(err.meta ? { meta: err.meta } : {}),
+  };
 
-function cloneDate(date: Date): Date {
-  return new Date(date.getTime());
-}
-
-function startOfUtcDay(date: Date): Date {
-  return buildUtcDate(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate(),
-  );
-}
-
-function endOfUtcDay(date: Date): Date {
-  return buildUtcDate(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate(),
-    23,
-    59,
-    59,
-    999,
-  );
-}
-
-function addUtcDays(date: Date, amount: number): Date {
-  const next = cloneDate(date);
-
-  next.setUTCDate(next.getUTCDate() + amount);
-
-  return next;
-}
-
-function addUtcMonths(date: Date, amount: number): Date {
-  const next = cloneDate(date);
-
-  next.setUTCMonth(next.getUTCMonth() + amount);
-
-  return next;
-}
-
-function startOfUtcWeek(date: Date): Date {
-  const startDate = startOfUtcDay(date);
-  const weekday = startDate.getUTCDay();
-  const diff = weekday === 0 ? -6 : 1 - weekday;
-
-  return addUtcDays(startDate, diff);
-}
-
-function endOfUtcWeek(date: Date): Date {
-  return endOfUtcDay(addUtcDays(startOfUtcWeek(date), 6));
-}
-
-function startOfUtcMonth(date: Date): Date {
-  return buildUtcDate(date.getUTCFullYear(), date.getUTCMonth(), 1);
-}
-
-function endOfUtcMonth(date: Date): Date {
-  return buildUtcDate(
-    date.getUTCFullYear(),
-    date.getUTCMonth() + 1,
-    0,
-    23,
-    59,
-    59,
-    999,
-  );
-}
-
-function startOfUtcYear(date: Date): Date {
-  return buildUtcDate(date.getUTCFullYear(), 0, 1);
-}
-
-function endOfUtcYear(date: Date): Date {
-  return buildUtcDate(date.getUTCFullYear(), 11, 31, 23, 59, 59, 999);
-}
-
-function parseUtcDateOnly(value: string, field: 'startDate' | 'endDate'): Date {
-  if (!DATE_ONLY_PATTERN.test(value)) {
-    throw invalidDateRangeError(field, value);
-  }
-
-  const [year, month, day] = value.split('-').map(Number);
-  const parsedDate = buildUtcDate(year, month - 1, day);
-
-  if (
-    parsedDate.getUTCFullYear() !== year ||
-    parsedDate.getUTCMonth() !== month - 1 ||
-    parsedDate.getUTCDate() !== day
-  ) {
-    throw invalidDateRangeError(field, value);
-  }
-
-  return parsedDate;
-}
-
-function getCustomPeriodWindow(range?: CustomPeriodRange): PeriodWindow {
-  const startDateInput = range?.startDate?.trim();
-  const endDateInput = range?.endDate?.trim();
-
-  if (!startDateInput || !endDateInput) {
-    const missingFields: Array<'startDate' | 'endDate'> = [];
-    if (!startDateInput) missingFields.push('startDate');
-    if (!endDateInput) missingFields.push('endDate');
-
-    throw new FacturaDomainValidationError(
-      FACTURA_ERROR_CODES.DATE_RANGE_REQUIRED,
-      missingFields.map((field) => ({
-        field,
-        code: FACTURA_ERROR_CODES.DATE_RANGE_REQUIRED,
-      })),
-    );
-  }
-
-  const startDate = startOfUtcDay(
-    parseUtcDateOnly(startDateInput, 'startDate'),
-  );
-  const endDate = endOfUtcDay(parseUtcDateOnly(endDateInput, 'endDate'));
-
-  if (startDate.getTime() > endDate.getTime()) {
-    throw new FacturaDomainValidationError(
-      FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
-      [
-        {
-          field: 'startDate',
-          code: FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
-          meta: { startDate: startDateInput, endDate: endDateInput },
-        },
-        {
-          field: 'endDate',
-          code: FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
-          meta: { startDate: startDateInput, endDate: endDateInput },
-        },
-      ],
-    );
-  }
-
-  const totalDays =
-    Math.round(
-      (startOfUtcDay(endDate).getTime() - startDate.getTime()) / DAY_IN_MS,
-    ) + 1;
-  const prevEndDate = endOfUtcDay(addUtcDays(startDate, -1));
-  const prevStartDate = startOfUtcDay(addUtcDays(startDate, -totalDays));
-
-  return { startDate, endDate, prevStartDate, prevEndDate };
+  return new FacturaDomainValidationError(code, [detail]);
 }
 
 export function normalizeFacturaDate(value: string | Date): Date {
-  const parsedDate = value instanceof Date ? cloneDate(value) : new Date(value);
-
-  return startOfUtcDay(parsedDate);
+  return normalizeSharedFacturaDate(value);
 }
 
-type BoundedPeriodFilter = Exclude<PeriodFilter, 'all'>;
-
 export function getPeriodWindow(
-  period: BoundedPeriodFilter,
+  period: Exclude<PeriodFilter, 'all'>,
   now = new Date(),
   range?: CustomPeriodRange,
 ): PeriodWindow {
-  if (period === 'custom') {
-    return getCustomPeriodWindow(range);
-  }
-
-  const currentDate = cloneDate(now);
-
-  if (period === 'week') {
-    const startDate = startOfUtcWeek(currentDate);
-    const endDate = endOfUtcWeek(currentDate);
-
-    return {
-      startDate,
-      endDate,
-      prevStartDate: addUtcDays(startDate, -7),
-      prevEndDate: addUtcDays(endDate, -7),
-    };
-  }
-
-  if (period === 'year') {
-    const previousYearDate = buildUtcDate(
-      currentDate.getUTCFullYear() - 1,
-      0,
-      1,
-    );
-
-    return {
-      startDate: startOfUtcYear(currentDate),
-      endDate: endOfUtcYear(currentDate),
-      prevStartDate: startOfUtcYear(previousYearDate),
-      prevEndDate: endOfUtcYear(previousYearDate),
-    };
-  }
-
-  const previousMonthDate = addUtcMonths(startOfUtcMonth(currentDate), -1);
-  const startDate = startOfUtcMonth(currentDate);
-  const endDate = endOfUtcMonth(currentDate);
-  const prevStartDate = startOfUtcMonth(previousMonthDate);
-  const prevEndDate = endOfUtcMonth(previousMonthDate);
-
-  return { startDate, endDate, prevStartDate, prevEndDate };
+  return getSharedPeriodWindow(period, now, range, facturaPeriodErrorFactory);
 }
 
 export function calculateSpendingTrend(
