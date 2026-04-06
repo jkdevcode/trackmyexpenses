@@ -35,3 +35,10 @@ export const calculateInvoiceBaseTotal = (
 
   return roundCurrency(total * (tasaCambio ?? 0));
 };
+
+export const normalizeToStep = (value: number, step: number): number => {
+  const normalized = Math.round(value / step) * step;
+  const decimals = step.toString().split(".")[1]?.length || 0;
+
+  return Number(normalized.toFixed(decimals));
+};

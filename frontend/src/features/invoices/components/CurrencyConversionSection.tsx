@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 
-import { calculateInvoiceBaseTotal } from "../utils/currency";
+import { calculateInvoiceBaseTotal, normalizeToStep } from "../utils/currency";
 import { formatCurrency } from "../utils/formatters";
+
+const RATE_STEP = 0.000001;
 
 import { useAppColorVariants } from "@/theme/app-color-variants";
 import { useColorTheme } from "@/hooks/use-color-theme";
@@ -44,11 +46,17 @@ export const CurrencyConversionSection = ({
   }, [rateIsValid, tasaCambio, total]);
 
   const [inputValue, setInputValue] = useState(
-    rateIsValid && tasaCambio ? String(tasaCambio) : "",
+    rateIsValid && tasaCambio
+      ? String(normalizeToStep(tasaCambio, RATE_STEP))
+      : "",
   );
 
   useEffect(() => {
-    setInputValue(rateIsValid && tasaCambio ? String(tasaCambio) : "");
+    setInputValue(
+      rateIsValid && tasaCambio
+        ? String(normalizeToStep(tasaCambio, RATE_STEP))
+        : "",
+    );
   }, [rateIsValid, tasaCambio]);
 
   if (!shouldRender) {
@@ -65,7 +73,7 @@ export const CurrencyConversionSection = ({
       return;
     }
 
-    onChangeTasa(parsed);
+    onChangeTasa(normalizeToStep(parsed, RATE_STEP));
   };
 
   return (
@@ -86,8 +94,8 @@ export const CurrencyConversionSection = ({
           color={appColor}
           description={t("form.currency.rate_hint")}
           label={t("form.currency.rate")}
-          min={0.000001}
-          step="0.000001"
+          min={RATE_STEP}
+          step={String(RATE_STEP)}
           type="number"
           value={inputValue}
           variant="bordered"
