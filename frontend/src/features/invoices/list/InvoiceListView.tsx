@@ -111,7 +111,7 @@ export const InvoiceListView = () => {
   };
 
   return (
-    <div className="space-y-6 min-h-[520px]">
+    <div className="space-y-6 min-h-130">
       <div className="flex flex-col gap-6">
         <h2 className="text-2xl font-bold tracking-tight">{t("list.title")}</h2>
 

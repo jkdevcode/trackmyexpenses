@@ -84,7 +84,9 @@ const ReportsPage = () => {
   return (
     <div className="flex flex-col items-center p-4 bg-background min-h-full w-full gap-6">
       <div className="max-w-3xl w-full flex flex-col gap-6">
-        <h1 className="text-2xl md:text-3xl font-bold ml-2">{t("reports:title")}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold ml-2">
+          {t("reports:title")}
+        </h1>
 
         <Card className="w-full shadow-lg rounded-2xl p-2">
           <CardHeader className="pb-0 pt-4 px-4 flex-col items-start">
@@ -109,7 +111,7 @@ const ReportsPage = () => {
             <div className="flex flex-col items-center gap-6 py-4">
               {rangeLabel && (
                 <div className="flex flex-col items-center animate-in fade-in slide-in-from-bottom-2 duration-400">
-                  <span className="text-default-500 text-[11px] uppercase font-bold tracking-[0.1em] mb-1">
+                  <span className="text-default-500 text-[11px] uppercase font-bold tracking-widest mb-1">
                     {t("reports:filters.range_label")}
                   </span>
                   <span className="text-xl font-black text-default-900 leading-tight">

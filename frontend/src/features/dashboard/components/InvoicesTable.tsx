@@ -137,7 +137,7 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
                             content={item.provider}
                             placement="top-start"
                           >
-                            <span className="font-medium text-foreground text-sm line-clamp-2 break-words cursor-help">
+                            <span className="font-medium text-foreground text-sm line-clamp-2 wrap-break-word cursor-help">
                               {item.provider}
                             </span>
                           </Tooltip>
