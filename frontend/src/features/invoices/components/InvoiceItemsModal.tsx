@@ -173,9 +173,7 @@ export const InvoiceItemsModal = ({
                         }
                       />
                       {rowError && (
-                        <p className="text-danger text-xs mt-1">
-                          ⚠ {rowError}
-                        </p>
+                        <p className="text-danger text-xs mt-1">⚠ {rowError}</p>
                       )}
                     </div>
                   </TableCell>
