@@ -74,6 +74,7 @@ i18n
       "invoices",
       "errors",
       "meta",
+      "legal",
     ],
     defaultNS: "common",
     interpolation: {

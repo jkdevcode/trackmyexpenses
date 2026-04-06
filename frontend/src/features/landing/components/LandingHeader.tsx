@@ -5,6 +5,7 @@ import {
   NavbarItem,
 } from "@heroui/navbar";
 import { Link } from "@heroui/link";
+import { Link as RouterLink } from "react-router-dom";
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 
@@ -21,7 +22,9 @@ export const LandingHeader = () => {
   return (
     <HeroNavbar maxWidth="xl" position="sticky">
       <NavbarBrand>
-        <p className="font-bold text-inherit text-xl">{t("app-name")}</p>
+        <RouterLink to="/">
+          <p className="font-bold text-inherit text-xl">{t("app-name")}</p>
+        </RouterLink>
       </NavbarBrand>
       <NavbarContent className="hidden sm:flex gap-4" justify="center">
         <NavbarItem>
