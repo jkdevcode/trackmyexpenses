@@ -3,6 +3,7 @@ import type { InvoiceUnit, PaymentMethod } from "../../types";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@heroui/button";
+import { DatePicker } from "@heroui/date-picker";
 import { Input } from "@heroui/input";
 import {
   Modal,
@@ -13,6 +14,12 @@ import {
 } from "@heroui/modal";
 import { Select, SelectItem } from "@heroui/select";
 import { Spinner } from "@heroui/spinner";
+import {
+  parseDate,
+  getLocalTimeZone,
+  today,
+  type DateValue,
+} from "@internationalized/date";
 
 import { InvoiceSearchInput } from "../../components/InvoiceSearchInput";
 import { PaginatedItems } from "../../components/PaginatedItems";
@@ -37,6 +44,18 @@ type InvoiceEditModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSaved: () => void;
+};
+
+const safeParseDate = (dateString?: string | null): DateValue => {
+  if (dateString) {
+    try {
+      return parseDate(dateString);
+    } catch {
+      // Ignore parse errors from DateValue
+    }
+  }
+
+  return today(getLocalTimeZone());
 };
 
 export const InvoiceEditModal = ({
@@ -80,7 +99,14 @@ export const InvoiceEditModal = ({
   }, [isOpen, setFilterValue]);
 
   return (
-    <Modal isOpen={isOpen} scrollBehavior="inside" size="xl" onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      isDismissable={false}
+      scrollBehavior="inside"
+      backdrop="opaque"
+      size="xl"
+      onClose={onClose}
+    >
       <ModalContent>
         <ModalHeader>{t("actions.edit")}</ModalHeader>
         <ModalBody>
@@ -109,16 +135,17 @@ export const InvoiceEditModal = ({
                     : undefined
                 }
               >
-                <Input
+                <DatePicker
+                  isRequired
                   color={appColor}
                   errorMessage={fieldErrors.get("fechaHoraCompra")}
                   isInvalid={fieldErrors.has("fechaHoraCompra")}
                   label={t("manual.fecha")}
-                  type="date"
-                  value={form.fechaHoraCompra}
+                  maxValue={today(getLocalTimeZone())}
+                  value={safeParseDate(form.fechaHoraCompra)}
                   variant="bordered"
-                  onValueChange={(value) =>
-                    updateField("fechaHoraCompra", value)
+                  onChange={(date: DateValue | null) =>
+                    updateField("fechaHoraCompra", date ? date.toString() : "")
                   }
                 />
               </div>
