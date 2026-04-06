@@ -73,6 +73,7 @@ export function PaginatedItems<T>({
         isCompact
         showControls
         showShadow
+        size="sm"
         color={appColor}
         page={currentPage}
         total={totalPages}

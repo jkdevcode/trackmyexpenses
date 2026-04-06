@@ -123,7 +123,7 @@ export const SettingsPage = () => {
   return (
     <div className="flex flex-col items-center p-4 bg-background min-h-full w-full gap-6">
       <div className="max-w-4xl w-full flex flex-col gap-6">
-        <h1 className="text-2xl font-bold ml-2">{t("settings:title")}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold ml-2">{t("settings:title")}</h1>
 
         <Card className="w-full shadow-lg rounded-2xl p-2">
           <CardHeader className="pb-0 pt-4 px-4 flex-col items-start">
