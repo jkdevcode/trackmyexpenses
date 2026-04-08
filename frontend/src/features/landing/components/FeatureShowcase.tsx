@@ -1,10 +1,13 @@
 import { useTranslation } from "react-i18next";
 
+import { getLandingImages } from "../utils";
+
 import { useAppColorVariants } from "@/theme/app-color-variants";
 
 export const FeatureShowcase = () => {
-  const { t } = useTranslation("landing");
+  const { t, i18n } = useTranslation("landing");
   const appColorVariants = useAppColorVariants();
+  const images = getLandingImages(i18n.language);
 
   return (
     <section className="py-20 px-4" id="features">
@@ -44,8 +47,13 @@ export const FeatureShowcase = () => {
             </li>
           </ul>
         </div>
-        <div className="bg-default-100 rounded-3xl aspect-square flex items-center justify-center text-default-300 border border-default-200 shadow-inner">
-          <p className="italic">{t("history-title")}</p>
+        <div className="bg-default-100 rounded-3xl aspect-square flex items-center justify-center text-default-300 border border-default-200 shadow-inner overflow-hidden">
+          <img
+            alt={t("history-title")}
+            className="w-full h-full object-cover object-top-left"
+            src={images.dashboard}
+            loading="lazy"
+          />
         </div>
       </div>
     </section>

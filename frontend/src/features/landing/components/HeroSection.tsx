@@ -2,13 +2,16 @@ import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
 import { useTranslation } from "react-i18next";
 
+import { getLandingImages } from "../utils";
+
 import { useAppColorVariants } from "@/theme/app-color-variants";
 import { useColorTheme } from "@/hooks/use-color-theme";
 
 export const HeroSection = () => {
-  const { t } = useTranslation("landing");
+  const { t, i18n } = useTranslation("landing");
   const { appColor } = useColorTheme();
   const appColorVariants = useAppColorVariants();
+  const images = getLandingImages(i18n.language);
 
   return (
     <section className="flex flex-col items-center justify-center py-20 gap-8 text-center px-4">
@@ -44,11 +47,12 @@ export const HeroSection = () => {
         </Button>
       </div>
       <div className="mt-12 w-full max-w-5xl rounded-2xl overflow-hidden border border-default-200 bg-default-50 shadow-2xl aspect-video flex items-center justify-center text-default-300">
-        {/* Placeholder for Dashboard Image/Preview */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-20 h-20 rounded-full border-4 border-dashed border-default-200" />
-          <p className="italic text-sm">{t("hero-preview")}</p>
-        </div>
+        <img
+          alt={t("hero-preview")}
+          className="w-full h-full object-cover object-top"
+          src={images.principal}
+          loading="lazy"
+        />
       </div>
     </section>
   );
