@@ -37,6 +37,16 @@ const CookieConsent = lazy(() =>
     default: module.CookieConsent,
   })),
 );
+const TermsOfService = lazy(() =>
+  import("@/features/legal/pages/TermsOfService").then((module) => ({
+    default: module.TermsOfService,
+  })),
+);
+const PrivacyPolicy = lazy(() =>
+  import("@/features/legal/pages/PrivacyPolicy").then((module) => ({
+    default: module.PrivacyPolicy,
+  })),
+);
 
 const shouldRenderCookieConsent = () => {
   if (typeof window === "undefined") return false;
@@ -104,6 +114,34 @@ function App() {
             </AppErrorBoundary>
           }
           path="/register"
+        />
+        <Route
+          element={
+            <AppErrorBoundary>
+              <Suspense
+                fallback={
+                  <LoadingSpinner message={t("common:loading.pages.page")} />
+                }
+              >
+                <TermsOfService />
+              </Suspense>
+            </AppErrorBoundary>
+          }
+          path="/terms-of-service"
+        />
+        <Route
+          element={
+            <AppErrorBoundary>
+              <Suspense
+                fallback={
+                  <LoadingSpinner message={t("common:loading.pages.page")} />
+                }
+              >
+                <PrivacyPolicy />
+              </Suspense>
+            </AppErrorBoundary>
+          }
+          path="/privacy-policy"
         />
         <Route
           element={

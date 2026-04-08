@@ -34,7 +34,9 @@ const Dashboard = () => {
       {/* Header Section */}
       <div className="flex flex-col gap-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            {t("title")}
+          </h1>
           <p className="text-default-500">{t("subtitle")}</p>
         </div>
 

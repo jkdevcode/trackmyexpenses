@@ -69,9 +69,7 @@ export const NewInvoicePage = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-6">
-        {t("page.title", "Nueva Factura")}
-      </h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-6">{t("page.title")}</h1>
       <Tabs
         aria-label={t("page.title")}
         selectedKey={activeTab}

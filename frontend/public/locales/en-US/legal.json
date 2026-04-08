@@ -1,0 +1,75 @@
+{
+  "terms": {
+    "title": "Terms of Service",
+    "updated": "Last updated: April 2026",
+    "sections": {
+      "intro": {
+        "title": "1. Introduction",
+        "content": "Welcome to TrackMyExpenses. By using our service, you agree to these Terms of Service. Please read them carefully."
+      },
+      "use": {
+        "title": "2. Use of the Service",
+        "content": "Our service is designed to help you manage invoices and track expenses. You agree to use the service only for lawful purposes and in accordance with these terms."
+      },
+      "responsibilities": {
+        "title": "3. User Responsibilities",
+        "content": "You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account."
+      },
+      "acceptable": {
+        "title": "4. Acceptable Use",
+        "content": "You must not use the application to store malicious software, infringe on any intellectual property rights, or engage in any fraudulent activity."
+      },
+      "data": {
+        "title": "5. Data Accuracy Disclaimer (OCR/AI)",
+        "content": "We use Optical Character Recognition (OCR) and AI technologies to extract details from the invoice images you upload. While we continually strive for high accuracy, the extracted results are not guaranteed to be perfect. You remain fully responsible for verifying the accuracy of all extracted data before relying on it for accounting, tax, or legal purposes."
+      },
+      "liability": {
+        "title": "6. Limitation of Liability",
+        "content": "TrackMyExpenses is provided on an 'as is' and 'as available' basis. We shall not be liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use the service."
+      },
+      "modifications": {
+        "title": "7. Modifications to the Service",
+        "content": "We reserve the right to modify or discontinue, temporarily or permanently, the service with or without prior notice."
+      },
+      "termination": {
+        "title": "8. Termination",
+        "content": "We reserve the right to suspend or terminate your account at any time, without notice, for conduct that we believe violates these Terms of Service or is harmful to other users of out service, us, or third parties."
+      }
+    }
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: April 2026",
+    "sections": {
+      "data": {
+        "title": "1. What Data is Collected",
+        "content": "We collect information that you directly provide to us. This includes account information (such as your name and email), financial transaction records, invoices, and any images you upload for OCR processing."
+      },
+      "usage": {
+        "title": "2. How We Use Data",
+        "content": "We use the data we collect to provide and maintain our service. Specifically, uploaded images are processed via OCR to extract text and details. We also use your data to communicate with you and improve user experience."
+      },
+      "storage": {
+        "title": "3. Data Storage",
+        "content": "Your data is stored securely in our backed databases under modern encryption standards. We retain your information as long as your account is active or as needed to provide you services."
+      },
+      "third_parties": {
+        "title": "4. Third-Party Services",
+        "content": "We don’t sell your personal data. We may share information with trusted third-party service providers (like hosting or OCR APIs) strictly to provide the TrackMyExpenses functionalities."
+      },
+      "security": {
+        "title": "5. Security Considerations",
+        "content": "We take reasonable administrative and technical measures to protect your personal data from unauthorized access. However, no data transmission over the Internet is 100% secure."
+      },
+      "rights": {
+        "title": "6. User Rights",
+        "content": "You retain full rights to your data. You may request access, correction, or deletion of your personal data from our platform at any time by contacting us."
+      },
+      "contact": {
+        "title": "7. Contact Us",
+        "content": "If you have any questions or concerns about this Privacy Policy, please contact us at {{email}}."
+      }
+    }
+
+  }
+}

@@ -4,6 +4,8 @@
   "hero-subtitle": "Sube una foto de tu factura y deja que el OCR haga el trabajo sucio. Edita, confirma y olvídate. La forma más simple de llevar tus cuentas.",
   "hero-cta-primary": "Empezar Gratis",
   "hero-cta-secondary": "Saber más",
+  "hero-preview": "Vista previa de la interfaz",
+  "history-title": "Visualización del Historial",
   "how-it-works-title": "Cómo funciona",
   "how-it-works-subtitle": "Hemos simplificado el proceso al máximo para que registrar un gasto no te quite más de 10 segundos.",
   "step-1-title": "Sube o Toma Foto",
@@ -17,5 +19,11 @@
   "features-desc": "Olvídate de las pilas de papeles y los Excel manuales. TrackMyExpenses organiza tus gastos por categorías y te ofrece una vista clara de dónde se va tu dinero cada mes.",
   "feature-1": "Filtros avanzados por fecha y monto",
   "feature-2": "Categorización automática inteligente",
-  "feature-3": "Exportación de datos para tu contabilidad"
+  "feature-3": "Exportación de datos para tu contabilidad",
+  "footer": {
+    "rights": "© {{year}} Todos los derechos reservados.",
+    "privacy": "Política de Privacidad",
+    "terms": "Términos de Servicio",
+    "contact": "Contacto"
+  }
 }

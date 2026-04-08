@@ -53,10 +53,7 @@ export const RevenueChart = ({ data, loading }: RevenueChartProps) => {
 
   if (loading || !recharts) {
     return (
-      <Card
-        className="h-[300px] w-full animate-pulse bg-default-100"
-        shadow="sm"
-      >
+      <Card className="h-75 w-full animate-pulse bg-default-100" shadow="sm">
         <CardBody />
       </Card>
     );
@@ -66,11 +63,11 @@ export const RevenueChart = ({ data, loading }: RevenueChartProps) => {
     recharts;
 
   return (
-    <Card className="h-[300px] w-full" shadow="sm">
+    <Card className="h-75 w-full" shadow="sm">
       <CardHeader className="flex flex-col items-start px-6 pt-6 pb-0">
         <h3 className="text-lg font-semibold">{t("charts.revenue_title")}</h3>
       </CardHeader>
-      <CardBody className="pb-4 h-full min-h-[250px]">
+      <CardBody className="pb-4 h-full min-h-62.5">
         <ResponsiveContainer height="100%" width="100%">
           <BarChart
             data={data}
