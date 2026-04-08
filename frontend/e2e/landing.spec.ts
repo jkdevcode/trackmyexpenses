@@ -1,4 +1,4 @@
-﻿import { test, expect } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
 test("landing hero renders", async ({ page }) => {
   await page.addInitScript(() => {
@@ -9,6 +9,6 @@ test("landing hero renders", async ({ page }) => {
   await page.waitForLoadState("networkidle");
 
   await expect(
-    page.getByText("Vista previa de la interfaz", { exact: true }),
+    page.getByAltText("Preview of the interface", { exact: true }),
   ).toBeVisible();
 });
