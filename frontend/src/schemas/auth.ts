@@ -57,3 +57,25 @@ export const getRegisterSchema = (t: TFunction) => {
       .required(t("validation:required")),
   });
 };
+
+export const getForgotPasswordSchema = (t: TFunction) => {
+  return yup.object({
+    email: yup
+      .string()
+      .email(t("validation:email_invalid"))
+      .required(t("validation:required")),
+  });
+};
+
+export const getResetPasswordSchema = (t: TFunction) => {
+  return yup.object({
+    newPassword: yup
+      .string()
+      .min(8, t("validation:password_min"))
+      .required(t("validation:required")),
+    confirmPassword: yup
+      .string()
+      .oneOf([yup.ref("newPassword")], t("validation:password_match"))
+      .required(t("validation:required")),
+  });
+};
