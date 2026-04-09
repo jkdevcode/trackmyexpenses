@@ -7,6 +7,7 @@
   "NOT_FOUND": "Recurso no encontrado.",
   "UNPROCESSABLE_ENTITY": "Hay datos que requieren revision.",
   "SERVER_ERROR": "Error del servidor. Intenta mas tarde.",
+  "RESET_PASSWORD_TOKEN_INVALID": "El enlace de recuperacion no es valido o ya expiro.",
 
   "FACTURA_ITEMS_EMPTY": "Debes agregar al menos un producto.",
   "FACTURA_ITEM_PRODUCTO_ID_INVALID": "Este item tiene una referencia de producto invalida.",

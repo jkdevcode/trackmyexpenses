@@ -38,5 +38,13 @@
   "landing": {
     "title": "Bienvenido a TrackMyExpenses",
     "description": "La mejor herramienta para gestionar tus gastos sin esfuerzo."
+  },
+  "forgotPassword": {
+    "title": "Recuperar contrasena | TrackMyExpenses",
+    "description": "Solicita un enlace para restablecer la contrasena de tu cuenta."
+  },
+  "resetPassword": {
+    "title": "Restablecer contrasena | TrackMyExpenses",
+    "description": "Define una nueva contrasena para tu cuenta de TrackMyExpenses."
   }
 }
