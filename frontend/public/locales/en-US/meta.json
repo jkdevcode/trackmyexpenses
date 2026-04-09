@@ -38,5 +38,13 @@
   "landing": {
     "title": "Welcome to TrackMyExpenses",
     "description": "The best tool for managing your expenses effortlessly."
+  },
+  "forgotPassword": {
+    "title": "Forgot Password | TrackMyExpenses",
+    "description": "Request a password reset link for your TrackMyExpenses account."
+  },
+  "resetPassword": {
+    "title": "Reset Password | TrackMyExpenses",
+    "description": "Set a new password for your TrackMyExpenses account."
   }
 }

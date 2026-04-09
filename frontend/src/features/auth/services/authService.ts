@@ -31,6 +31,25 @@ export interface LogoutResponse {
   message: string;
 }
 
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  status: number;
+  message: string;
+}
+
+export interface ResetPasswordPayload {
+  token: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordResponse {
+  status: number;
+  message: string;
+}
+
 export interface RegisterPayload {
   tipo_documento: string;
   documento_identidad: string;
@@ -83,6 +102,28 @@ export const registerRequest = async (
 
 export const logoutRequest = async (): Promise<LogoutResponse> => {
   const response = await axiosClient.post<LogoutResponse>("/auth/logout");
+
+  return response.data;
+};
+
+export const forgotPasswordRequest = async (
+  payload: ForgotPasswordPayload,
+): Promise<ForgotPasswordResponse> => {
+  const response = await axiosClient.post<ForgotPasswordResponse>(
+    "/auth/forgot-password",
+    payload,
+  );
+
+  return response.data;
+};
+
+export const resetPasswordRequest = async (
+  payload: ResetPasswordPayload,
+): Promise<ResetPasswordResponse> => {
+  const response = await axiosClient.post<ResetPasswordResponse>(
+    "/auth/reset-password",
+    payload,
+  );
 
   return response.data;
 };

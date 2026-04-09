@@ -7,6 +7,7 @@
   "NOT_FOUND": "Resource not found.",
   "UNPROCESSABLE_ENTITY": "Some data needs your attention.",
   "SERVER_ERROR": "Server error. Please try again later.",
+  "RESET_PASSWORD_TOKEN_INVALID": "The password reset link is invalid or has expired.",
 
   "FACTURA_ITEMS_EMPTY": "You must add at least one product.",
   "FACTURA_ITEM_PRODUCTO_ID_INVALID": "Item has an invalid product reference.",
