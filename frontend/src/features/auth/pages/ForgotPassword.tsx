@@ -75,7 +75,7 @@ const ForgotPasswordPage = () => {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8 rounded-2xl bg-content1 p-8 shadow-lg">
         <div className="flex flex-col items-center text-center">
-          <Logo size={60} />
+          <Logo width={40} height={40} />
           <h2 className="mt-6 text-3xl font-extrabold text-foreground">
             {t("auth:forgot_password.title")}
           </h2>

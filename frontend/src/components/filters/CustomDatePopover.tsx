@@ -306,7 +306,7 @@ export const CustomDatePopover = ({
             <m.div
               key="backdrop"
               animate={{ opacity: 1 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[50]"
+              className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-50"
               exit={{ opacity: 0 }}
               initial={{ opacity: 0 }}
               transition={{ duration: 0.2 }}

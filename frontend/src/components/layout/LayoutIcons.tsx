@@ -1,5 +1,6 @@
 import { IconSvgProps } from "@/types";
 
+// layout icons
 export const HomeIcon = (props: IconSvgProps) => (
   <svg
     aria-hidden="true"

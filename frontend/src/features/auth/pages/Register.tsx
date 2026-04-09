@@ -13,6 +13,7 @@ import { isAxiosError } from "axios";
 
 import { useRegisterMutation } from "../hooks/useAuthMutations";
 
+import { ChevronLeftIcon } from "@/components/ui/icons";
 import { getErrorMessage } from "@/utils/errors";
 import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/ui/icons";
 import { getRegisterSchema } from "@/schemas/auth";
@@ -143,6 +144,9 @@ const RegisterPage = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-2xl w-full space-y-8 bg-content1 p-8 rounded-2xl shadow-lg">
+        <RouterLink className="mb-2 inline-block" to="/">
+          <ChevronLeftIcon className="w-6 h-6" />
+        </RouterLink>
         <div className="flex flex-col items-center">
           {/* Logo o Avatar Upload */}
           <div
