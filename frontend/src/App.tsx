@@ -12,6 +12,12 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 const LandingPage = lazy(() => import("@/pages/landing"));
 const LoginPage = lazy(() => import("@/features/auth/pages/Login"));
 const RegisterPage = lazy(() => import("@/features/auth/pages/Register"));
+const ForgotPasswordPage = lazy(
+  () => import("@/features/auth/pages/ForgotPassword"),
+);
+const ResetPasswordPage = lazy(
+  () => import("@/features/auth/pages/ResetPassword"),
+);
 const ProfilePage = lazy(() => import("@/features/user/pages/Profile"));
 const Dashboard = lazy(() => import("@/features/dashboard/pages/Dashboard"));
 const NewInvoicePage = lazy(() =>
@@ -80,6 +86,34 @@ function App() {
             </AppErrorBoundary>
           }
           path="/"
+        />
+        <Route
+          element={
+            <AppErrorBoundary>
+              <Suspense
+                fallback={
+                  <LoadingSpinner message={t("common:loading.pages.page")} />
+                }
+              >
+                <ForgotPasswordPage />
+              </Suspense>
+            </AppErrorBoundary>
+          }
+          path="/forgot-password"
+        />
+        <Route
+          element={
+            <AppErrorBoundary>
+              <Suspense
+                fallback={
+                  <LoadingSpinner message={t("common:loading.pages.page")} />
+                }
+              >
+                <ResetPasswordPage />
+              </Suspense>
+            </AppErrorBoundary>
+          }
+          path="/reset-password"
         />
         <Route
           element={

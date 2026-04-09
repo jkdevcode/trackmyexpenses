@@ -133,12 +133,7 @@ const LoginPage = () => {
 
           <div className="flex items-center justify-between">
             <div className="text-sm">
-              <Link
-                as={RouterLink}
-                color={linkColor}
-                href="#"
-                to="/forgot-contrasena"
-              >
+              <Link as={RouterLink} color={linkColor} to="/forgot-password">
                 {t("auth:login.forgot_password")}
               </Link>
             </div>
