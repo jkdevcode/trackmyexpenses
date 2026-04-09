@@ -10,6 +10,7 @@ import { addToast } from "@heroui/toast";
 
 import { useLoginMutation } from "../hooks/useAuthMutations";
 
+import { ChevronLeftIcon } from "@/components/ui/icons";
 import { getErrorMessage } from "@/utils/errors";
 import { EyeFilledIcon, EyeSlashFilledIcon, Logo } from "@/components/ui/icons";
 import { getLoginSchema } from "@/schemas/auth";
@@ -86,8 +87,11 @@ const LoginPage = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-md w-full space-y-8 bg-content1 p-8 rounded-2xl shadow-lg">
+        <RouterLink className="mb-2 inline-block" to="/">
+          <ChevronLeftIcon className="w-6 h-6" />
+        </RouterLink>
         <div className="flex flex-col items-center">
-          <Logo size={60} />
+          <Logo width={40} height={40} />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
             {t("auth:login.title")}
           </h2>
