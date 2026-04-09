@@ -1,29 +1,40 @@
-# frontend/src/features/invoices
+﻿# Invoices Feature
 
-Feature de facturas: OCR, registro manual, listado con busqueda/paginacion, detalle y edicion.
+## Description
+
+This feature owns the main expense-entry workflow of the product: OCR capture, manual invoice creation, invoice listing, detail/edit flows, and shared invoice filtering utilities.
 
 ## Responsibilities
 
-- Subir imagenes de factura y validar tipo/tamano en cliente.
-- Revisar extraccion IA/OCR, conservar el archivo original y confirmar el origen del parseo.
-- Gestionar alta manual, creacion rapida de productos, multi-moneda y detalle editable con snapshots.
-- Traducir errores estructurados del backend a estados de formulario y feedback visible para el usuario.
-- Sincronizar tabs OCR/manual/listado con `tab` en URL y reutilizar busqueda debounced + paginacion en listas y detalle.
+- Support OCR-assisted and manual invoice creation.
+- Manage invoice detail, edit, and list views.
+- Reuse a single filter model across invoices, dashboard, and reports.
+- Handle multi-currency input, exchange-rate display, and quantity validation.
 
-## Main Files
+## Key Files
 
-- **`ocr/OcrInvoiceFlow.tsx`**: Flujo upload -> edicion -> confirmacion con `ocrSource` y archivo original.
-- **`manual/ManualInvoiceForm.tsx`**: Registro manual con productos del usuario, moneda y tasa de cambio.
-- **`list/InvoiceListView.tsx`**: Listado con filtro por periodo, busqueda y modales de detalle/edicion.
-- **`list/components/InvoiceDetailModal.tsx`**: Visualiza detalle, imagen, moneda, metadata OCR y busqueda paginada de items.
-- **`components/PaginatedItems.tsx`**: Paginacion reutilizable para tabla, cards y detalle de productos.
-- **`hooks/useInvoiceFilter.ts`**: Busqueda debounced reutilizable para facturas y productos del detalle.
-- **`hooks/useInvoiceErrorToast.ts`**: Traduce errores de API y muestra feedback consistente.
-- **`services/invoiceService.ts`**: Requests API tipados, incluyendo OCR multipart y consumo del listado de facturas.
-- **`utils/invoice-api.ts`**: Mapeos DTO -> modelo para mantener `services/` enfocado en llamadas HTTP.
+- `ocr/OcrInvoiceFlow.tsx`: Upload, parse, review, and create workflow for invoice images.
+- `manual/ManualInvoiceForm.tsx`: Manual entry flow with product selection, date picker, and currency controls.
+- `list/InvoiceListView.tsx`: Paginated invoice list with filters, detail modal, and edit modal.
+- `hooks/useInvoiceFilters.ts`: Shared filter state for `week | month | year | all | custom`.
+- `services/invoiceService.ts`: Typed invoice and product requests.
+- `utils/date-periods.ts` and `utils/invoice-filters.ts`: Shared date-range presets and query-param building.
+- `utils/invoice-quantity.ts`: Quantity rules that align with the backend's decimal-for-kg constraint.
 
-## Usage
+## How it Works
 
-- Consumido principalmente en `src/pages/NewInvoicePage.tsx`, que expone tabs OCR/manual/listado sincronizados con la URL.
-- Usa `utils/currency.ts`, `hooks/useInvoiceUpload.ts` y formateadores compartidos para mostrar moneda original y base.
-- Depende de endpoints protegidos del backend (`/api/facturas`, `/api/productos`) y del flujo OCR con imagen persistida.
+- The OCR flow uploads the original image, lets the user review parsed items, and creates the invoice through the file-backed OCR endpoint.
+- The manual flow uses HeroUI date pickers and currency helpers to build a clean creation payload.
+- The list view uses the shared `PeriodFilter` component and custom date-range support to keep invoice filtering aligned with dashboard and reports.
+- The current filter contract serializes to `period`, `startDate`, and `endDate`, while `all` explicitly disables date bounding.
+
+## Integration
+
+- Mounted by `src/pages/NewInvoicePage.tsx`, which synchronizes the active invoice tab with the URL.
+- Shares filtering helpers with dashboard and reports.
+- Depends on backend `/facturas` and `/productos` endpoints plus shared frontend error parsing utilities.
+
+## Notes
+
+- Decimal quantities are only valid for `kg` items; other units should remain whole-number counts.
+- `confirmInvoiceRequest` is still present for compatibility, but the primary OCR creation flow uses `/facturas/ocr/create`.

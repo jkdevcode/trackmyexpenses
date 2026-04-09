@@ -1,21 +1,36 @@
-# backend/prisma
+﻿# Prisma Schema and Migrations
 
-Definicion del modelo de datos y migraciones de base MySQL.
+## Description
+
+This folder defines the MySQL data model for the backend and stores the migration history used to evolve it safely across environments.
 
 ## Responsibilities
 
-- Declarar entidades y relaciones para usuarios, productos, facturas y snapshots de items.
-- Versionar cambios de DB para multi-moneda, OCR metadata y catalogo de productos por usuario.
-- Servir de fuente para generar Prisma Client.
+- Define the persistent shape of users, invoices, products, and invoice item snapshots.
+- Track schema changes for password recovery, currency snapshots, user-scoped products, and decimal item quantities.
+- Serve as the source of truth for Prisma Client generation and database migrations.
 
-## Main Files
+## Key Files
 
-- **`schema.prisma`**: Modelos `Usuario`, `Factura`, `Producto`, `FacturaProducto` con moneda base, snapshots e `ocrSource`.
-- **`migrations/*/migration.sql`**: Historial de cambios de esquema, incluyendo multi-moneda y `producto_user_scoped`.
-- **`scripts/backfill_currency_snapshot.sql`**: Backfill para facturas legacy antes de endurecer constraints.
+- `schema.prisma`: Main Prisma schema with `Usuario`, `Factura`, `Producto`, and `FacturaProducto`.
+- `migrations/20260408170000_add_password_reset_fields/migration.sql`: Adds password reset token and expiration fields to `Usuario`.
+- `migrations/20260402190000_factura_producto_decimal_quantity/migration.sql`: Updates invoice item quantity storage to support decimal values.
+- `scripts/backfill_currency_snapshot.sql`: Backfill utility for legacy currency snapshot data before stricter constraints are enforced.
 
-## Usage
+## How it Works
 
-- Usado por `npx prisma generate` y `prisma migrate`.
-- Mantener sincronizado con DTOs y logica de `factura`, `producto`, `user` y `reportes`.
-- Ejecutar el backfill de moneda/snapshots antes de aplicar constraints no nulos en entornos con datos previos.
+- `schema.prisma` defines user auth data, including password reset fields used by the forgot/reset password flow.
+- Invoice models store both original and base-currency totals so dashboard and reporting logic can work with normalized monetary data.
+- `FacturaProducto.cantidad` is stored as a decimal, which supports the rule that only `kg` items may use decimal quantities.
+- Migrations are applied in order to keep the database aligned with the NestJS DTOs, repositories, and services.
+
+## Integration
+
+- `backend/src/prisma` loads this schema through Prisma Client and exposes it to the rest of the app.
+- `backend/src/auth` depends on the reset password fields in `Usuario`.
+- `backend/src/factura` and `backend/src/reportes` depend on the currency snapshot and item snapshot columns for filtering, totals, and PDFs.
+
+## Notes
+
+- Apply migrations before running backend e2e tests or local development flows that touch auth or invoices.
+- Keep DTO validation and service assumptions in sync with schema changes, especially around dates, currency, and item quantity precision.

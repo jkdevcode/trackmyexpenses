@@ -1,22 +1,33 @@
-# frontend/src/pages
+﻿# Route Pages
 
-Entradas de rutas de nivel app que ensamblan features y layouts.
+## Description
+
+This folder contains thin route-entry components that assemble features and layouts for top-level navigation.
 
 ## Responsibilities
 
-- Exponer paginas lazy importadas por `src/App.tsx`.
-- Componer features sin concentrar logica de negocio.
-- Mantener vistas base del routing publico y utilitario.
+- Provide route-level entry points for the router.
+- Keep route files lightweight and delegate business logic to features.
+- Compose page metadata, layout wrappers, and feature modules.
 
-## Main Files
+## Key Files
 
-- **`landing.tsx`**: Wrapper de la pagina publica principal.
-- **`Dashboard.tsx`**: Entrada de dashboard (delegada a feature).
-- **`NewInvoicePage.tsx`**: Contenedor de tabs OCR/manual/listado.
-- **`404.tsx`**: Pagina de recurso no encontrado.
+- `landing.tsx`: Entry page for the public marketing experience.
+- `NewInvoicePage.tsx`: Route entry that switches between OCR, manual, and list invoice tabs.
+- `404.tsx`: Fallback page for unknown routes.
+- `index.tsx`: Lightweight legacy/default page component.
 
-## Usage
+## How it Works
 
-- Mapeadas directamente en rutas de React Router.
-- Deben depender de hooks/services de `src/features`.
-- Evitar acceso directo a API desde este nivel.
+- Route pages are lazy-loaded by `src/App.tsx` where appropriate.
+- `NewInvoicePage.tsx` keeps the invoice tab in the URL and updates page metadata based on the selected tab.
+- Most authenticated pages now live directly inside feature folders and are imported from the router.
+
+## Integration
+
+- Depends on `src/features`, `src/layouts`, and shared hooks such as `usePageMeta`.
+- Keeps routing concerns separate from feature service and form logic.
+
+## Notes
+
+- Avoid calling backend APIs directly from this folder; use feature services and hooks instead.

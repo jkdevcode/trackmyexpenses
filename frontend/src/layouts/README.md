@@ -1,21 +1,31 @@
-# frontend/src/layouts
+﻿# Page Layouts
 
-Layouts de pagina para composicion de vistas de alto nivel.
+## Description
+
+This folder contains lightweight page-level wrappers that are separate from the authenticated app shell.
 
 ## Responsibilities
 
-- Definir estructuras base reutilizables entre paginas.
-- Encapsular contenedores visuales (publico/autenticado).
-- Reducir codigo repetido en paginas concretas.
+- Provide reusable outer structure for public or simple pages.
+- Keep page wrappers distinct from the main private layout.
+- Reduce repeated header/footer composition in route entry files.
 
-## Main Files
+## Key Files
 
-- **`default.tsx`**: Layout base reutilizable para vistas internas.
-- **`landing.tsx`**: Layout de la pagina publica de inicio.
-- **`README.md`**: Referencia de responsabilidades de layout.
+- `landing.tsx`: Public layout that wraps pages with the landing header and footer.
+- `default.tsx`: Lightweight generic layout used by older or standalone page patterns.
 
-## Usage
+## How it Works
 
-- Importados por paginas en `src/pages` y features publicas.
-- Complementan `AppLayout` cuando se necesita estructura mas simple.
-- Mantienen coherencia entre responsive, espaciados y wrappers.
+- The landing layout composes the public marketing shell around landing content.
+- The default layout remains available for simple pages that need a generic wrapper without the authenticated navigation.
+
+## Integration
+
+- Used by `src/pages/landing.tsx` and any standalone page that does not belong inside `AppLayout`.
+- Works alongside shared components and feature-level pages.
+- Authenticated routes use `src/components/layout/AppLayout.tsx` instead of these wrappers.
+
+## Notes
+
+- Avoid duplicating sidebar or mobile app-shell logic here; that belongs to the authenticated layout components.

@@ -1,20 +1,32 @@
-# backend/src/prisma
+﻿# Prisma Integration
 
-Integracion de Prisma Client con el ciclo de vida de NestJS.
+## Description
+
+This folder integrates Prisma Client into the NestJS application lifecycle and exposes it as a shared dependency.
 
 ## Responsibilities
 
-- Crear cliente Prisma compartido para toda la app.
-- Conectar a la base al iniciar modulos Nest.
-- Exponer modulo reutilizable para inyeccion de dependencias.
+- Create a single Prisma client for the app.
+- Manage database connectivity through Nest dependency injection.
+- Keep data access consistent across backend modules.
 
-## Main Files
+## Key Files
 
-- **`prisma.service.ts`**: Extiende `PrismaClient` y gestiona conexion.
-- **`prisma.module.ts`**: Exporta `PrismaService` para otros modulos.
+- `prisma.service.ts`: Extends `PrismaClient` and manages connection lifecycle.
+- `prisma.module.ts`: Exports `PrismaService` for other modules.
 
-## Usage
+## How it Works
 
-- Importado por modulos de dominio (`auth`, `user`, `factura`, `producto`, `health`).
-- Centraliza acceso a tablas definidas en `backend/prisma/schema.prisma`.
-- Evita instancias duplicadas de cliente en controllers/services.
+- Nest modules import `PrismaModule` once and inject `PrismaService` where needed.
+- The service provides access to the schema defined in `backend/prisma/schema.prisma`.
+- Sharing the service prevents duplicated Prisma client instances and keeps tests simpler to wire.
+
+## Integration
+
+- Used by `auth`, `user`, `factura`, `producto`, `reportes`, and `health`.
+- Repository classes and service layers build their persistence logic on top of this module.
+- E2E tests rely on the same Prisma integration when they boot Nest applications.
+
+## Notes
+
+- Schema changes belong in `backend/prisma`; this folder is the runtime bridge that consumes them.
