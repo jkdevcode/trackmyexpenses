@@ -9,6 +9,8 @@ describe('AuthController', () => {
   let authService: {
     register: jest.Mock;
     login: jest.Mock;
+    forgotPassword: jest.Mock;
+    resetPassword: jest.Mock;
   };
   let configService: { get: jest.Mock };
 
@@ -16,6 +18,8 @@ describe('AuthController', () => {
     authService = {
       register: jest.fn(),
       login: jest.fn(),
+      forgotPassword: jest.fn(),
+      resetPassword: jest.fn(),
     };
     configService = { get: jest.fn() };
 
@@ -35,6 +39,8 @@ describe('AuthController', () => {
     expect(typeof controller.register).toBe('function');
     expect(typeof controller.login).toBe('function');
     expect(typeof controller.logout).toBe('function');
+    expect(typeof controller.forgotPassword).toBe('function');
+    expect(typeof controller.resetPassword).toBe('function');
   });
 
   it('should call authService.register with dto and uploaded file info', async () => {
@@ -118,5 +124,40 @@ describe('AuthController', () => {
       }),
     );
     expect(result).toEqual({ status: 200, message: 'Logout exitoso' });
+  });
+
+  it('should call authService.forgotPassword with dto', async () => {
+    const dto = { email: 'user@example.com' };
+    authService.forgotPassword.mockResolvedValue({
+      status: 200,
+      message: 'If the email exists, you will receive instructions.',
+    });
+
+    const result = await controller.forgotPassword(dto);
+
+    expect(authService.forgotPassword).toHaveBeenCalledWith(dto);
+    expect(result).toEqual({
+      status: 200,
+      message: 'If the email exists, you will receive instructions.',
+    });
+  });
+
+  it('should call authService.resetPassword with dto', async () => {
+    const dto = {
+      token: 'valid-reset-token-1234567890abcdef',
+      newPassword: 'new-password-123',
+    };
+    authService.resetPassword.mockResolvedValue({
+      status: 200,
+      message: 'Password updated successfully',
+    });
+
+    const result = await controller.resetPassword(dto);
+
+    expect(authService.resetPassword).toHaveBeenCalledWith(dto);
+    expect(result).toEqual({
+      status: 200,
+      message: 'Password updated successfully',
+    });
   });
 });

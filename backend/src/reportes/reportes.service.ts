@@ -13,7 +13,6 @@ import {
   endOfUtcDay,
   startOfUtcDay,
 } from '../common/utils/date-periods';
-import { PeriodFilter } from '../common/types/periods';
 import { GetReportesQueryDto } from './dto/get-reportes-query.dto';
 
 type FacturaWithProductos = Prisma.FacturaGetPayload<{

@@ -42,6 +42,12 @@ const envSchema = z
       .default('https://v6.exchangerate-api.com/v6'),
     JWT_SECRET: z.string().min(8).default('change-me-in-production'),
     JWT_EXPIRES_IN: z.string().default('7d'),
+    FRONTEND_URL: z.string().url().default('http://localhost:5173'),
+    EMAIL_HOST: z.string().optional(),
+    EMAIL_PORT: toNumber(587),
+    EMAIL_USER: z.string().optional(),
+    EMAIL_PASS: z.string().optional(),
+    EMAIL_FROM: z.string().optional(),
     THROTTLE_LIMIT: toNumber(120),
     THROTTLE_TTL: toNumber(60),
     CACHE_TTL_MS: z.string().optional(),
@@ -52,6 +58,33 @@ const envSchema = z
     CSRF_ORIGIN_CHECK_ENABLED: toBoolean(false),
   })
   .superRefine((env, ctx) => {
+    const emailConfig = [
+      { key: 'EMAIL_HOST', value: env.EMAIL_HOST },
+      { key: 'EMAIL_USER', value: env.EMAIL_USER },
+      { key: 'EMAIL_PASS', value: env.EMAIL_PASS },
+      { key: 'EMAIL_FROM', value: env.EMAIL_FROM },
+    ];
+    const hasSomeEmailConfig = emailConfig.some(
+      ({ value }) => typeof value === 'string' && value.trim().length > 0,
+    );
+    const hasCompleteEmailConfig = emailConfig.every(
+      ({ value }) => typeof value === 'string' && value.trim().length > 0,
+    );
+
+    if (hasSomeEmailConfig && !hasCompleteEmailConfig) {
+      for (const { key, value } of emailConfig) {
+        if (typeof value === 'string' && value.trim().length > 0) {
+          continue;
+        }
+
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [key],
+          message: `${key} must be set when configuring SMTP email delivery`,
+        });
+      }
+    }
+
     if (env.NODE_ENV === 'production') {
       if (
         !env.JWT_SECRET ||
@@ -72,6 +105,20 @@ const envSchema = z
           path: ['CORS_ORIGIN'],
           message: 'CORS_ORIGIN must be set in production',
         });
+      }
+
+      if (!hasCompleteEmailConfig) {
+        for (const { key, value } of emailConfig) {
+          if (typeof value === 'string' && value.trim().length > 0) {
+            continue;
+          }
+
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: `${key} must be set in production`,
+          });
+        }
       }
     }
   });
