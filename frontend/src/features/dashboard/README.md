@@ -1,22 +1,35 @@
-# frontend/src/features/dashboard
+﻿# Dashboard Feature
 
-Feature de analitica y visualizacion de resumen financiero.
+## Description
+
+This feature renders the authenticated expense overview, including KPI cards, charts, recent invoices, and the shared date filter used to scope analytics.
 
 ## Responsibilities
 
-- Consultar estadisticas agregadas desde backend.
-- Transformar datos de facturas a series para graficas.
-- Renderizar KPIs, tablas y filtros por periodo.
+- Fetch and transform dashboard-ready analytics data.
+- Render charts, summary cards, and recent invoice lists.
+- Reuse the shared filtering model introduced for invoices and reports.
 
-## Main Files
+## Key Files
 
-- **`pages/Dashboard.tsx`**: Composicion principal del dashboard.
-- **`hooks/useDashboardData.ts`**: Query por periodo + manejo de errores.
-- **`services/dashboardService.ts`**: Mapeo tipado de respuestas API.
-- **`components/RevenueChart.tsx`**: Grafica de gasto mensual.
+- `pages/Dashboard.tsx`: Dashboard page composition.
+- `hooks/useDashboardData.ts`: Shared filter state, query execution, and toast-based error feedback.
+- `components/DateFilter.tsx`: Dashboard wrapper around the shared `PeriodFilter` component.
+- `services/dashboardService.ts`: Maps backend invoice and product responses into dashboard view models.
+- `components/StatsCards.tsx`, `RevenueChart.tsx`, `AverageTicketChart.tsx`: Core dashboard widgets.
 
-## Usage
+## How it Works
 
-- Accedido en ruta protegida `/dashboard`.
-- Depende de React Query y `axiosClient`.
-- Reutiliza tipos de `types.ts` para contratos de vista.
+- The dashboard reuses `useInvoiceFilters`, which means analytics now support `week`, `month`, `year`, `all`, and `custom` ranges.
+- `dashboardService` builds query params from the shared invoice filter utilities and converts API payloads into chart data and summary metrics.
+- Chart aggregation adjusts to the selected filter window, including custom date-range selections.
+
+## Integration
+
+- Consumes invoice filter utilities from the invoices feature.
+- Reads server state through TanStack Query and the shared Axios client.
+- Works with backend invoice stats and product endpoints to populate cards, charts, and recent activity.
+
+## Notes
+
+- Error feedback is intentionally shown through toasts so the dashboard can stay visible even when a request fails.

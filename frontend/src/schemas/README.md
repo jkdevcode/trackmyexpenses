@@ -1,21 +1,32 @@
-# frontend/src/schemas
+﻿# Validation Schemas
 
-Esquemas Yup para validacion de formularios en cliente.
+## Description
+
+This folder contains Yup schemas used by React Hook Form to validate frontend forms before requests are sent.
 
 ## Responsibilities
 
-- Centralizar reglas de validacion reutilizables.
-- Mantener mensajes compatibles con i18n.
-- Servir de contrato para React Hook Form (`yupResolver`).
+- Centralize reusable client-side validation rules.
+- Keep validation messages compatible with i18n.
+- Stay aligned with backend request contracts and current feature behavior.
 
-## Main Files
+## Key Files
 
-- **`auth.ts`**: Reglas para login y registro.
-- **`profile.ts`**: Reglas para perfil y cambio de contrasena.
-- **`invoice.ts`**: Reglas para formulario OCR/confirmacion de factura.
+- `auth.ts`: Validation for login, register, forgot-password, and reset-password forms.
+- `profile.ts`: Validation for profile updates and authenticated password changes.
+- `invoice.ts`: Base invoice-form validation for shared invoice metadata fields.
 
-## Usage
+## How it Works
 
-- Importados por paginas/components de features (`auth`, `user`, `invoices`).
-- Deben mantenerse sincronizados con validaciones backend.
-- Evitar logica de negocio aqui; solo validacion de entrada.
+- Feature pages import these schema factories and pass the active translation function so validation messages stay localized.
+- Auth validation now includes the new password recovery pages as part of the same schema surface.
+- Invoice validation here focuses on common invoice fields, while richer item-level rules are handled closer to the invoice feature logic.
+
+## Integration
+
+- Used by auth, user, and invoice forms through `yupResolver`.
+- Works alongside backend Zod validation so the client can fail fast while the server remains authoritative.
+
+## Notes
+
+- Keep schema rules synchronized with backend constraints such as password length and currency-code shape.

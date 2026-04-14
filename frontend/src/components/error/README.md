@@ -1,19 +1,29 @@
-# frontend/src/components/error
+﻿# Error Components
 
-Componentes para captura y presentacion de errores de render en React.
+## Description
+
+This folder contains React render-error handling components used to keep the app resilient when a view crashes.
 
 ## Responsibilities
 
-- Aislar fallos de UI con boundaries.
-- Mostrar fallback seguro cuando una rama de componentes falla.
-- Evitar caidas globales de la aplicacion.
+- Catch render-time errors before they break the entire SPA.
+- Show safe fallback UI around routes and providers.
+- Isolate failures to the smallest practical UI boundary.
 
-## Main Files
+## Key Files
 
-- **`AppErrorBoundary.tsx`**: Error boundary principal reutilizable.
+- `AppErrorBoundary.tsx`: Reusable error boundary used around lazy routes and the global provider tree.
 
-## Usage
+## How it Works
 
-- Montado en `provider.tsx` y rutas criticas en `App.tsx`.
-- Recomendado envolver nuevas vistas lazy o modulos inestables.
-- Complementa manejo de errores de red definido en `src/utils/errors.ts`.
+- The boundary wraps route elements and provider composition so a single component failure does not blank the full app.
+- Fallback titles can be customized per route, which helps keep failures understandable in context.
+
+## Integration
+
+- Mounted globally in `src/provider.tsx`.
+- Reused in `src/App.tsx` around landing, auth, dashboard, invoices, settings, reports, and legal routes.
+
+## Notes
+
+- This folder handles render failures only; API and validation errors are translated elsewhere through `src/utils/errors.ts`.

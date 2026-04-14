@@ -6,29 +6,35 @@ const updateUserSchema = z
     nombres: z
       .string()
       .min(2, { message: 'Los nombres deben tener al menos 2 caracteres' })
-      .optional(),
+      .optional()
+      .describe('First names'),
     apellidos: z
       .string()
       .min(2, { message: 'Los apellidos deben tener al menos 2 caracteres' })
-      .optional(),
+      .optional()
+      .describe('Last names'),
     correo: z
       .string()
       .email({ message: 'El correo electrónico debe ser válido' })
-      .optional(),
+      .optional()
+      .describe('Email address'),
     documento: z
       .string()
       .min(5, { message: 'El documento debe tener al menos 5 caracteres' })
-      .optional(),
+      .optional()
+      .describe('Identity document number'),
     monedaBase: z
       .string()
       .trim()
       .length(3, { message: 'monedaBase debe tener 3 letras' })
-      .optional(),
+      .optional()
+      .describe('Base currency of the user, e.g. USD, EUR, COP'),
     foto: z
       .string()
       .url({ message: 'La foto debe ser una URL válida' })
       .optional()
-      .or(z.literal('')),
+      .or(z.literal(''))
+      .describe('Profile photo URL'),
   })
   .strict();
 

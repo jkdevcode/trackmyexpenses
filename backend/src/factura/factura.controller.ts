@@ -1,4 +1,5 @@
 import {
+  applyDecorators,
   Body,
   Controller,
   Delete,
@@ -16,6 +17,19 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request as ExpressRequest } from 'express';
+import {
+  ApiBadRequestResponse,
+  ApiCookieAuth,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+  ApiUnauthorizedResponse,
+  ApiParam,
+  ApiConsumes,
+  ApiNotFoundResponse,
+} from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { ZodError, type ZodIssue } from 'zod';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -42,6 +56,61 @@ interface RequestWithUser extends ExpressRequest {
   user: {
     id: number;
   };
+}
+
+const PERIOD_VALUES = ['week', 'month', 'year', 'all', 'custom'] as const;
+
+function ApiInvoiceFilterQueries() {
+  return applyDecorators(
+    ApiQuery({
+      name: 'period',
+      required: false,
+      enum: PERIOD_VALUES,
+      description:
+        'Predefined filter window. Use `custom` with `startDate` and `endDate`, or `all` to ignore the date range.',
+      example: 'custom',
+    }),
+    ApiQuery({
+      name: 'startDate',
+      required: false,
+      description: 'Required when `period=custom`. Format: `YYYY-MM-DD`.',
+      example: '2026-04-01',
+    }),
+    ApiQuery({
+      name: 'endDate',
+      required: false,
+      description: 'Required when `period=custom`. Format: `YYYY-MM-DD`.',
+      example: '2026-04-09',
+    }),
+  );
+}
+
+function ApiInvoicePaginationQueries() {
+  return applyDecorators(
+    ApiQuery({
+      name: 'page',
+      required: false,
+      description: 'Page number for paginated invoice results.',
+      schema: {
+        type: 'integer',
+        default: 1,
+        minimum: 1,
+      },
+      example: 1,
+    }),
+    ApiQuery({
+      name: 'limit',
+      required: false,
+      description: 'Maximum number of invoices to return per page.',
+      schema: {
+        type: 'integer',
+        default: 20,
+        minimum: 1,
+        maximum: 100,
+      },
+      example: 20,
+    }),
+  );
 }
 
 function isUnknownArray(value: unknown): value is unknown[] {
@@ -142,6 +211,8 @@ function mapZodErrorToDetails(error: ZodError): AppErrorDetail[] {
     : buildDetail(FACTURA_ERROR_CODES.OCR_INVALID_PAYLOAD);
 } */
 
+@ApiTags('Invoices')
+@ApiCookieAuth('token')
 @Controller('facturas')
 @UseGuards(JwtAuthGuard)
 export class FacturaController {
@@ -153,6 +224,13 @@ export class FacturaController {
   @Post()
   @UseInterceptors(FileInterceptor('file', imageFileInterceptorOptions))
   @UsePipes(ZodValidationPipe)
+  @ApiOperation({ summary: 'Create a new invoice' })
+  @ApiConsumes('multipart/form-data', 'application/json')
+  @ApiCreatedResponse({ description: 'Invoice successfully created.' })
+  @ApiBadRequestResponse({
+    description: 'Invalid invoice payload or file type/size.',
+  })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid auth cookie.' })
   async create(
     @Request() req: RequestWithUser,
     @Body() dto: CreateFacturaDto,
@@ -181,6 +259,64 @@ export class FacturaController {
 
   @Get()
   @UsePipes(ZodValidationPipe)
+  @ApiOperation({
+    summary: 'List invoices with shared period filters',
+    description:
+      'Returns paginated invoices for the authenticated user. Supports `week`, `month`, `year`, `all`, and `custom` filters. When `period=custom`, both `startDate` and `endDate` are required.',
+  })
+  @ApiInvoiceFilterQueries()
+  @ApiInvoicePaginationQueries()
+  @ApiOkResponse({
+    description: 'Paginated invoice list and stats for the selected range.',
+    schema: {
+      example: {
+        status: 200,
+        message: 'Facturas obtenidas exitosamente',
+        data: [
+          {
+            id: 42,
+            codigoFactura: 'FAC-1712693500000-221',
+            lugarCompra: 'Supermercado Central',
+            fechaHoraCompra: '2026-04-05T00:00:00.000Z',
+            totalPagar: 23000,
+            moneda: 'COP',
+            monedaBase: 'COP',
+            totalPagarBase: 23000,
+          },
+        ],
+        facturas: [
+          {
+            id: 42,
+            codigoFactura: 'FAC-1712693500000-221',
+            lugarCompra: 'Supermercado Central',
+            fechaHoraCompra: '2026-04-05T00:00:00.000Z',
+            totalPagar: 23000,
+            moneda: 'COP',
+            monedaBase: 'COP',
+            totalPagarBase: 23000,
+          },
+        ],
+        pagination: {
+          page: 1,
+          limit: 20,
+          total: 4,
+        },
+        stats: {
+          currentPeriodInvoices: 4,
+          totalSpending: 154000,
+          spendingTrend: 12.5,
+          totalInvoices: 31,
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Invalid period, invalid pagination values, or missing custom date range parameters.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Missing or invalid auth cookie.',
+  })
   async findAll(
     @Request() req: RequestWithUser,
     @Query() query: GetFacturasQueryDto,
@@ -199,6 +335,33 @@ export class FacturaController {
 
   @Get('stats')
   @UsePipes(ZodValidationPipe)
+  @ApiOperation({
+    summary: 'Get invoice stats for the selected period',
+    description:
+      'Returns aggregated invoice counts and spending metrics using the same shared period filter contract as the invoice list.',
+  })
+  @ApiInvoiceFilterQueries()
+  @ApiOkResponse({
+    description: 'Aggregated invoice stats for the selected range.',
+    schema: {
+      example: {
+        status: 200,
+        message: 'Estadisticas obtenidas exitosamente',
+        stats: {
+          currentPeriodInvoices: 4,
+          totalSpending: 154000,
+          spendingTrend: 12.5,
+          totalInvoices: 31,
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid period or missing custom date range parameters.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Missing or invalid auth cookie.',
+  })
   async stats(
     @Request() req: RequestWithUser,
     @Query() query: GetFacturasQueryDto,
@@ -210,6 +373,11 @@ export class FacturaController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get invoice by ID' })
+  @ApiParam({ name: 'id', description: 'Invoice ID', example: 1 })
+  @ApiOkResponse({ description: 'Invoice details retrieved.' })
+  @ApiNotFoundResponse({ description: 'Invoice not found.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid auth cookie.' })
   async findOne(
     @Param('id', ParseIntPipe) id: number,
     @Request() req: RequestWithUser,
@@ -219,6 +387,12 @@ export class FacturaController {
 
   @Post(':id/productos')
   @UsePipes(ZodValidationPipe)
+  @ApiOperation({ summary: 'Add product to invoice' })
+  @ApiParam({ name: 'id', description: 'Invoice ID', example: 1 })
+  @ApiCreatedResponse({ description: 'Product added successfully.' })
+  @ApiBadRequestResponse({ description: 'Invalid product payload.' })
+  @ApiNotFoundResponse({ description: 'Invoice not found.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid auth cookie.' })
   async addProducto(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddProductoFacturaDto,
@@ -229,6 +403,12 @@ export class FacturaController {
 
   @Put(':id')
   @UsePipes(ZodValidationPipe)
+  @ApiOperation({ summary: 'Update an invoice' })
+  @ApiParam({ name: 'id', description: 'Invoice ID', example: 1 })
+  @ApiOkResponse({ description: 'Invoice updated successfully.' })
+  @ApiBadRequestResponse({ description: 'Invalid payload.' })
+  @ApiNotFoundResponse({ description: 'Invoice not found.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid auth cookie.' })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateFacturaDto,
@@ -238,6 +418,11 @@ export class FacturaController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete an invoice' })
+  @ApiParam({ name: 'id', description: 'Invoice ID', example: 1 })
+  @ApiOkResponse({ description: 'Invoice deleted successfully.' })
+  @ApiNotFoundResponse({ description: 'Invoice not found.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid auth cookie.' })
   async remove(
     @Param('id', ParseIntPipe) id: number,
     @Request() req: RequestWithUser,
@@ -247,6 +432,30 @@ export class FacturaController {
 
   @Post('ocr')
   @UseInterceptors(FileInterceptor('image', imageFileInterceptorOptions))
+  @ApiOperation({ summary: 'Scan receipt via OCR' })
+  @ApiConsumes('multipart/form-data')
+  @ApiCreatedResponse({
+    description: 'Extracted OCR invoice data.',
+    schema: {
+      example: {
+        factura: {
+          fechaHoraCompra: '2026-04-14T00:00:00.000Z',
+          metodoPago: 'EFECTIVO',
+          lugarCompra: 'Supermercado',
+          totalPagar: 1000,
+        },
+        productos: [
+          {
+            nombreDetectado: 'Leche',
+            precioUnitario: 500,
+            cantidadDetectada: 2,
+          },
+        ],
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Invalid image format or size.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid auth cookie.' })
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
     @Request() req: RequestWithUser,
@@ -279,6 +488,37 @@ export class FacturaController {
 
   @Post('ocr/confirmar')
   @UsePipes(ZodValidationPipe)
+  @ApiOperation({ summary: 'Confirm scanned OCR data' })
+  @ApiOkResponse({
+    description: 'Confirmed OCR data response.',
+    schema: {
+      example: {
+        message: 'Factura confirmada exitosamente',
+        data: {
+          factura: {
+            fechaHoraCompra: '2026-04-14T00:00:00.000Z',
+            metodoPago: 'EFECTIVO',
+            moneda: 'COP',
+            tasaCambio: 1,
+            lugarCompra: 'Supermercado',
+            nitProveedor: '123456',
+            totalPagar: 1000,
+          },
+          productos: [
+            {
+              nombreDetectado: 'Leche',
+              precioUnitario: 500,
+              cantidadDetectada: 2,
+              unidadDetectada: 'u',
+              descuentoDetectado: 0,
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Invalid confirmation payload.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid auth cookie.' })
   async confirmarFactura(
     @Request() req: RequestWithUser,
     @Body() dto: ConfirmFacturaDto,
@@ -288,6 +528,13 @@ export class FacturaController {
 
   @Post('ocr/create')
   @UseInterceptors(FileInterceptor('file', imageFileInterceptorOptions))
+  @ApiOperation({ summary: 'Create invoice using confirmed OCR data' })
+  @ApiConsumes('multipart/form-data', 'application/json')
+  @ApiCreatedResponse({
+    description: 'Invoice successfully created from OCR data.',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid layout or items.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid auth cookie.' })
   async createWithOcr(
     @Request() req: RequestWithUser,
     @UploadedFile() file: Express.Multer.File,

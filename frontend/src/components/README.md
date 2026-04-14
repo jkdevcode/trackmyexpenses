@@ -1,22 +1,35 @@
-# frontend/src/components
+﻿# Shared Components
 
-Componentes compartidos de presentacion usados por varias features y layouts.
+## Description
+
+This folder contains reusable presentation components that support multiple frontend features, including the authenticated shell, shared filters, loading states, and render-time error handling.
 
 ## Responsibilities
 
-- Contener UI reutilizable desacoplada de dominio.
-- Definir estructura de layout (sidebar, navbar, app shell).
-- Centralizar manejo visual de errores y estados de carga.
+- Provide reusable UI building blocks outside any single feature.
+- Keep common layout, loading, error, and filter interactions visually consistent.
+- Wrap HeroUI primitives with app-specific behavior and styling.
 
-## Main Files
+## Key Files
 
-- **`layout/AppLayout.tsx`**: Shell principal autenticado con sidebar/mobile navbar.
-- **`layout/Sidebar.tsx`**: Navegacion desktop y acciones de sesion.
-- **`layout/MobileNavbar.tsx`**: Navegacion movil y perfil.
-- **`error/AppErrorBoundary.tsx`**: Captura errores de render y fallback.
+- `layout/AppLayout.tsx`: Main authenticated shell with sidebar, mobile navigation, and route outlet.
+- `filters/PeriodFilter.tsx`: Shared filter control used by dashboard, invoices, and reports.
+- `filters/CustomDatePopover.tsx`: Custom range picker used by the shared period filter.
+- `error/AppErrorBoundary.tsx`: Render error containment for routes and providers.
+- `ui/LoadingSpinner.tsx`: Standard loading state for lazy routes and async views.
 
-## Usage
+## How it Works
 
-- Consumido por rutas en `src/App.tsx` y paginas autenticadas.
-- Reutilizado desde features para mantener consistencia visual.
-- No contiene acceso directo a API; solo composicion de UI.
+- Components in this folder stay presentation-focused and avoid feature-specific API logic.
+- The shared period filter is now the main entry point for `week | month | year | all | custom` selection across the app.
+- Error and loading components are reused around lazy routes so page transitions and failure states behave consistently.
+
+## Integration
+
+- Used by `src/App.tsx`, feature pages, and route guards.
+- Consumed alongside `src/contexts`, `src/theme`, and feature-level hooks.
+- Dashboard, invoices, and reports all depend on the shared filter components defined here.
+
+## Notes
+
+- Keep network requests and business rules in feature folders; this folder should stay UI-oriented.
