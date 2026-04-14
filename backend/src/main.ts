@@ -68,9 +68,20 @@ async function bootstrap() {
   app.useGlobalPipes(new ZodValidationPipe());
 
   const config = new DocumentBuilder()
-    .setTitle('API Auth')
-    .setDescription('Backend escalable con Zod')
+    .setTitle('TrackMyExpenses API')
+    .setDescription(
+      'REST API for authentication, invoice management, OCR processing, products, users, and PDF reports. Authentication is handled with a JWT stored in the HttpOnly `token` cookie.',
+    )
     .setVersion('1.0')
+    .addTag('Auth', 'Authentication, login, and password recovery.')
+    .addTag(
+      'Invoices',
+      'Invoice listing, stats, CRUD workflows, and OCR-assisted flows.',
+    )
+    .addTag(
+      'Reports',
+      'PDF report generation and report data availability checks.',
+    )
     .addCookieAuth('token', {
       type: 'apiKey',
       in: 'cookie',

@@ -7,21 +7,25 @@ const updateFacturaItemSchema = z
     productoId: z
       .number()
       .int({ message: 'productoId debe ser un entero' })
-      .positive({ message: 'productoId debe ser mayor a 0' }),
+      .positive({ message: 'productoId debe ser mayor a 0' })
+      .describe('Product ID'),
     cantidad: z
       .number()
       .positive({ message: 'cantidad debe ser mayor a 0' })
-      .optional(),
-    unidad: z.enum(['u', 'kg', 'g']).optional(),
+      .optional()
+      .describe('Quantity'),
+    unidad: z.enum(['u', 'kg', 'g']).optional().describe('Unit (u, kg, g)'),
     descuento: z
       .number()
       .min(0, { message: 'descuento no puede ser negativo' })
       .max(100, { message: 'descuento no puede ser mayor a 100' })
-      .optional(),
+      .optional()
+      .describe('Discount (0-100)'),
     precioUnitario: z
       .number()
       .positive({ message: 'precioUnitario debe ser mayor a 0' })
-      .optional(),
+      .optional()
+      .describe('Unit price'),
   })
   .superRefine((item, ctx) => {
     if (
@@ -47,16 +51,22 @@ const updateFacturaSchema = z.object({
       'TRANSFERENCIA',
       'OTRO',
     ])
-    .optional(),
-  lugarCompra: z.string().min(1).optional(),
-  nitProveedor: z.string().optional(),
+    .optional()
+    .describe('Payment method'),
+  lugarCompra: z.string().min(1).optional().describe('Place of purchase'),
+  nitProveedor: z.string().optional().describe('Supplier NIT'),
   fechaHoraCompra: z
     .string()
     .refine((val) => !isNaN(Date.parse(val)), {
       message: 'La fecha debe ser valida (ISO 8601)',
     })
-    .optional(),
-  items: z.array(updateFacturaItemSchema).min(1).optional(),
+    .optional()
+    .describe('Purchase date (ISO 8601)'),
+  items: z
+    .array(updateFacturaItemSchema)
+    .min(1)
+    .optional()
+    .describe('Items to update'),
 });
 
 export class UpdateFacturaDto extends createZodDto(updateFacturaSchema) {}
