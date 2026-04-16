@@ -1,0 +1,799 @@
+{
+  "info": {
+    "_postman_id": "f3552a67-0f4b-4d67-86ef-3ae62148011a",
+    "name": "trackmyexpenses",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "33490495",
+    "_collection_link": "https://go.postman.co/collection/33490495-f3552a67-0f4b-4d67-86ef-3ae62148011a?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "/api/auth/register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"tipoDocumento\":\"tarjeta\",\r\n    \"nombres\": \"Manuel\",\r\n    \"apellidos\": \"Perez\",\r\n    \"documento\":\"1020304050\",\r\n    \"correo\": \"manuel@gmail.com\",\r\n    \"contrasena\":\"1020304050\",\r\n    \"monedaBase\": \"COP\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/auth/register",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"documento\":\"1020304050\",\r\n    \"contrasena\":\"1020304050\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/auth/login",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/auth/forgot-password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"manuel@gmail.com\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/auth/forgot-password",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "forgot-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/auth/reset-password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"token\": \"ce03f042ac8f18237b5335dfe247001a1698aac16357dd0b913575b225fac315\",\r\n    \"newPassword\":\"1122334455\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/auth/reset-password",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "reset-password"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "/api/users",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY2NDQ5NjE5LCJleHAiOjE3NjcwNTQ0MTl9.V_A5ENqo5YnZTI2vDrIsVYa8E7RUUBJFJX2TAVC2Ho0",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/api/users",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/users/me",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY2NDQ5NjE5LCJleHAiOjE3NjcwNTQ0MTl9.V_A5ENqo5YnZTI2vDrIsVYa8E7RUUBJFJX2TAVC2Ho0",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/api/users/me",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/user/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/api/users/1",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/user/{id}",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjAsImlhdCI6MTc2NzQ4OTk1NCwiZXhwIjoxNzY4MDk0NzU0fQ.FHdaGXGLTxdmLudfL0dg4p4rCUFFkqRkUmnlWQC1kWE",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"tipoDocumento\":\"CC\",\r\n    \"nombres\": \"Manuel\",\r\n    \"apellidos\": \"Perez Perez\",\r\n    \"documento\":\"1088848366\",\r\n    \"correo\": \"manuel@gmail.co\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/users/20",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "20"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/user/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwiaWF0IjoxNzU1NDg3Mzg1LCJleHAiOjE3NTYwOTIxODV9.qMyw7zbFNG9YNuqNZJMNx2Uoguzx6Dl6nx0YskdOo6E",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/users/2",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/user/change-password",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"currentPassword\": \"12345678\",\r\n  \"newPassword\": \"123456789\",\r\n  \"confirmPassword\": \"123456789\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/users/change-password",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "change-password"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "/api/productos",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY5NjM4NzI2LCJleHAiOjE3NzAyNDM1MjZ9.A87fCEo_RJSOX2_XeG6slJxRhMaw4W2Mnmbs2s98Faw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/api/productos",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/productos",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY2NDQ5NjE5LCJleHAiOjE3NjcwNTQ0MTl9.V_A5ENqo5YnZTI2vDrIsVYa8E7RUUBJFJX2TAVC2Ho0",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"codigo\": \"PROD-89718011\",\r\n    \"nombre\": \"example jos\",\r\n    \"precioUnitario\": 12345\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/productos",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Facturas",
+      "item": [
+        {
+          "name": "/api/facturas",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzcxMzQ0NjE5LCJleHAiOjE3NzE5NDk0MTl9.fDx-Cfg6ZvRDxKHG_th7mp20YilcbXu-oGkPeHKGLMQ",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"metodoPago\": \"EFECTIVO\",\r\n  \"moneda\": \"COP\",\r\n  \"tasaCambio\": 1,\r\n  \"lugarCompra\": \"Supermercado Central\",\r\n  \"nitProveedor\": \"123456789\",\r\n  \"fechaHoraCompra\": \"2026-04-14T10:30:00.000Z\",\r\n  \"items\": [\r\n    {\r\n    \"cantidad\": 1,\r\n    \"productoId\": 8,\r\n    \"unidad\": \"u\"\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/facturas",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "facturas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/facturas",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY5NjM4NzI2LCJleHAiOjE3NzAyNDM1MjZ9.A87fCEo_RJSOX2_XeG6slJxRhMaw4W2Mnmbs2s98Faw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/api/facturas?period=year",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "facturas"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "year"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/facturas/stats",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY5NjM4NzI2LCJleHAiOjE3NzAyNDM1MjZ9.A87fCEo_RJSOX2_XeG6slJxRhMaw4W2Mnmbs2s98Faw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/api/facturas?period=year",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "facturas"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "year"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/facturas/{id}",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY5NjM4NzI2LCJleHAiOjE3NzAyNDM1MjZ9.A87fCEo_RJSOX2_XeG6slJxRhMaw4W2Mnmbs2s98Faw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/api/facturas/1",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "facturas",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/facturas/{id}",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY5NjM4NzI2LCJleHAiOjE3NzAyNDM1MjZ9.A87fCEo_RJSOX2_XeG6slJxRhMaw4W2Mnmbs2s98Faw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"metodoPago\": \"TARJETA_CREDITO\",\r\n  \"lugarCompra\": \"Tienda Actualizada\",\r\n  \"nitProveedor\": \"987654321\",\r\n  \"fechaHoraCompra\": \"2026-04-14T15:45:00.000Z\",\r\n  \"items\": [\r\n    {\r\n      \"productoId\": 8,\r\n      \"cantidad\": 1,\r\n      \"unidad\": \"u\",\r\n      \"descuento\": 0,\r\n      \"precioUnitario\": 15000\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/facturas/22",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "facturas",
+                "22"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/facturas/{id}",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY5NjM4NzI2LCJleHAiOjE3NzAyNDM1MjZ9.A87fCEo_RJSOX2_XeG6slJxRhMaw4W2Mnmbs2s98Faw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/api/facturas/21",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "facturas",
+                "21"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/facturas/{id}/productos",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY2NDQ5NjE5LCJleHAiOjE3NjcwNTQ0MTl9.V_A5ENqo5YnZTI2vDrIsVYa8E7RUUBJFJX2TAVC2Ho0",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"productoId\": 3,\r\n  \"cantidad\": 5,\r\n  \"unidad\": \"u\",\r\n  \"descuento\": 10,\r\n\"precioUnitario\": 2000\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/facturas/3/productos",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "facturas",
+                "3",
+                "productos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/facturas/ocr",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY3MTE0MDE2LCJleHAiOjE3Njc3MTg4MTZ9.YrBFp_i5Y_OVUE0RWD2ocymawyxXxr3JgkP9Lz8no9M",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "uuid": "4e21bb69-92bd-4645-b45c-e8d4f59ef86a",
+                  "src": "/D:/facturas-musica generate/features/factura desconocida/WhatsApp Image 2025-12-30 at 13.34.15.jpeg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/facturas/ocr",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "facturas",
+                "ocr"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/facturas/ocr/confirmar",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY2NDQ5NjE5LCJleHAiOjE3NjcwNTQ0MTl9.V_A5ENqo5YnZTI2vDrIsVYa8E7RUUBJFJX2TAVC2Ho0",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"factura\": {\r\n    \"fechaHoraCompra\": \"2025-06-02T11:58:00.000Z\",\r\n    \"metodoPago\": \"EFECTIVO\",\r\n    \"lugarCompra\": \"Jeronimo Martins Colombia S.A.\",\r\n    \"nitProveedor\": \"900480569-1\"\r\n  },\r\n  \"productos\": [\r\n    {\r\n      \"nombreDetectado\": \"PAPA S LAVAR\",\r\n      \"cantidadDetectada\": 0.48,\r\n      \"unidadDetectada\": \"kg\",\r\n      \"precioUnitario\": 2600,\r\n      \"descuentoDetectado\": 0\r\n    },\r\n    {\r\n      \"nombreDetectado\": \"FILETE POLLO\",\r\n      \"cantidadDetectada\": 0.695,\r\n      \"unidadDetectada\": \"kg\",\r\n      \"precioUnitario\": 26980\r\n    }\r\n  ]\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/facturas/ocr/confirmar",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "facturas",
+                "ocr",
+                "confirmar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/facturas/ocr/create",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiaWF0IjoxNzY2NDQ5NjE5LCJleHAiOjE3NjcwNTQ0MTl9.V_A5ENqo5YnZTI2vDrIsVYa8E7RUUBJFJX2TAVC2Ho0",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"metodoPago\": \"EFECTIVO\",\r\n  \"moneda\": \"COP\",\r\n  \"tasaCambio\": 1,\r\n  \"lugarCompra\": \"Supermercado XYZ\",\r\n  \"nitProveedor\": \"112233445\",\r\n  \"fechaHoraCompra\": \"2026-04-14T12:00:00.000Z\",\r\n  \"totalPagar\": 15000,\r\n  \"ocrSource\": \"ai\",\r\n  \"items\": [\r\n    {\r\n      \"nombreDetectado\": \"Leche Entera\",\r\n      \"precioUnitario\": 5000,\r\n      \"cantidad\": 1\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/facturas/ocr/create",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "facturas",
+                "ocr",
+                "create"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "/api/reportes/facturas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/api/reportes/facturas?from=2026-03-01&to=2026-03-25",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "facturas"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-03-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-03-25"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/api/reportes/facturas/check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/api/reportes/facturas?period=all",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "facturas"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "all"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseURL",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}
