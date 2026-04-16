@@ -1,7 +1,8 @@
 node_modules
 dist
 coverage
-uploads
+playwright-report
+test-results
 .env
 .env.*
 npm-debug.log*

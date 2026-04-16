@@ -1,0 +1,69 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL is required}
+        VITE_ASSETS_URL: ${VITE_ASSETS_URL:?VITE_ASSETS_URL is required}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_SENTRY_ENVIRONMENT: ${VITE_SENTRY_ENVIRONMENT:-production}
+        VITE_CONTACT_EMAIL: ${VITE_CONTACT_EMAIL:-support@trackmyexpenses.dev}
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}@mysql:3306/${MYSQL_DATABASE:-trackmyexpenses}
+      PRISMA_MIGRATE_DEPLOY: ${PRISMA_MIGRATE_DEPLOY:-true}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - backend_uploads:/app/uploads
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:3000/api/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-trackmyexpenses}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  backend_uploads:
+  mysql_data:
