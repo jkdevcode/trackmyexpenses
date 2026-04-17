@@ -9,6 +9,7 @@ This folder contains shared client-side infrastructure used throughout the SPA.
 - Configure the shared HTTP client.
 - Configure global TanStack Query behavior.
 - Initialize optional monitoring services.
+- Keep build-time monitoring configuration aligned with Vite and Dockerized frontend builds.
 
 ## Key Files
 
@@ -20,7 +21,8 @@ This folder contains shared client-side infrastructure used throughout the SPA.
 
 - `axiosClient` sends requests with credentials and notifies the session context when a 401 response occurs.
 - `queryClient` centralizes retry and cache defaults so feature hooks behave consistently.
-- `sentry.ts` defers initialization until the browser is idle and only enables monitoring in production.
+- `sentry.ts` defers initialization until the browser is idle and only enables monitoring in production when `VITE_SENTRY_DSN` is present.
+- When the frontend is built in Docker, these values are baked into the static bundle through Docker build args passed to Vite.
 
 ## Integration
 

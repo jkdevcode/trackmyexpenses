@@ -2,35 +2,36 @@
 
 ## Description
 
-This folder defines the MySQL data model for the backend and stores the migration history used to evolve it safely across environments.
+This folder defines the MySQL data model for the backend and stores the Prisma migration history used to evolve it safely across local, CI, and Docker Compose environments.
 
 ## Responsibilities
 
 - Define the persistent shape of users, invoices, products, and invoice item snapshots.
-- Track schema changes for password recovery, currency snapshots, user-scoped products, and decimal item quantities.
+- Track schema changes for password recovery, OCR metadata, currency handling, and user-scoped product data.
 - Serve as the source of truth for Prisma Client generation and database migrations.
 
 ## Key Files
 
 - `schema.prisma`: Main Prisma schema with `Usuario`, `Factura`, `Producto`, and `FacturaProducto`.
-- `migrations/20260408170000_add_password_reset_fields/migration.sql`: Adds password reset token and expiration fields to `Usuario`.
-- `migrations/20260402190000_factura_producto_decimal_quantity/migration.sql`: Updates invoice item quantity storage to support decimal values.
-- `scripts/backfill_currency_snapshot.sql`: Backfill utility for legacy currency snapshot data before stricter constraints are enforced.
+- `migrations/20260318234521_enforce_currency_and_snapshot_not_null/migration.sql`: Aligns invoice and user currency columns with the current schema expectations.
+- `migrations/20260403002749_init_clean/migration.sql`: Adds the `imagenUrl` and `ocrSource` columns used by the invoice OCR workflow.
+- `migrations/README.md`: Notes on how migration folders are used across local development, CI, and Dockerized runtime startup.
 
 ## How it Works
 
-- `schema.prisma` defines user auth data, including password reset fields used by the forgot/reset password flow.
-- Invoice models store both original and base-currency totals so dashboard and reporting logic can work with normalized monetary data.
-- `FacturaProducto.cantidad` is stored as a decimal, which supports the rule that only `kg` items may use decimal quantities.
-- Migrations are applied in order to keep the database aligned with the NestJS DTOs, repositories, and services.
+- `schema.prisma` defines the domain model consumed by Prisma Client at backend startup.
+- Migration folders contain the SQL Prisma generated for each schema change, including invoice OCR metadata and currency-alignment changes.
+- Local development usually applies migrations with `npx prisma migrate dev`, while the backend Docker entrypoint runs `npx prisma migrate deploy` when `PRISMA_MIGRATE_DEPLOY=true`.
+- CI uses `prisma db push` against an ephemeral MySQL service for faster setup, so committed migrations remain the durable source of truth for non-ephemeral environments.
 
 ## Integration
 
 - `backend/src/prisma` loads this schema through Prisma Client and exposes it to the rest of the app.
-- `backend/src/auth` depends on the reset password fields in `Usuario`.
-- `backend/src/factura` and `backend/src/reportes` depend on the currency snapshot and item snapshot columns for filtering, totals, and PDFs.
+- `backend/src/auth` depends on the user auth fields defined here.
+- `backend/src/factura` and `backend/src/reportes` depend on the invoice and snapshot columns for filtering, totals, OCR, and PDF generation.
+- `docker-compose.yml` and `backend/docker-entrypoint.sh` rely on these migrations to bring the containerized database into the expected state.
 
 ## Notes
 
-- Apply migrations before running backend e2e tests or local development flows that touch auth or invoices.
-- Keep DTO validation and service assumptions in sync with schema changes, especially around dates, currency, and item quantity precision.
+- Keep committed migrations in sync with the schema before shipping Docker images or staging deployments.
+- Do not edit previously applied migration SQL in shared environments; create a new migration instead.

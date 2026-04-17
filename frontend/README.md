@@ -1,6 +1,6 @@
 # TrackMyExpenses Frontend
 
-React SPA built with Vite and TypeScript. The frontend consumes the backend API, keeps authenticated sessions in sync, and renders the landing, auth, dashboard, invoices, reports, profile, settings, and legal experiences.
+React SPA built with Vite and TypeScript. The frontend consumes the backend API, keeps authenticated sessions in sync, and renders the landing, auth, dashboard, invoices, reports, profile, settings, legal, and cookie-consent experiences. It can run with the Vite dev server locally or as a static build served by Nginx in Docker Compose.
 
 ## User Flows
 
@@ -8,6 +8,7 @@ React SPA built with Vite and TypeScript. The frontend consumes the backend API,
 - Protected app areas: dashboard, invoices, reports, profile, and settings are gated by the session context and route guards.
 - Shared filtering: dashboard, invoices, and reports reuse the same period and custom date-range model so users see consistent data windows across the app.
 - Reports UI: the reports page checks whether data exists for the selected range before requesting the PDF download.
+- Public UX: landing and legal pages use localized copy, contact metadata, and cookie-consent messaging from shared i18n resources.
 
 ## Routes
 
@@ -35,6 +36,7 @@ Protected routes:
 - `SessionProvider` hydrates the current user from `/users/me`, stores the authenticated user in context, and clears local state on unauthorized responses.
 - UI preferences such as theme, color theme, and cookie consent are handled with React context providers.
 - Forms use React Hook Form plus Yup validation schemas.
+- Monitoring is optional and initialized through the shared Sentry bootstrap only in production builds with a DSN.
 
 ## Auth, Filters, and Reports
 
@@ -65,11 +67,23 @@ Protected routes:
 | `VITE_SENTRY_ENVIRONMENT` | Environment label sent to Sentry. | No | `development` |
 | `VITE_CONTACT_EMAIL` | Contact email displayed by the app metadata and public pages. | No | `support@trackmyexpenses.dev` |
 
+Notes:
+
+- These values are consumed at build time by Vite.
+- In Docker Compose, the root `.env` file provides the build args used by the frontend container image.
+
 ## Local Setup
 
 1. Copy `.env.example` to `.env`.
 2. Install dependencies: `npm install`.
 3. Start development mode: `npm run dev`.
+
+## Docker and Static Hosting
+
+- The frontend Docker image builds the Vite app and serves it through Nginx.
+- `docker-compose.yml` injects `VITE_API_URL`, `VITE_ASSETS_URL`, `VITE_SENTRY_*`, and `VITE_CONTACT_EMAIL` as Docker build args.
+- The Nginx container exposes a simple `/healthz` endpoint used by Docker Compose and CI smoke tests.
+- The Vite config keeps SPA routing compatible with static hosting and container-based deployments.
 
 Useful commands:
 
