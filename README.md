@@ -2,6 +2,11 @@
 
 TrackMyExpenses is a full-stack expense management platform built as a monorepo with a React frontend and a NestJS backend. The application combines secure authentication, OCR-assisted invoice capture, multi-currency expense tracking, shared date filters, PDF reporting, and a Docker-ready local environment in a single workflow.
 
+## CI Status
+
+[![Backend CI](https://github.com/jkdevcode/trackmyexpenses/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/jkdevcode/trackmyexpenses/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://github.com/jkdevcode/trackmyexpenses/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/jkdevcode/trackmyexpenses/actions/workflows/frontend-ci.yml)
+
 ## Features
 
 - Secure authentication with register, login, logout, protected routes, and password recovery via email reset links.
