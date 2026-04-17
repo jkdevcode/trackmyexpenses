@@ -1,4 +1,5 @@
 # TrackMyExpenses Backend
+[![Backend CI](https://github.com/jkdevcode/trackmyexpenses/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/jkdevcode/trackmyexpenses/actions/workflows/backend-ci.yml)
 
 NestJS API for authentication, invoices, products, users, OCR processing, exchange-rate handling, and PDF reporting. The backend exposes REST endpoints under `/api`, serves Swagger at `/docs`, uses JWT cookies for authenticated flows, and can run locally or as the backend service in the repository Docker Compose stack.
 
