@@ -1,6 +1,6 @@
 # TrackMyExpenses Backend
 
-NestJS API for authentication, invoices, products, users, OCR processing, exchange-rate handling, and PDF reporting. The backend exposes REST endpoints under `/api`, serves Swagger at `/docs`, and uses JWT cookies for authenticated flows.
+NestJS API for authentication, invoices, products, users, OCR processing, exchange-rate handling, and PDF reporting. The backend exposes REST endpoints under `/api`, serves Swagger at `/docs`, uses JWT cookies for authenticated flows, and can run locally or as the backend service in the repository Docker Compose stack.
 
 ## API Capabilities
 
@@ -8,7 +8,7 @@ NestJS API for authentication, invoices, products, users, OCR processing, exchan
 - Session-aware user features via JWT stored in the HttpOnly `token` cookie.
 - Invoice management with manual creation, OCR-assisted creation, product snapshots, invoice stats, and shared period filtering.
 - Reporting endpoints to validate whether report data exists and to generate invoice PDFs.
-- Infrastructure for SMTP delivery, file uploads, optional Redis caching, throttling, exchange-rate lookup, and OCR parsing.
+- Infrastructure for SMTP delivery, file uploads, optional Redis caching, throttling, exchange-rate lookup, OCR parsing, and runtime health checks.
 
 ## Authentication Flow
 
@@ -57,6 +57,12 @@ Notes:
 | `THROTTLE_TTL` | Throttle window length in seconds. | No | `60` |
 | `UPLOADS_DIR` | Local directory used to persist uploaded images. | No | `./uploads/users` |
 
+Container runtime:
+
+| Variable | Description | Required | Example |
+| --- | --- | --- | --- |
+| `PRISMA_MIGRATE_DEPLOY` | When `true`, the Docker entrypoint runs `prisma migrate deploy` before starting the app. | No | `true` |
+
 ## Swagger
 
 Run the backend and open `http://localhost:3000/docs`.
@@ -66,6 +72,13 @@ Run the backend and open `http://localhost:3000/docs`.
 - For protected endpoints, Swagger also exposes the `cookieAuth` security scheme so you can test the same session-aware requests from the docs.
 - Query docs now cover shared period filtering, custom date ranges, and report validation before PDF generation.
 
+## Postman Collection
+
+- Import `docs/postman/trackmyexpenses.postman_collection.json` into Postman.
+- Set the `baseURL` collection variable, for example `http://localhost:3000`.
+- The collection mirrors the organized API surface for auth, users, products, invoices, OCR flows, and reports.
+- Use Swagger for controller-level docs and schema examples, and Postman for end-to-end request execution and saved request bodies.
+
 ## Local Setup
 
 1. Copy `.env.example` to `.env`.
@@ -73,8 +86,20 @@ Run the backend and open `http://localhost:3000/docs`.
 3. Run migrations: `npx prisma migrate dev`.
 4. Start development mode: `npm run start:dev`.
 
+## Docker and Compose
+
+You can run only MySQL from the repository root with `docker compose up -d mysql` while keeping the NestJS backend local, or start the full stack with `docker compose up --build -d`.
+
+- For a backend process running on your host machine, use `localhost` in `DATABASE_URL` because Docker Compose publishes MySQL to the host port.
+- For a service running inside the same Docker Compose network, use the service name `mysql`, for example `mysql://root:<password>@mysql:3306/trackmyexpenses`.
+- The backend container uses `Dockerfile` plus `docker-entrypoint.sh`, generates the Prisma client on startup, and optionally applies migrations through `PRISMA_MIGRATE_DEPLOY`.
+- The Docker Compose backend health check calls `GET /api/health`, which is also used by the backend CI smoke test.
+
+After MySQL is healthy, run `npx prisma migrate deploy` or `npx prisma migrate dev` from `backend/` to apply the Prisma migrations.
+
 Useful commands:
 
 - `npm run build`
 - `npm test`
 - `npm run test:e2e`
+- `npm run start:docker`

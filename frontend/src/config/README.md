@@ -9,6 +9,7 @@ This folder contains small runtime and static configuration helpers for the fron
 - Centralize app-wide values that should not be hardcoded in feature files.
 - Expose environment-backed settings to the UI.
 - Hold lightweight feature flags and shared metadata helpers.
+- Keep the frontend build-time env contract aligned with `.env.example` and the root Docker Compose build args.
 
 ## Key Files
 
@@ -19,12 +20,13 @@ This folder contains small runtime and static configuration helpers for the fron
 
 - `APP_CONFIG` is the main place for env-backed frontend configuration currently used by landing and legal surfaces.
 - `site.ts` is used by the cookie-consent component to decide whether the consent UI should appear.
+- Docker builds pass `VITE_API_URL`, `VITE_ASSETS_URL`, optional Sentry values, and `VITE_CONTACT_EMAIL` at build time so the static bundle matches the deployed environment.
 - Page-specific titles and descriptions are not defined here; they are resolved through `usePageMeta` and the `meta` translation namespace.
 
 ## Integration
 
 - Used by the landing footer, legal pages, and cookie-consent UI.
-- Works alongside `import.meta.env` declarations and i18n-based metadata.
+- Works alongside `import.meta.env` declarations, i18n-based metadata, and the root Compose environment file.
 
 ## Notes
 

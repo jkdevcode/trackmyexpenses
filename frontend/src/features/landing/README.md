@@ -2,7 +2,7 @@
 
 ## Description
 
-This feature contains the public marketing experience of the product, including localized visuals, navigation, CTAs, and footer links.
+This feature contains the public marketing experience of the product, including localized visuals, navigation, CTAs, footer links, and the surrounding public-site UX such as cookie consent.
 
 ## Responsibilities
 
@@ -10,6 +10,7 @@ This feature contains the public marketing experience of the product, including 
 - Surface calls to action for login and registration.
 - Link users to legal pages and contact information.
 - Serve localized screenshots and feature-copy variants.
+- Work with the shared cookie-consent and locale system used on public pages.
 
 ## Key Files
 
@@ -23,6 +24,7 @@ This feature contains the public marketing experience of the product, including 
 
 - The landing page reads translations and selects localized hero/dashboard screenshots through `getLandingImages()`.
 - The footer routes users to Terms of Service, Privacy Policy, and the configured contact email.
+- Shared public UI such as the cookie-consent modal reads its copy from the common locale namespace, which keeps the consent experience aligned across English and Spanish.
 - Public components remain separate from authenticated layout concerns so the marketing surface stays lightweight.
 
 ## Integration

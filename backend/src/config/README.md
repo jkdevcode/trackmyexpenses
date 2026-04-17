@@ -2,13 +2,14 @@
 
 ## Description
 
-This folder owns backend startup configuration validation so the NestJS app can fail fast when required environment variables are missing or invalid.
+This folder owns backend startup configuration validation so the NestJS app can fail fast when required environment variables are missing or invalid, whether it runs locally or inside the Docker Compose stack.
 
 ## Responsibilities
 
 - Validate environment variables with typed defaults.
 - Enforce production-only requirements such as stronger JWT and CORS configuration.
 - Validate conditional dependencies such as complete SMTP settings for password recovery.
+- Keep the backend runtime contract aligned with `backend/.env.example`.
 
 ## Key Files
 
@@ -20,12 +21,14 @@ This folder owns backend startup configuration validation so the NestJS app can 
 - Development-friendly defaults are applied for common values such as `PORT`, `JWT_EXPIRES_IN`, and `CORS_ORIGIN`.
 - SMTP settings are validated as a group, so partial email configuration fails validation instead of silently misbehaving.
 - Production mode adds stricter checks for `JWT_SECRET`, `CORS_ORIGIN`, and SMTP completeness.
+- In Docker Compose, the backend container still uses this same validated runtime contract; Compose only overrides selected values such as `DATABASE_URL`.
 
 ## Integration
 
 - Loaded globally by `ConfigModule` in `app.module.ts`.
 - Consumed by auth, mail, exchange rate, storage, health, logging, cache, and throttling services through `ConfigService`.
 - Indirectly shapes the frontend password reset flow through `FRONTEND_URL`.
+- Works alongside `backend/.env.example`, while the root `.env.example` configures the surrounding Docker Compose services.
 
 ## Notes
 
