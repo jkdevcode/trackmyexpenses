@@ -30,11 +30,11 @@ export const getRegisterSchema = (t: TFunction) => {
       .string()
       .email(t("validation:email_invalid"))
       .required(t("validation:required")),
-    direccion: yup.string().required(t("validation:required")),
+    /*  direccion: yup.string().required(t("validation:required")),
     telefono: yup
       .string()
       .matches(/^[0-9]{10}$/, t("validation:phone_invalid"))
-      .required(t("validation:required")),
+      .required(t("validation:required")), */
     tipo_documento: yup.string().required(t("validation:required")),
     documento_identidad: yup
       .string()
@@ -42,6 +42,10 @@ export const getRegisterSchema = (t: TFunction) => {
       .matches(/^\d+$/, t("validation:numeric_only"))
       .min(6, t("validation:document_min"))
       .max(10, t("validation:document_max")),
+    monedaBase: yup
+      .string()
+      .required(t("validation:required"))
+      .length(3, t("validation:currency_invalid")),
     password: yup
       .string()
       .min(8, t("validation:password_min"))
@@ -50,6 +54,28 @@ export const getRegisterSchema = (t: TFunction) => {
     confirmPassword: yup
       .string()
       .oneOf([yup.ref("password")], t("validation:password_match"))
+      .required(t("validation:required")),
+  });
+};
+
+export const getForgotPasswordSchema = (t: TFunction) => {
+  return yup.object({
+    email: yup
+      .string()
+      .email(t("validation:email_invalid"))
+      .required(t("validation:required")),
+  });
+};
+
+export const getResetPasswordSchema = (t: TFunction) => {
+  return yup.object({
+    newPassword: yup
+      .string()
+      .min(8, t("validation:password_min"))
+      .required(t("validation:required")),
+    confirmPassword: yup
+      .string()
+      .oneOf([yup.ref("newPassword")], t("validation:password_match"))
       .required(t("validation:required")),
   });
 };

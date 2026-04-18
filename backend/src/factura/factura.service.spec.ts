@@ -1,43 +1,59 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import {
-  BadRequestException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { InternalServerErrorException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from 'nestjs-pino';
 import { DomainConflictError } from '../common/errors/domain-conflict.error';
+import { FACTURA_ERROR_CODES } from './errors/factura-error-codes';
 import { FacturaNotFoundError } from './errors/factura-not-found.error';
+import { FacturaDomainValidationError } from './factura.domain';
 import { FACTURA_REPOSITORY } from './factura.repository.port';
 import { FacturaService } from './factura.service';
+import { ExchangeRateService } from '../infra/exchange-rate/exchange-rate.service';
+import { StorageService } from '../infra/storage/storage.service';
 
 describe('FacturaService', () => {
   let service: FacturaService;
   let repo: {
     transaction: jest.Mock;
     findFacturaIdByUser: jest.Mock;
+    findFacturaCurrencyByUser: jest.Mock;
     findProductoById: jest.Mock;
+    findFacturasByUser: jest.Mock;
     findFacturasByUserAndRange: jest.Mock;
     countFacturasByUserAndRange: jest.Mock;
     countFacturasByUser: jest.Mock;
+    sumTotalPagarByUser: jest.Mock;
     sumTotalPagarByUserAndRange: jest.Mock;
     findFacturaDetailByUser: jest.Mock;
+    findFacturaProductosByFacturaId: jest.Mock;
+    findUsuarioMonedaBase: jest.Mock;
   };
   let logger: { error: jest.Mock };
   let cache: { get: jest.Mock; set: jest.Mock };
+  let exchangeRateService: { getRate: jest.Mock };
+  let storage: { upload: jest.Mock };
 
   beforeEach(async () => {
     repo = {
       transaction: jest.fn(),
       findFacturaIdByUser: jest.fn(),
+      findFacturaCurrencyByUser: jest.fn(),
       findProductoById: jest.fn(),
+      findFacturasByUser: jest.fn(),
       findFacturasByUserAndRange: jest.fn(),
       countFacturasByUserAndRange: jest.fn(),
       countFacturasByUser: jest.fn(),
+      sumTotalPagarByUser: jest.fn(),
       sumTotalPagarByUserAndRange: jest.fn(),
       findFacturaDetailByUser: jest.fn(),
+      findFacturaProductosByFacturaId: jest.fn(),
+      findUsuarioMonedaBase: jest.fn(),
     };
+    repo.findUsuarioMonedaBase.mockResolvedValue('COP');
     logger = { error: jest.fn() };
     cache = { get: jest.fn(), set: jest.fn() };
+    exchangeRateService = { getRate: jest.fn() };
+    storage = { upload: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -45,6 +61,8 @@ describe('FacturaService', () => {
         { provide: FACTURA_REPOSITORY, useValue: repo },
         { provide: Logger, useValue: logger },
         { provide: CACHE_MANAGER, useValue: cache },
+        { provide: ExchangeRateService, useValue: exchangeRateService },
+        { provide: StorageService, useValue: storage },
       ],
     }).compile();
 
@@ -59,7 +77,9 @@ describe('FacturaService', () => {
     const tx = {
       findProductosByIds: jest
         .fn()
-        .mockResolvedValue([{ id: 1, precioUnitario: 3000 }]),
+        .mockResolvedValue([
+          { id: 1, precioUnitario: 3000, nombre: 'ARROZ', codigo: 'P-1' },
+        ]),
       createFactura: jest.fn().mockResolvedValue({ id: 10 }),
       createFacturaProducto: jest.fn().mockResolvedValue({ id: 20 }),
       findFacturaByIdWithRelations: jest
@@ -71,18 +91,19 @@ describe('FacturaService', () => {
     const dto = {
       metodoPago: 'EFECTIVO',
       lugarCompra: 'TIENDA',
-      items: [{ productoId: 1, cantidad: 2, descuento: 0 }],
+      items: [{ productoId: 1, cantidad: 1.5, unidad: 'kg', descuento: 0 }],
     };
 
     const result = await service.create(5, dto as any);
 
     expect(repo.transaction).toHaveBeenCalled();
-    expect(tx.findProductosByIds).toHaveBeenCalledWith([1]);
+    expect(tx.findProductosByIds).toHaveBeenCalledWith(5, [1]);
     expect(tx.createFactura).toHaveBeenCalled();
     expect(tx.createFacturaProducto).toHaveBeenCalledWith(
       expect.objectContaining({
         productoId: 1,
-        cantidad: 2,
+        cantidad: 1.5,
+        unidad: 'kg',
       }),
     );
     expect(result).toEqual({
@@ -110,13 +131,36 @@ describe('FacturaService', () => {
     ).rejects.toBeInstanceOf(FacturaNotFoundError);
   });
 
+  it('should rethrow structured AppError in create when item payload is invalid', async () => {
+    repo.transaction.mockImplementation(async (callback: any) => callback({}));
+
+    const promise = service.create(5, {
+      metodoPago: 'EFECTIVO',
+      lugarCompra: 'TIENDA',
+      items: [{ productoId: 1, cantidad: 0 }],
+    } as any);
+
+    await expect(promise).rejects.toBeInstanceOf(FacturaDomainValidationError);
+    await expect(promise).rejects.toMatchObject({
+      code: FACTURA_ERROR_CODES.ITEM_CANTIDAD_INVALID,
+      details: [
+        expect.objectContaining({
+          field: 'items[0].cantidad',
+          code: FACTURA_ERROR_CODES.ITEM_CANTIDAD_INVALID,
+        }),
+      ],
+    });
+  });
+
   it('should confirm factura from OCR successfully (createFromOcr)', async () => {
     const tx = {
       findProductoByNombre: jest.fn().mockResolvedValue({ id: 7 }),
       createProducto: jest.fn(),
       findProductosByIds: jest
         .fn()
-        .mockResolvedValue([{ id: 7, precioUnitario: 5000 }]),
+        .mockResolvedValue([
+          { id: 7, precioUnitario: 5000, nombre: 'LECHE', codigo: 'P-7' },
+        ]),
       createFactura: jest.fn().mockResolvedValue({ id: 11 }),
       createFacturaProducto: jest.fn().mockResolvedValue({ id: 21 }),
       findFacturaByIdWithRelations: jest.fn().mockResolvedValue({ id: 11 }),
@@ -141,7 +185,7 @@ describe('FacturaService', () => {
 
     const result = await service.createFromOcr(9, dto as any);
 
-    expect(tx.findProductoByNombre).toHaveBeenCalledWith('LECHE ENTERA');
+    expect(tx.findProductoByNombre).toHaveBeenCalledWith(9, 'LECHE ENTERA');
     expect(tx.createProducto).not.toHaveBeenCalled();
     expect(result.status).toBe(201);
     expect(result.message).toBe('Factura OCR confirmada exitosamente');
@@ -153,7 +197,9 @@ describe('FacturaService', () => {
       createProducto: jest.fn(),
       findProductosByIds: jest
         .fn()
-        .mockResolvedValue([{ id: 7, precioUnitario: 5000 }]),
+        .mockResolvedValue([
+          { id: 7, precioUnitario: 5000, nombre: 'LECHE', codigo: 'P-7' },
+        ]),
       createFactura: jest.fn().mockResolvedValue({ id: 11 }),
       createFacturaProducto: jest.fn().mockResolvedValue({ id: 21 }),
       findFacturaByIdWithRelations: jest.fn().mockResolvedValue({ id: 11 }),
@@ -184,7 +230,7 @@ describe('FacturaService', () => {
     );
   });
 
-  it('should throw BadRequestException in createFromOcr when product does not exist and price is invalid', async () => {
+  it('should throw structured AppError in createFromOcr when product does not exist and price is invalid', async () => {
     const tx = {
       findProductoByNombre: jest.fn().mockResolvedValue(null),
       createProducto: jest.fn(),
@@ -195,22 +241,31 @@ describe('FacturaService', () => {
     };
     repo.transaction.mockImplementation(async (callback: any) => callback(tx));
 
-    await expect(
-      service.createFromOcr(1, {
-        factura: {
-          fechaHoraCompra: '2026-03-05T10:00:00.000Z',
-          metodoPago: 'EFECTIVO',
-          lugarCompra: 'TIENDA',
+    const promise = service.createFromOcr(1, {
+      factura: {
+        fechaHoraCompra: '2026-03-05T10:00:00.000Z',
+        metodoPago: 'EFECTIVO',
+        lugarCompra: 'TIENDA',
+      },
+      productos: [
+        {
+          nombreDetectado: 'NUEVO',
+          precioUnitario: 0,
+          cantidadDetectada: 1,
         },
-        productos: [
-          {
-            nombreDetectado: 'NUEVO',
-            precioUnitario: 0,
-            cantidadDetectada: 1,
-          },
-        ],
-      } as any),
-    ).rejects.toBeInstanceOf(BadRequestException);
+      ],
+    } as any);
+
+    await expect(promise).rejects.toBeInstanceOf(FacturaDomainValidationError);
+    await expect(promise).rejects.toMatchObject({
+      code: FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID,
+      details: [
+        expect.objectContaining({
+          field: 'items[0].precioUnitario',
+          code: FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID,
+        }),
+      ],
+    });
   });
 
   it('should throw FacturaNotFoundError in confirmFactura (createFromOcr) when confirmed product ids are missing', async () => {
@@ -267,34 +322,98 @@ describe('FacturaService', () => {
     expect(result.pagination).toEqual({ page: 2, limit: 5, total: 1 });
   });
 
+  it('should apply custom ranges when listing facturas', async () => {
+    repo.findFacturasByUserAndRange.mockResolvedValue([
+      { id: 9, usuarioId: 12 },
+    ]);
+    repo.countFacturasByUserAndRange.mockResolvedValue(1);
+    repo.countFacturasByUser.mockResolvedValue(5);
+    repo.sumTotalPagarByUserAndRange
+      .mockResolvedValueOnce(18000)
+      .mockResolvedValueOnce(9000);
+
+    await service.findAll(12, 'custom', 1, 20, {
+      startDate: '2026-03-10',
+      endDate: '2026-03-12',
+    });
+
+    expect(repo.findFacturasByUserAndRange).toHaveBeenCalledWith(
+      12,
+      {
+        startDate: new Date('2026-03-10T00:00:00.000Z'),
+        endDate: new Date('2026-03-12T23:59:59.999Z'),
+      },
+      1,
+      20,
+    );
+  });
+
+  it('should return all invoices without date filtering when period is all', async () => {
+    repo.findFacturasByUser.mockResolvedValue([{ id: 7, usuarioId: 12 }]);
+    repo.countFacturasByUser.mockResolvedValue(4);
+    repo.sumTotalPagarByUser.mockResolvedValue(28000);
+
+    const result = await service.findAll(12, 'all', 1, 20);
+
+    expect(repo.findFacturasByUser).toHaveBeenCalledWith(12, 1, 20);
+    expect(repo.findFacturasByUserAndRange).not.toHaveBeenCalled();
+    expect(result.facturas).toEqual([{ id: 7, usuarioId: 12 }]);
+    expect(result.pagination).toEqual({ page: 1, limit: 20, total: 4 });
+    expect(result.stats).toEqual({
+      currentPeriodInvoices: 4,
+      totalSpending: 28000,
+      spendingTrend: 0,
+      totalInvoices: 4,
+    });
+  });
+
   it('should add producto to factura', async () => {
-    repo.findFacturaIdByUser.mockResolvedValue({ id: 50 });
-    repo.findProductoById.mockResolvedValue({ id: 1, precioUnitario: 10000 });
+    repo.findFacturaCurrencyByUser.mockResolvedValue({
+      id: 50,
+      totalPagar: 0,
+      totalPagarBase: 0,
+      moneda: 'COP',
+      monedaBase: 'COP',
+      tasaCambio: 1,
+    });
+    repo.findProductoById.mockResolvedValue({
+      id: 1,
+      precioUnitario: 10000,
+      nombre: 'AZUCAR',
+      codigo: 'P-1',
+    });
     const tx = {
       createFacturaProducto: jest.fn().mockResolvedValue({ id: 77 }),
       updateFacturaTotalAndGetDetails: jest
         .fn()
         .mockResolvedValue({ id: 50, totalPagar: 18000 }),
+      updateFactura: jest.fn(),
     };
     repo.transaction.mockImplementation(async (callback: any) => callback(tx));
 
     const result = await service.addProducto(1, 50, {
       productoId: 1,
-      cantidad: 2,
+      cantidad: 1.5,
+      unidad: 'kg',
       descuento: 10,
     } as any);
 
-    expect(repo.findFacturaIdByUser).toHaveBeenCalledWith(1, 50);
-    expect(repo.findProductoById).toHaveBeenCalledWith(1);
+    expect(repo.findFacturaCurrencyByUser).toHaveBeenCalledWith(1, 50);
+    expect(repo.findProductoById).toHaveBeenCalledWith(1, 1);
     expect(repo.transaction).toHaveBeenCalled();
     expect(tx.createFacturaProducto).toHaveBeenCalledWith(
       expect.objectContaining({
         facturaId: 50,
         productoId: 1,
-        precioTotal: 18000,
+        unidad: 'kg',
+        precioTotal: 13500,
       }),
     );
-    expect(tx.updateFacturaTotalAndGetDetails).toHaveBeenCalledWith(50, 18000);
+    expect(tx.updateFacturaTotalAndGetDetails).toHaveBeenCalledWith(
+      50,
+      13500,
+      13500,
+    );
     expect(result).toEqual(
       expect.objectContaining({
         status: 201,
@@ -304,7 +423,7 @@ describe('FacturaService', () => {
   });
 
   it('should throw FacturaNotFoundError when factura does not exist in addProducto', async () => {
-    repo.findFacturaIdByUser.mockResolvedValue(null);
+    repo.findFacturaCurrencyByUser.mockResolvedValue(null);
 
     await expect(
       service.addProducto(1, 999, { productoId: 1, cantidad: 1 } as any),
@@ -312,8 +431,20 @@ describe('FacturaService', () => {
   });
 
   it('should throw DomainConflictError when repository reports duplicate product in factura', async () => {
-    repo.findFacturaIdByUser.mockResolvedValue({ id: 50 });
-    repo.findProductoById.mockResolvedValue({ id: 1, precioUnitario: 10000 });
+    repo.findFacturaCurrencyByUser.mockResolvedValue({
+      id: 50,
+      totalPagar: 0,
+      totalPagarBase: 0,
+      moneda: 'COP',
+      monedaBase: 'COP',
+      tasaCambio: 1,
+    });
+    repo.findProductoById.mockResolvedValue({
+      id: 1,
+      precioUnitario: 10000,
+      nombre: 'AZUCAR',
+      codigo: 'P-1',
+    });
     repo.transaction.mockRejectedValue(
       new DomainConflictError('El producto ya esta en la factura'),
     );
@@ -324,12 +455,97 @@ describe('FacturaService', () => {
   });
 
   it('should throw FacturaNotFoundError when producto does not exist in addProducto', async () => {
-    repo.findFacturaIdByUser.mockResolvedValue({ id: 50 });
+    repo.findFacturaCurrencyByUser.mockResolvedValue({
+      id: 50,
+      totalPagar: 0,
+      totalPagarBase: 0,
+      moneda: 'COP',
+      monedaBase: 'COP',
+      tasaCambio: 1,
+    });
     repo.findProductoById.mockResolvedValue(null);
 
     await expect(
       service.addProducto(1, 50, { productoId: 987, cantidad: 1 } as any),
     ).rejects.toBeInstanceOf(FacturaNotFoundError);
+  });
+
+  it('should update factura and item prices', async () => {
+    repo.findFacturaCurrencyByUser.mockResolvedValue({
+      id: 88,
+      totalPagar: 3000,
+      totalPagarBase: 3000,
+      moneda: 'COP',
+      monedaBase: 'COP',
+      tasaCambio: 1,
+    });
+    const tx = {
+      findFacturaProductosByFacturaId: jest.fn().mockResolvedValue([
+        {
+          id: 1,
+          productoId: 10,
+          cantidad: 1.5,
+          unidad: 'kg',
+          descuento: 10,
+          precioUnitario: 1500,
+          precioTotal: 2025,
+        },
+      ]),
+      updateFacturaProductoSnapshot: jest.fn(),
+      updateFactura: jest.fn(),
+      findFacturaByIdWithRelations: jest.fn().mockResolvedValue({
+        id: 88,
+        codigoFactura: 'FAC-88',
+      }),
+    };
+    repo.transaction.mockImplementation(async (callback: any) => callback(tx));
+
+    const result = await service.update(5, 88, {
+      metodoPago: 'EFECTIVO',
+      items: [{ productoId: 10, cantidad: 1.75, precioUnitario: 2000 }],
+    } as any);
+
+    expect(tx.findFacturaProductosByFacturaId).toHaveBeenCalledWith(88);
+    expect(tx.updateFacturaProductoSnapshot).toHaveBeenCalledWith({
+      facturaId: 88,
+      productoId: 10,
+      cantidad: 1.75,
+      unidad: 'kg',
+      descuento: 10,
+      precioUnitario: 2000,
+      precioTotal: 3150,
+    });
+    expect(tx.updateFactura).toHaveBeenCalledWith(
+      88,
+      expect.objectContaining({
+        metodoPago: 'EFECTIVO',
+        totalPagar: 3150,
+        totalPagarBase: 3150,
+      }),
+    );
+    expect(result).toEqual({
+      status: 200,
+      message: 'Factura actualizada exitosamente',
+      factura: { id: 88, codigoFactura: 'FAC-88' },
+    });
+  });
+
+  it('should delete factura without removing products', async () => {
+    repo.findFacturaIdByUser.mockResolvedValue({ id: 99 });
+    const tx = {
+      deleteFacturaProductosByFacturaId: jest.fn(),
+      deleteFacturaById: jest.fn(),
+    };
+    repo.transaction.mockImplementation(async (callback: any) => callback(tx));
+
+    const result = await service.remove(7, 99);
+
+    expect(tx.deleteFacturaProductosByFacturaId).toHaveBeenCalledWith(99);
+    expect(tx.deleteFacturaById).toHaveBeenCalledWith(99);
+    expect(result).toEqual({
+      status: 200,
+      message: 'Factura eliminada exitosamente',
+    });
   });
 
   it('should return cached stats on getStats', async () => {
@@ -371,6 +587,52 @@ describe('FacturaService', () => {
     );
   });
 
+  it('should include the custom range in the stats cache key', async () => {
+    cache.get.mockResolvedValue(null);
+    repo.countFacturasByUserAndRange.mockResolvedValue(1);
+    repo.sumTotalPagarByUserAndRange
+      .mockResolvedValueOnce(5000)
+      .mockResolvedValueOnce(2500);
+    repo.countFacturasByUser.mockResolvedValue(6);
+
+    await service.getStats(3, 'custom', {
+      startDate: '2026-03-10',
+      endDate: '2026-03-12',
+    });
+
+    expect(cache.get).toHaveBeenCalledWith(
+      'factura:stats:3:custom:2026-03-10:2026-03-12',
+    );
+    expect(cache.set).toHaveBeenCalledWith(
+      'factura:stats:3:custom:2026-03-10:2026-03-12',
+      expect.any(Object),
+      600000,
+    );
+  });
+
+  it('should compute and cache all-time stats on getStats cache miss', async () => {
+    cache.get.mockResolvedValue(null);
+    repo.countFacturasByUser.mockResolvedValue(9);
+    repo.sumTotalPagarByUser.mockResolvedValue(45000);
+
+    const result = await service.getStats(3, 'all');
+
+    expect(result.message).toBe('Estadisticas obtenidas exitosamente');
+    expect(result.stats).toEqual({
+      currentPeriodInvoices: 9,
+      totalSpending: 45000,
+      spendingTrend: 0,
+      totalInvoices: 9,
+    });
+    expect(cache.get).toHaveBeenCalledWith('factura:stats:3:all');
+    expect(cache.set).toHaveBeenCalledWith(
+      'factura:stats:3:all',
+      result.stats,
+      600000,
+    );
+    expect(repo.countFacturasByUserAndRange).not.toHaveBeenCalled();
+  });
+
   it('should throw InternalServerErrorException when findAll fails unexpectedly', async () => {
     repo.findFacturasByUserAndRange.mockRejectedValue(new Error('db failure'));
 
@@ -386,7 +648,9 @@ describe('FacturaService', () => {
       createProducto: jest.fn().mockResolvedValue({ id: 15 }),
       findProductosByIds: jest
         .fn()
-        .mockResolvedValue([{ id: 15, precioUnitario: 2500 }]),
+        .mockResolvedValue([
+          { id: 15, precioUnitario: 2500, nombre: 'PROD', codigo: 'P-15' },
+        ]),
       createFactura: jest.fn().mockResolvedValue({ id: 22 }),
       createFacturaProducto: jest.fn().mockResolvedValue({ id: 30 }),
       findFacturaByIdWithRelations: jest.fn().mockResolvedValue({ id: 22 }),
@@ -410,6 +674,7 @@ describe('FacturaService', () => {
     } as any);
 
     expect(tx.createProducto).toHaveBeenCalledWith(
+      9,
       expect.objectContaining({
         nombre: 'PRODUCTO NUEVO',
         codigo: expect.stringContaining('PROD-'),
@@ -418,7 +683,7 @@ describe('FacturaService', () => {
     );
   });
 
-  it('should throw BadRequestException on invalid OCR item shape', async () => {
+  it('should throw structured AppError on invalid OCR item shape', async () => {
     const tx = {
       findProductoByNombre: jest.fn(),
       createProducto: jest.fn(),
@@ -429,22 +694,31 @@ describe('FacturaService', () => {
     };
     repo.transaction.mockImplementation(async (callback: any) => callback(tx));
 
-    await expect(
-      service.createFromOcr(1, {
-        factura: {
-          fechaHoraCompra: '2026-03-06T10:00:00.000Z',
-          metodoPago: 'EFECTIVO',
-          lugarCompra: 'TIENDA',
+    const promise = service.createFromOcr(1, {
+      factura: {
+        fechaHoraCompra: '2026-03-06T10:00:00.000Z',
+        metodoPago: 'EFECTIVO',
+        lugarCompra: 'TIENDA',
+      },
+      productos: [
+        {
+          nombreDetectado: '',
+          precioUnitario: 1000,
+          cantidadDetectada: 1,
         },
-        productos: [
-          {
-            nombreDetectado: '',
-            precioUnitario: 1000,
-            cantidadDetectada: 1,
-          },
-        ],
-      } as any),
-    ).rejects.toBeInstanceOf(BadRequestException);
+      ],
+    } as any);
+
+    await expect(promise).rejects.toBeInstanceOf(FacturaDomainValidationError);
+    await expect(promise).rejects.toMatchObject({
+      code: FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+      details: [
+        expect.objectContaining({
+          field: 'items[0]',
+          code: FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+        }),
+      ],
+    });
   });
 
   it('should throw InternalServerErrorException on unexpected createFromOcr error', async () => {
@@ -480,5 +754,36 @@ describe('FacturaService', () => {
       } as any),
     ).rejects.toBeInstanceOf(InternalServerErrorException);
     expect(logger.error).toHaveBeenCalled();
+  });
+
+  it('should continue creating factura when image upload fails', async () => {
+    const tx = {
+      findProductosByIds: jest
+        .fn()
+        .mockResolvedValue([
+          { id: 1, precioUnitario: 3000, nombre: 'ARROZ', codigo: 'P-1' },
+        ]),
+      createFactura: jest.fn().mockResolvedValue({ id: 10 }),
+      createFacturaProducto: jest.fn().mockResolvedValue({ id: 20 }),
+      findFacturaByIdWithRelations: jest
+        .fn()
+        .mockResolvedValue({ id: 10, codigoFactura: 'FAC-1' }),
+    };
+    repo.transaction.mockImplementation(async (callback: any) => callback(tx));
+    storage.upload.mockRejectedValue(new Error('storage down'));
+
+    const dto = {
+      metodoPago: 'EFECTIVO',
+      lugarCompra: 'TIENDA',
+      items: [{ productoId: 1, cantidad: 2, descuento: 0 }],
+    };
+    const file = {
+      buffer: Buffer.from('image'),
+    } as Express.Multer.File;
+
+    const result = await service.create(5, dto as any, file);
+
+    expect(storage.upload).toHaveBeenCalled();
+    expect(result.status).toBe(201);
   });
 });

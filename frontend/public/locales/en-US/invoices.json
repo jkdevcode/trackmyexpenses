@@ -7,6 +7,38 @@
     "manual": "Manual Entry",
     "list": "Invoices"
   },
+  "actions": {
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "filters": {
+    "day": "Day",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year",
+    "all": "All",
+    "custom": "Custom",
+    "custom_range": "Custom Range",
+    "custom_trigger": "Custom range",
+    "range_trigger": "Range",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "clear_dates": "Clear dates",
+    "applied_flash": "✓ Applied",
+    "today": "Today",
+    "last_7_days": "Last 7 days",
+    "last_30_days": "Last 30 days",
+    "last_3_months": "Last 3 months",
+    "last_6_months": "Last 6 months",
+    "last_1_year": "Last 1 year",
+    "active_range": "{{start}} – {{end}}"
+  },
+  "validation": {
+    "precioUnitario_invalid": "Unit price must be greater than 0."
+  },
+  "empty": "No invoices for this period",
+  "confirmDelete": "Are you sure you want to delete this invoice?",
   "list": {
     "title": "Invoice List",
     "error": "Could not load invoices.",
@@ -16,7 +48,9 @@
       "day": "Day",
       "week": "Week",
       "month": "Month",
-      "year": "Year"
+      "year": "Year",
+      "all": "All",
+      "custom": "Custom Range"
     },
     "actions": {
       "view_detail": "View detail"
@@ -48,20 +82,29 @@
     "error": "Could not load invoice detail.",
     "close": "Close",
     "total": "Total",
+    "total_base": "Base total",
     "codigo": "Code",
     "fecha": "Date",
     "metodo": "Method",
     "lugar": "Store",
     "nit": "Tax ID",
     "usuario": "User",
+    "moneda": "Currency",
+    "monedaBase": "Base currency",
+    "tasaCambio": "Exchange rate",
+    "edit_warning_title": "Historical changes",
+    "edit_warning": "You are modifying historical data",
     "items_aria": "Invoice items",
     "table": {
       "producto": "Product",
       "cantidad": "Quantity",
+      "unidad": "Unit",
       "precioUnitario": "Unit price",
       "descuento": "Discount",
       "precioTotal": "Total price"
-    }
+    },
+    "view_image": "View invoice",
+    "ocr_source": "OCR Source"
   },
   "manual": {
     "fecha": "Date",
@@ -72,23 +115,46 @@
     "submit": "Create Invoice",
     "success": "Invoice created successfully.",
     "error": "Could not create manual invoice.",
+    "currency": {
+      "label": "Currency",
+      "placeholder": "Select",
+      "rate": "Exchange rate",
+      "rate_hint": "Used to calculate base totals",
+      "total_base": "Total in base currency",
+      "pending": "Add a rate to see conversion"
+    },
     "items": {
       "add_title": "Add Product",
       "producto": "Product",
       "cantidad": "Quantity",
+      "unidad": "Unit",
       "descuento": "Discount (%)",
       "add": "Add",
       "list_title": "Added items",
       "empty": "No products added.",
       "remove": "Remove",
+      "create_product": "+ Create product",
       "columns": {
         "nombre": "Name",
         "cantidad": "Quantity",
+        "unidad": "Unit",
         "precioUnitario": "Unit price",
         "descuento": "Discount",
         "subtotal": "Subtotal",
         "acciones": "Actions"
       }
+    },
+    "create_product": {
+      "title": "Create product",
+      "codigo": "Code",
+      "nombre": "Name",
+      "precio": "Unit price",
+      "submit": "Create",
+      "cancel": "Cancel",
+      "success": "Product created successfully",
+      "error": "Could not create product",
+      "validation_required": "Code and name are required",
+      "validation_price": "Unit price must be greater than 0"
     },
     "validation": {
       "fecha_required": "Date is required.",
@@ -97,8 +163,9 @@
       "product_required": "You must select a product.",
       "product_not_found": "Selected product was not found.",
       "item_duplicate": "This product has already been added.",
-      "cantidad_invalid": "Quantity must be greater than 0.",
-      "descuento_invalid": "Discount must be between 0 and 100."
+      "cantidad_invalid": "Quantity must be greater than 0 and can only use decimals when the unit is kg.",
+      "descuento_invalid": "Discount must be between 0 and 100.",
+      "item_invalid": "All items must have valid quantity and discount. Only kg allows decimals."
     }
   },
   "upload": {
@@ -109,11 +176,25 @@
     "success": "Image processed successfully",
     "error": "Error processing image",
     "invalid_type": "Only PDF or image files are allowed",
-    "invalid_size": "The file exceeds the 5MB maximum size"
+    "invalid_size": "The file exceeds the 5MB maximum size",
+    "missing_file_on_confirm": "File reference lost. Please upload the invoice again."
+  },
+  "ocr": {
+    "source": {
+      "label": "OCR Quality",
+      "ai": "High precision",
+      "ai_tooltip": "Processed directly with AI",
+      "ocr": "Medium precision",
+      "ocr_tooltip": "Processed with OCR + AI",
+      "fallback": "Review data",
+      "fallback_tooltip": "Processed with basic rules (may fail)"
+    },
+    "fallback_warning": "Detected data may be incorrect. Review before saving.",
+    "error_message": "Could not process the invoice. Try another image."
   },
   "form": {
     "title": "Invoice Review",
-    "subtitle": "Verifyextracted data before saving.",
+    "subtitle": "Verify extracted data before saving.",
     "provider": "Purchase Location",
     "nit": "Provider NIT",
     "date": "Date",
@@ -124,7 +205,21 @@
     "items": "Items",
     "edit": "Expand / Edit",
     "cancel": "Cancel",
-    "save": "Save Invoice"
+    "save": "Save Invoice",
+    "currency": {
+      "label": "Currency",
+      "placeholder": "Select",
+      "detected": "Detected currency: {{currency}}",
+      "fallback": "No currency detected. Using {{currency}}",
+      "conversion_info": "This invoice is in {{moneda}}, but your base currency is {{monedaBase}}",
+      "rate": "Exchange rate",
+      "rate_hint": "Used to calculate base totals",
+      "total_base": "Total in base currency",
+      "base_desc": "Based on {{currency}}",
+      "pending": "Add a rate to see conversion",
+      "missing_rate": "Cannot calculate total without an exchange rate",
+      "rate_required": "You must enter an exchange rate"
+    }
   },
   "summary": {
     "products_detected": "Products detected",
@@ -134,7 +229,7 @@
   "modal": {
     "title": "Product Details",
     "items_count": "items found",
-    "search": "Search product...",
+    "search": "Search...",
     "close": "Close",
     "columns": {
       "product": "PRODUCT",
@@ -150,6 +245,8 @@
     "message": "Are you sure you want to register this invoice?",
     "products": "Products",
     "total": "Total to Pay",
+    "total_base": "Base total",
+    "total_base_pending": "Pending conversion",
     "cancel": "Cancel",
     "confirm": "Confirm and Save"
   },

@@ -8,11 +8,13 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
 import { StorageModule } from '../infra/storage/storage.module';
+import { MailModule } from '../infra/mail/mail.module';
 
 @Module({
   imports: [
     PrismaModule,
     StorageModule,
+    MailModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

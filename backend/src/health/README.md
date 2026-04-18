@@ -1,22 +1,36 @@
-# backend/src/health
+﻿# Health Module
 
-Modulo de health-check para validar estado de dependencias en runtime.
+## Description
+
+This module exposes runtime health information for the backend so local environments, CI, Docker Compose, and deployment infrastructure can verify readiness.
 
 ## Responsibilities
 
-- Verificar conectividad con base de datos (Prisma).
-- Verificar disponibilidad de escritura en almacenamiento.
-- Exponer endpoint de observabilidad para monitoreo.
+- Check whether the database is reachable through Prisma.
+- Check whether the configured uploads directory is writable.
+- Return a simple health payload with overall status and individual checks.
+- Provide a stable probe target for container and CI smoke tests.
 
-## Main Files
+## Key Files
 
-- **`health.controller.ts`**: Endpoint HTTP de health.
-- **`health.service.ts`**: Ejecuta checks de DB y storage.
-- **`health.module.ts`**: Registro del modulo.
-- **`health.service.spec.ts`**: Pruebas unitarias de degradacion.
+- `health.controller.ts`: Exposes the HTTP health endpoint.
+- `health.service.ts`: Runs the database and storage checks and builds the response payload.
+- `health.module.ts`: Registers the controller and service.
+- `health.service.spec.ts`: Covers degraded and healthy states in unit tests.
 
-## Usage
+## How it Works
 
-- Importado por `AppModule`.
-- Consumido por pipelines/monitores para readiness.
-- Responde estado `ok` o `degraded` con detalle de checks.
+- The service runs a lightweight `SELECT 1` query to verify database connectivity.
+- It resolves `UPLOADS_DIR`, ensures the directory exists, and checks write access.
+- The combined response reports `ok` only when both dependencies pass; otherwise it returns `degraded`.
+- Docker Compose uses this endpoint for the backend container health check after startup.
+
+## Integration
+
+- Imported by `AppModule` so the endpoint is available in every environment.
+- Depends on `PrismaService` and `ConfigService`.
+- Useful for deployment checks, operational dashboards, debugging local startup issues, and the backend CI Docker Compose smoke test.
+
+## Notes
+
+- The health endpoint does not validate SMTP or external exchange-rate availability; it is intentionally limited to core local dependencies.

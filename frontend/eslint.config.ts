@@ -21,7 +21,13 @@ export default [
         React: "readonly",
         process: "readonly",
         Buffer: "readonly",
+        formatCurrency: "readonly",
         console: "readonly",
+        HTMLElement: "readonly",
+        URLSearchParams: "readonly",
+        MediaQueryListEvent: "readonly",
+        clearTimeout: "readonly",
+        Element: "readonly",
         HTMLDivElement: "readonly",
         HTMLInputElement: "readonly",
         HTMLFormElement: "readonly",
@@ -32,6 +38,7 @@ export default [
         window: "readonly",
         SVGSVGElement: "readonly",
         URL: "readonly",
+        setTimeout: "readonly",
       },
       parserOptions: {
         ecmaFeatures: {

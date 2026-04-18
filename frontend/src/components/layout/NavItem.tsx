@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import { Tooltip } from "@heroui/tooltip";
 
 /* import { Link } from "@heroui/link"; */
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 
 interface NavItemProps {
   href: string;
@@ -12,6 +12,8 @@ interface NavItemProps {
 }
 
 export const NavItem = ({ href, icon, label, isCollapsed }: NavItemProps) => {
+  const appColorVariants = useAppColorVariants();
+
   return (
     <Tooltip
       color="default"

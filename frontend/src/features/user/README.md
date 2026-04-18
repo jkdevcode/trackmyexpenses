@@ -1,22 +1,36 @@
-# frontend/src/features/user
+﻿# User Feature
 
-Feature de perfil de usuario y seguridad de cuenta.
+## Description
+
+This feature manages authenticated account settings tied directly to the current user, including profile data, avatar updates, base currency, and password changes.
 
 ## Responsibilities
 
-- Mostrar/editar datos de perfil autenticado.
-- Gestionar cambio de contrasena.
-- Sincronizar cambios de perfil con estado de sesion global.
+- Render and submit the profile update form.
+- Support authenticated password changes.
+- Keep session state in sync after profile edits.
+- Surface the impact of base-currency changes to the user.
 
-## Main Files
+## Key Files
 
-- **`pages/Profile.tsx`**: Vista de perfil y formulario de actualizacion.
-- **`components/ChangePasswordCard.tsx`**: Formulario de cambio de contrasena.
-- **`hooks/useUserMutations.ts`**: Mutaciones React Query para perfil/seguridad.
-- **`services/userService.ts`**: Requests `PATCH /users/:id` y `change-password`.
+- `pages/Profile.tsx`: Main profile page with avatar upload and base-currency selection.
+- `components/ChangePasswordCard.tsx`: Authenticated password change form.
+- `hooks/useUserMutations.ts`: TanStack Query mutations for user updates.
+- `services/userService.ts`: Typed requests for profile and password endpoints.
 
-## Usage
+## How it Works
 
-- Disponible en ruta protegida `/profile`.
-- Usa `SessionContext` para leer usuario y refrescar datos.
-- Comparte validaciones con `src/schemas/profile.ts`.
+- The profile form is prefilled from session data and updates the session when the backend returns the new user state.
+- Avatar uploads are submitted with multipart form data.
+- Changing `monedaBase` surfaces a warning because it affects currency conversion and reporting behavior across the app.
+- Password changes are handled separately from forgot/reset password flows because they require an active session.
+
+## Integration
+
+- Depends on `SessionContext`, shared schemas, and currency constants.
+- Consumes backend `/users/me`, `/users/:id`, and `PATCH /users/change-password` endpoints.
+- Shares account and preference concerns with the settings feature.
+
+## Notes
+
+- Base currency changes affect future invoice normalization, dashboard totals, and report outputs.

@@ -12,7 +12,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 
-import { THEME_COLOR_MAP, appColor } from "@/theme/theme.config";
+import { useColorTheme } from "@/hooks/use-color-theme";
+import { THEME_COLOR_MAP } from "@/theme/theme.config";
 
 interface RevenueChartProps {
   data: ExpenseData[];
@@ -21,6 +22,7 @@ interface RevenueChartProps {
 
 export const RevenueChart = ({ data, loading }: RevenueChartProps) => {
   const { t } = useTranslation("dashboard");
+  const { appColor } = useColorTheme();
   const [recharts, setRecharts] = useState<{
     BarChart: typeof BarChartType;
     Bar: typeof BarType;
@@ -51,10 +53,7 @@ export const RevenueChart = ({ data, loading }: RevenueChartProps) => {
 
   if (loading || !recharts) {
     return (
-      <Card
-        className="h-[300px] w-full animate-pulse bg-default-100"
-        shadow="sm"
-      >
+      <Card className="h-75 w-full animate-pulse bg-default-100" shadow="sm">
         <CardBody />
       </Card>
     );
@@ -64,11 +63,11 @@ export const RevenueChart = ({ data, loading }: RevenueChartProps) => {
     recharts;
 
   return (
-    <Card className="h-[300px] w-full" shadow="sm">
+    <Card className="h-75 w-full" shadow="sm">
       <CardHeader className="flex flex-col items-start px-6 pt-6 pb-0">
         <h3 className="text-lg font-semibold">{t("charts.revenue_title")}</h3>
       </CardHeader>
-      <CardBody className="pb-4 h-full min-h-[250px]">
+      <CardBody className="pb-4 h-full min-h-62.5">
         <ResponsiveContainer height="100%" width="100%">
           <BarChart
             data={data}
@@ -88,10 +87,13 @@ export const RevenueChart = ({ data, loading }: RevenueChartProps) => {
             />
             <Tooltip
               contentStyle={{
+                backgroundColor: "hsl(var(--heroui-default-100))",
                 borderRadius: "8px",
-                border: "none",
-                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                border: "1px solid hsl(var(--heroui-default-200))",
+                color: "hsl(var(--heroui-foreground))",
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)",
               }}
+              labelStyle={{ color: "hsl(var(--heroui-default-500))" }}
               cursor={{ fill: "transparent" }}
             />
             <Bar
@@ -100,6 +102,7 @@ export const RevenueChart = ({ data, loading }: RevenueChartProps) => {
               // Opcional: una transición suave al hacer hover
               className="cursor-pointer hover:opacity-80 transition-opacity"
               dataKey="value"
+              name={t("charts.legend.total")}
               // 2. Aplicamos el color procesado
               fill={chartColor}
             />

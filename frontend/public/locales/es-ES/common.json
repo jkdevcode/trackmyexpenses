@@ -1,5 +1,11 @@
 {
   "error": "Error",
+  "error_boundary": {
+    "title": "Ocurrio un error inesperado",
+    "description": "Esta seccion fallo. Puedes intentar recargar la vista.",
+    "layout_title": "Error en el layout de la aplicacion",
+    "retry": "Reintentar"
+  },
   "switch-to-dark-mode": "Cambiar a modo oscuro",
   "switch-to-light-mode": "Cambiar a modo claro",
   "home": "Inicio",
@@ -24,12 +30,42 @@
   "how-it-works": "Cómo funciona",
   "create-account": "Crear cuenta",
   "app-name": "TrackMyExpenses",
+  "loading": {
+    "basic": "Cargando...",
+    "pages": {
+      "landing": "Cargando inicio...",
+      "login": "Cargando login...",
+      "register": "Cargando registro...",
+      "dashboard": "Cargando dashboard...",
+      "profile": "Cargando perfil...",
+      "invoices": "Cargando facturas...",
+      "settings": "Cargando ajustes...",
+      "reports": "Cargando reportes...",
+      "page": "Cargando pagina..."
+    }
+  },
   "navigation": {
     "dashboard": "Panel Principal",
     "invoices": "Facturas",
+    "reports": "Reportes",
     "settings": "Ajustes"
   },
   "auth": {
     "logout": "Cerrar sesión"
-  }
+  },
+  "currency": {
+    "label": "Moneda",
+    "base_label": "Moneda base",
+    "options": {
+      "COP": "COP - Peso colombiano",
+      "USD": "USD - Dolar estadounidense",
+      "EUR": "EUR - Euro",
+      "MXN": "MXN - Peso mexicano"
+    }
+  },
+  "cookie-consent-title": "Política de cookies",
+  "cookie-consent": "Utilizamos cookies en nuestro sitio web para brindarte la experiencia más relevante recordando tus preferencias y visitas repetidas. Al hacer clic en <strong className=\"font-semibold\">\"Aceptar todo\"</strong>, consientes el uso de TODAS las cookies. Por favor lee nuestra",
+  "cookie-policy": "Política de cookies.",
+  "accept-all": "Aceptar todo",
+  "reject": "Rechazar"
 }

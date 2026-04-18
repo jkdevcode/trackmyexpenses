@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useTranslation } from "react-i18next";
 import { Button } from "@heroui/button";
@@ -7,6 +7,7 @@ import { Input } from "@heroui/input";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Avatar } from "@heroui/avatar";
 import { addToast } from "@heroui/toast";
+import { Select, SelectItem } from "@heroui/select";
 import { isAxiosError } from "axios";
 
 import ChangePasswordCard from "../components/ChangePasswordCard";
@@ -14,21 +15,37 @@ import { useUpdateProfileMutation } from "../hooks/useUserMutations";
 
 import { useSession } from "@/contexts/session-context";
 import { getErrorMessage } from "@/utils/errors";
-import { appColor } from "@/theme/theme.config";
+import { useAppColorVariants } from "@/theme/app-color-variants";
+import { useColorTheme } from "@/hooks/use-color-theme";
 import { getProfileSchema } from "@/schemas/profile";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { CameraIcon } from "@/components/ui/CameraIcon";
+import {
+  DEFAULT_CURRENCY,
+  SUPPORTED_CURRENCIES,
+  normalizeCurrencyCode,
+} from "@/constants/currency";
 
 interface ProfileFormValues {
   nombres: string;
   apellidos: string;
   correo: string;
   documento: string;
+  monedaBase: string;
 }
 
 const ProfilePage = () => {
-  const { t } = useTranslation(["profile", "auth", "validation"]);
+  const { t } = useTranslation(["profile", "auth", "validation", "common"]);
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
   const { user, login } = useSession();
   const updateProfileMutation = useUpdateProfileMutation();
+  const { t: tMeta } = useTranslation("meta");
+
+  usePageMeta({
+    title: tMeta("profile.title"),
+    description: tMeta("profile.description"),
+  });
 
   const ASSETS_URL = import.meta.env.VITE_ASSETS_URL;
 
@@ -37,6 +54,7 @@ const ProfilePage = () => {
     user?.foto ? `${ASSETS_URL}${user.foto}` : "",
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastCurrencyToast = useRef<string | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -64,14 +82,17 @@ const ProfilePage = () => {
       apellidos: user?.apellidos || "",
       correo: user?.correo || "",
       documento: user?.documento || "",
+      monedaBase: normalizeCurrencyCode(user?.monedaBase, DEFAULT_CURRENCY),
     }),
     [user],
   );
 
   const {
+    control,
     handleSubmit,
     register,
     reset,
+    watch,
     formState: { errors, touchedFields, isDirty },
   } = useForm<ProfileFormValues>({
     defaultValues,
@@ -79,9 +100,29 @@ const ProfilePage = () => {
     mode: "onTouched",
   });
 
+  const selectedCurrency = watch("monedaBase");
+
   useEffect(() => {
     reset(defaultValues);
   }, [defaultValues, reset]);
+
+  useEffect(() => {
+    if (!user?.monedaBase) return;
+
+    if (
+      selectedCurrency &&
+      selectedCurrency !== user.monedaBase &&
+      selectedCurrency !== lastCurrencyToast.current
+    ) {
+      addToast({
+        title: t("profile:currency.alert_title"),
+        description: t("profile:currency.alert_body"),
+        color: "warning",
+        timeout: 4000,
+      });
+      lastCurrencyToast.current = selectedCurrency;
+    }
+  }, [selectedCurrency, user?.monedaBase, t]);
 
   const onSubmit = async (values: ProfileFormValues) => {
     try {
@@ -95,6 +136,7 @@ const ProfilePage = () => {
           apellidos: user.apellidos,
           correo: user.correo,
           documento: user.documento,
+          monedaBase: user.monedaBase,
         },
         foto,
       });
@@ -164,7 +206,9 @@ const ProfilePage = () => {
               onChange={handleImageChange}
             />
           </div>
-          <p className="text-primary text-sm mt-3 font-medium transition-opacity opacity-70 hover:opacity-100">
+          <p
+            className={`text-sm mt-3 font-medium transition-opacity opacity-70 hover:opacity-100 ${appColorVariants.text}`}
+          >
             {t("profile:avatar.change")}
           </p>
           <h1 className="text-2xl font-bold mt-4">{t("profile:title")}</h1>
@@ -212,6 +256,36 @@ const ProfilePage = () => {
                 variant="bordered"
                 {...register("documento")}
               />
+
+              <Controller
+                control={control}
+                name="monedaBase"
+                render={({ field }) => (
+                  <Select
+                    className="md:col-span-2"
+                    color={appColor}
+                    errorMessage={errors.monedaBase?.message}
+                    isInvalid={
+                      !!touchedFields.monedaBase && !!errors.monedaBase
+                    }
+                    label={t("profile:currency.label")}
+                    placeholder={t("profile:currency.placeholder")}
+                    selectedKeys={field.value ? [field.value] : []}
+                    variant="bordered"
+                    onChange={(event) => field.onChange(event.target.value)}
+                  >
+                    {SUPPORTED_CURRENCIES.map((code) => (
+                      <SelectItem key={code}>
+                        {t(`common:currency.options.${code}`, code)}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div className="rounded-medium border border-warning-200 bg-warning-50 p-3 text-sm text-warning-700">
+              {t("profile:currency.alert_body")}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">

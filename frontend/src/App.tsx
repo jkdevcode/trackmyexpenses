@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import { Route, Routes } from "react-router-dom";
 
 import { CookieConsentProvider } from "@/contexts/cookie-consent-context";
@@ -11,6 +12,12 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 const LandingPage = lazy(() => import("@/pages/landing"));
 const LoginPage = lazy(() => import("@/features/auth/pages/Login"));
 const RegisterPage = lazy(() => import("@/features/auth/pages/Register"));
+const ForgotPasswordPage = lazy(
+  () => import("@/features/auth/pages/ForgotPassword"),
+);
+const ResetPasswordPage = lazy(
+  () => import("@/features/auth/pages/ResetPassword"),
+);
 const ProfilePage = lazy(() => import("@/features/user/pages/Profile"));
 const Dashboard = lazy(() => import("@/features/dashboard/pages/Dashboard"));
 const NewInvoicePage = lazy(() =>
@@ -21,9 +28,29 @@ const NewInvoicePage = lazy(() =>
 const PageNotFound = lazy(() =>
   import("@/pages/404").then((module) => ({ default: module.PageNotFound })),
 );
+const SettingsPage = lazy(() =>
+  import("@/features/settings/pages/SettingsPage").then((module) => ({
+    default: module.SettingsPage,
+  })),
+);
+const ReportsPage = lazy(() =>
+  import("@/features/reports/pages/ReportsPage").then((module) => ({
+    default: module.default,
+  })),
+);
 const CookieConsent = lazy(() =>
   import("@/components/ui/cookie-consent").then((module) => ({
     default: module.CookieConsent,
+  })),
+);
+const TermsOfService = lazy(() =>
+  import("@/features/legal/pages/TermsOfService").then((module) => ({
+    default: module.TermsOfService,
+  })),
+);
+const PrivacyPolicy = lazy(() =>
+  import("@/features/legal/pages/PrivacyPolicy").then((module) => ({
+    default: module.PrivacyPolicy,
   })),
 );
 
@@ -36,6 +63,8 @@ const shouldRenderCookieConsent = () => {
 };
 
 function App() {
+  const { t } = useTranslation("common");
+
   return (
     <CookieConsentProvider>
       {shouldRenderCookieConsent() ? (
@@ -48,7 +77,9 @@ function App() {
           element={
             <AppErrorBoundary>
               <Suspense
-                fallback={<LoadingSpinner message="Cargando inicio..." />}
+                fallback={
+                  <LoadingSpinner message={t("common:loading.pages.landing")} />
+                }
               >
                 <LandingPage />
               </Suspense>
@@ -59,9 +90,39 @@ function App() {
         <Route
           element={
             <AppErrorBoundary>
+              <Suspense
+                fallback={
+                  <LoadingSpinner message={t("common:loading.pages.page")} />
+                }
+              >
+                <ForgotPasswordPage />
+              </Suspense>
+            </AppErrorBoundary>
+          }
+          path="/forgot-password"
+        />
+        <Route
+          element={
+            <AppErrorBoundary>
+              <Suspense
+                fallback={
+                  <LoadingSpinner message={t("common:loading.pages.page")} />
+                }
+              >
+                <ResetPasswordPage />
+              </Suspense>
+            </AppErrorBoundary>
+          }
+          path="/reset-password"
+        />
+        <Route
+          element={
+            <AppErrorBoundary>
               <PublicOnlyRoute>
                 <Suspense
-                  fallback={<LoadingSpinner message="Cargando login..." />}
+                  fallback={
+                    <LoadingSpinner message={t("common:loading.pages.login")} />
+                  }
                 >
                   <LoginPage />
                 </Suspense>
@@ -75,7 +136,11 @@ function App() {
             <AppErrorBoundary>
               <PublicOnlyRoute>
                 <Suspense
-                  fallback={<LoadingSpinner message="Cargando registro..." />}
+                  fallback={
+                    <LoadingSpinner
+                      message={t("common:loading.pages.register")}
+                    />
+                  }
                 >
                   <RegisterPage />
                 </Suspense>
@@ -86,7 +151,37 @@ function App() {
         />
         <Route
           element={
-            <AppErrorBoundary fallbackTitle="Error en el layout de la aplicacion">
+            <AppErrorBoundary>
+              <Suspense
+                fallback={
+                  <LoadingSpinner message={t("common:loading.pages.page")} />
+                }
+              >
+                <TermsOfService />
+              </Suspense>
+            </AppErrorBoundary>
+          }
+          path="/terms-of-service"
+        />
+        <Route
+          element={
+            <AppErrorBoundary>
+              <Suspense
+                fallback={
+                  <LoadingSpinner message={t("common:loading.pages.page")} />
+                }
+              >
+                <PrivacyPolicy />
+              </Suspense>
+            </AppErrorBoundary>
+          }
+          path="/privacy-policy"
+        />
+        <Route
+          element={
+            <AppErrorBoundary
+              fallbackTitle={t("common:error_boundary.layout_title")}
+            >
               <ProtectedRoute>
                 <AppLayout />
               </ProtectedRoute>
@@ -98,7 +193,11 @@ function App() {
             element={
               <AppErrorBoundary>
                 <Suspense
-                  fallback={<LoadingSpinner message="Cargando dashboard..." />}
+                  fallback={
+                    <LoadingSpinner
+                      message={t("common:loading.pages.dashboard")}
+                    />
+                  }
                 >
                   <Dashboard />
                 </Suspense>
@@ -110,7 +209,11 @@ function App() {
             element={
               <AppErrorBoundary>
                 <Suspense
-                  fallback={<LoadingSpinner message="Cargando perfil..." />}
+                  fallback={
+                    <LoadingSpinner
+                      message={t("common:loading.pages.profile")}
+                    />
+                  }
                 >
                   <ProfilePage />
                 </Suspense>
@@ -122,7 +225,11 @@ function App() {
             element={
               <AppErrorBoundary>
                 <Suspense
-                  fallback={<LoadingSpinner message="Cargando facturas..." />}
+                  fallback={
+                    <LoadingSpinner
+                      message={t("common:loading.pages.invoices")}
+                    />
+                  }
                 >
                   <NewInvoicePage />
                 </Suspense>
@@ -131,15 +238,45 @@ function App() {
             path="/invoices"
           />
           <Route
-            element={<div className="p-4">Ajustes (WIP)</div>}
+            element={
+              <AppErrorBoundary>
+                <Suspense
+                  fallback={
+                    <LoadingSpinner
+                      message={t("common:loading.pages.settings")}
+                    />
+                  }
+                >
+                  <SettingsPage />
+                </Suspense>
+              </AppErrorBoundary>
+            }
             path="/settings"
+          />
+          <Route
+            element={
+              <AppErrorBoundary>
+                <Suspense
+                  fallback={
+                    <LoadingSpinner
+                      message={t("common:loading.pages.reports")}
+                    />
+                  }
+                >
+                  <ReportsPage />
+                </Suspense>
+              </AppErrorBoundary>
+            }
+            path="/reports"
           />
         </Route>
         <Route
           element={
             <AppErrorBoundary>
               <Suspense
-                fallback={<LoadingSpinner message="Cargando pagina..." />}
+                fallback={
+                  <LoadingSpinner message={t("common:loading.pages.page")} />
+                }
               >
                 <PageNotFound />
               </Suspense>

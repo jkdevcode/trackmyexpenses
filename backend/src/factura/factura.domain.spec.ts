@@ -5,9 +5,11 @@ import {
   calculateSpendingTrend,
   FacturaDomainValidationError,
   getPeriodWindow,
+  normalizeFacturaDate,
   normalizeAndValidateOcrItem,
   roundCurrency,
 } from './factura.domain';
+import { FACTURA_ERROR_CODES } from './errors/factura-error-codes';
 
 describe('factura.domain', () => {
   describe('calculateFacturaTotal', () => {
@@ -34,7 +36,7 @@ describe('factura.domain', () => {
     it('should validate valid factura items', () => {
       expect(() =>
         assertValidFacturaItems([
-          { productoId: 1, cantidad: 2, descuento: 10 },
+          { productoId: 1, cantidad: 1.5, unidad: 'kg', descuento: 10 },
           { productoId: 2, cantidad: 1 },
         ]),
       ).not.toThrow();
@@ -52,13 +54,33 @@ describe('factura.domain', () => {
       ).toThrow(FacturaDomainValidationError);
     });
 
-    it('should throw on duplicate productoId', () => {
+    it('should reject decimal cantidad when unidad is not kg', () => {
       expect(() =>
+        assertValidFacturaItems([
+          { productoId: 1, cantidad: 1.5, unidad: 'u' },
+        ]),
+      ).toThrow(FacturaDomainValidationError);
+    });
+
+    it('should throw on duplicate productoId', () => {
+      try {
         assertValidFacturaItems([
           { productoId: 1, cantidad: 1 },
           { productoId: 1, cantidad: 2 },
-        ]),
-      ).toThrow(FacturaDomainValidationError);
+        ]);
+        fail('Expected duplicate item validation error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(FacturaDomainValidationError);
+        expect(error).toMatchObject({
+          code: FACTURA_ERROR_CODES.ITEM_DUPLICATE,
+          details: [
+            expect.objectContaining({
+              field: 'items[1]',
+              code: FACTURA_ERROR_CODES.ITEM_DUPLICATE,
+            }),
+          ],
+        });
+      }
     });
 
     it('should throw on invalid descuento', () => {
@@ -100,34 +122,48 @@ describe('factura.domain', () => {
     it('should normalize valid OCR item', () => {
       const result = normalizeAndValidateOcrItem({
         nombreDetectado: '  leche entera ',
-        cantidadDetectada: '2',
+        cantidadDetectada: '1.5',
+        unidadDetectada: 'kg',
         descuentoDetectado: '5',
         precioUnitario: '4000',
       });
 
       expect(result).toEqual({
         nombreDetectado: 'LECHE ENTERA',
-        cantidad: 2,
+        cantidad: 1.5,
         descuento: 5,
         precioUnitario: 4000,
-        unidad: 'u',
+        unidad: 'kg',
       });
     });
 
     it('should throw when nombreDetectado is missing', () => {
-      expect(() =>
+      try {
         normalizeAndValidateOcrItem({
           cantidadDetectada: 1,
           precioUnitario: 1000,
-        }),
-      ).toThrow(FacturaDomainValidationError);
+        });
+        fail('Expected OCR item validation error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(FacturaDomainValidationError);
+        expect(error).toMatchObject({
+          code: FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+          details: [
+            expect.objectContaining({
+              field: 'items[0]',
+              code: FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+            }),
+          ],
+        });
+      }
     });
 
     it('should throw when cantidadDetectada is invalid', () => {
       expect(() =>
         normalizeAndValidateOcrItem({
           nombreDetectado: 'PAN',
-          cantidadDetectada: 0,
+          cantidadDetectada: 1.5,
+          unidadDetectada: 'u',
           precioUnitario: 1000,
         }),
       ).toThrow(FacturaDomainValidationError);
@@ -140,35 +176,134 @@ describe('factura.domain', () => {
     });
   });
 
+  describe('normalizeFacturaDate', () => {
+    it('should normalize ISO datetime values to UTC day boundaries', () => {
+      expect(
+        normalizeFacturaDate('2026-03-06T18:45:00.000Z').toISOString(),
+      ).toBe('2026-03-06T00:00:00.000Z');
+    });
+
+    it('should preserve the calendar day for offset-aware inputs', () => {
+      expect(
+        normalizeFacturaDate('2026-03-06T00:00:00.000-05:00').toISOString(),
+      ).toBe('2026-03-06T00:00:00.000Z');
+    });
+  });
+
   describe('getPeriodWindow', () => {
     const now = new Date('2026-03-06T15:30:00.000Z');
 
-    it('should build day window', () => {
-      const result = getPeriodWindow('day', now);
-
-      expect(result.startDate.getHours()).toBe(0);
-      expect(result.startDate.getMinutes()).toBe(0);
-      expect(result.startDate.getDate()).toBe(6);
-      expect(result.prevStartDate.getDate()).toBe(5);
-    });
-
-    it('should build month window by default', () => {
+    it('should build a full month window in UTC by default', () => {
       const result = getPeriodWindow('month', now);
 
-      expect(result.startDate.getDate()).toBe(1);
-      expect(result.prevEndDate.getDate()).toBe(28);
-      expect(result.prevEndDate.getHours()).toBe(23);
-      expect(result.prevEndDate.getMinutes()).toBe(59);
+      expect(result.startDate.toISOString()).toBe('2026-03-01T00:00:00.000Z');
+      expect(result.endDate.toISOString()).toBe('2026-03-31T23:59:59.999Z');
+      expect(result.prevStartDate.toISOString()).toBe(
+        '2026-02-01T00:00:00.000Z',
+      );
+      expect(result.prevEndDate.toISOString()).toBe('2026-02-28T23:59:59.999Z');
     });
 
-    it('should build year window', () => {
+    it('should build a full year window in UTC', () => {
       const result = getPeriodWindow('year', now);
 
-      expect(result.startDate.getMonth()).toBe(0);
-      expect(result.startDate.getDate()).toBe(1);
-      expect(result.prevStartDate.getFullYear()).toBe(2025);
-      expect(result.prevStartDate.getMonth()).toBe(0);
-      expect(result.prevStartDate.getDate()).toBe(1);
+      expect(result.startDate.toISOString()).toBe('2026-01-01T00:00:00.000Z');
+      expect(result.endDate.toISOString()).toBe('2026-12-31T23:59:59.999Z');
+      expect(result.prevStartDate.toISOString()).toBe(
+        '2025-01-01T00:00:00.000Z',
+      );
+      expect(result.prevEndDate.toISOString()).toBe('2025-12-31T23:59:59.999Z');
+    });
+
+    it('should build a full week window in UTC', () => {
+      const result = getPeriodWindow('week', now);
+
+      expect(result.startDate.toISOString()).toBe('2026-03-02T00:00:00.000Z');
+      expect(result.endDate.toISOString()).toBe('2026-03-08T23:59:59.999Z');
+      expect(result.prevStartDate.toISOString()).toBe(
+        '2026-02-23T00:00:00.000Z',
+      );
+      expect(result.prevEndDate.toISOString()).toBe('2026-03-01T23:59:59.999Z');
+    });
+
+    it('should build a custom UTC window and a previous range with matching length', () => {
+      const result = getPeriodWindow('custom', now, {
+        startDate: '2026-03-10',
+        endDate: '2026-03-12',
+      });
+
+      expect(result.startDate.toISOString()).toBe('2026-03-10T00:00:00.000Z');
+      expect(result.endDate.toISOString()).toBe('2026-03-12T23:59:59.999Z');
+      expect(result.prevStartDate.toISOString()).toBe(
+        '2026-03-07T00:00:00.000Z',
+      );
+      expect(result.prevEndDate.toISOString()).toBe('2026-03-09T23:59:59.999Z');
+    });
+
+    it('should reject missing custom range boundaries', () => {
+      expect(() => getPeriodWindow('custom', now)).toThrow(
+        FacturaDomainValidationError,
+      );
+
+      try {
+        getPeriodWindow('custom', now);
+        fail('Expected custom range required validation error');
+      } catch (error) {
+        expect(error).toMatchObject({
+          code: FACTURA_ERROR_CODES.DATE_RANGE_REQUIRED,
+          details: [
+            {
+              code: FACTURA_ERROR_CODES.DATE_RANGE_REQUIRED,
+              meta: {
+                missingFields: ['startDate', 'endDate'],
+              },
+            },
+          ],
+        });
+      }
+    });
+
+    it('should reject invalid custom range dates', () => {
+      try {
+        getPeriodWindow('custom', now, {
+          startDate: '2026-02-30',
+          endDate: '2026-03-01',
+        });
+        fail('Expected invalid custom range date error');
+      } catch (error) {
+        expect(error).toMatchObject({
+          code: FACTURA_ERROR_CODES.DATE_RANGE_INVALID,
+          details: [
+            expect.objectContaining({
+              field: 'startDate',
+              code: FACTURA_ERROR_CODES.DATE_RANGE_INVALID,
+            }),
+          ],
+        });
+      }
+    });
+
+    it('should reject reversed custom ranges', () => {
+      try {
+        getPeriodWindow('custom', now, {
+          startDate: '2026-03-12',
+          endDate: '2026-03-10',
+        });
+        fail('Expected invalid custom range order error');
+      } catch (error) {
+        expect(error).toMatchObject({
+          code: FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
+          details: [
+            {
+              code: FACTURA_ERROR_CODES.DATE_RANGE_ORDER_INVALID,
+              meta: {
+                startDate: '2026-03-12',
+                endDate: '2026-03-10',
+              },
+            },
+          ],
+        });
+      }
     });
   });
 

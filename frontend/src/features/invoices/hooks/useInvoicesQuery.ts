@@ -1,6 +1,6 @@
 import type {
   InvoiceDetail,
-  InvoicePeriod,
+  InvoiceFilter,
   InvoiceSummaryItem,
 } from "../types";
 
@@ -11,10 +11,10 @@ import {
   getInvoicesRequest,
 } from "../services/invoiceService";
 
-export const useInvoicesQuery = (period: InvoicePeriod) =>
+export const useInvoicesQuery = (filter: InvoiceFilter) =>
   useQuery<InvoiceSummaryItem[]>({
-    queryKey: ["facturas", period],
-    queryFn: () => getInvoicesRequest(period),
+    queryKey: ["facturas", filter],
+    queryFn: () => getInvoicesRequest(filter),
     placeholderData: (previousData) => previousData,
   });
 

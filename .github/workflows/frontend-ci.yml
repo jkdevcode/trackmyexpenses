@@ -6,11 +6,11 @@ on:
     paths:
       - "frontend/**"
       - ".github/workflows/frontend-ci.yml"
-
   pull_request:
     branches: [develop, main]
     paths:
       - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
   workflow_dispatch:
 
 permissions:
@@ -46,6 +46,9 @@ jobs:
         run: npx eslint "src/**/*.{ts,tsx}"
 
       - name: Build frontend
+        env:
+          VITE_API_URL: http://localhost:3000/api
+          VITE_ASSETS_URL: http://localhost:3000/uploads
         run: npm run build
 
       - name: Cache Playwright browsers
@@ -68,19 +71,3 @@ jobs:
           path: frontend/playwright-report
           if-no-files-found: ignore
 
-  frontend-quality-gate:
-    name: Frontend Quality Gate
-    runs-on: ubuntu-latest
-    if: always()
-    needs:
-      - frontend-ci
-    steps:
-      - name: Validate frontend result
-        run: |
-          RESULT="${{ needs.frontend-ci.result }}"
-          echo "frontend-ci: ${RESULT}"
-          if [[ "${RESULT}" == "failure" || "${RESULT}" == "cancelled" ]]; then
-            echo "Frontend CI failed."
-            exit 1
-          fi
-          echo "Frontend quality gate passed."

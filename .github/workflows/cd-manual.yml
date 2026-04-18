@@ -96,11 +96,18 @@ jobs:
           printf "%s" "${STAGING_SSH_KEY}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: Deploy image in staging host
+      - name: Deploy via docker-compose in staging host
         env:
           STAGING_HOST: ${{ secrets.STAGING_HOST }}
           STAGING_USER: ${{ secrets.STAGING_USER }}
-          IMAGE: ${{ needs.build-and-push-backend.outputs.image }}
+          STAGING_DIR: ${{ secrets.STAGING_DIR || '~/trackmyexpenses' }}
         run: |
-          ssh -o StrictHostKeyChecking=no "${STAGING_USER}@${STAGING_HOST}" \
-            "docker pull ${IMAGE} && docker stop trackmyexpenses-backend || true && docker rm trackmyexpenses-backend || true && docker run -d --name trackmyexpenses-backend -p 3000:3000 ${IMAGE}"
+          ssh -o StrictHostKeyChecking=no "${STAGING_USER}@${STAGING_HOST}" "
+            cd ${STAGING_DIR} && \
+            [ -f .env ] || (echo ".env file missing in ${STAGING_DIR}" && exit 1) && \
+            # NOTE: git pull is a temporary solution for simplicity.
+            # Ideal future state: deploy using specific versioned image tags to ensure exact commit deployment.
+            git pull && \
+            docker compose pull && \
+            docker compose up -d
+          "

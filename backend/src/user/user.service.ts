@@ -22,6 +22,7 @@ const userSelect = {
   correo: true,
   rol: true,
   foto: true,
+  monedaBase: true,
   fechaIngreso: true,
   fechaUltimaEdicion: true,
 };
@@ -90,13 +91,16 @@ export class UserService {
     if (dto.apellidos !== undefined) data.apellidos = dto.apellidos;
     if (dto.correo !== undefined) data.correo = dto.correo;
     if (dto.documento !== undefined) data.documento = dto.documento;
+    if (dto.monedaBase !== undefined) {
+      data.monedaBase = dto.monedaBase.trim().toUpperCase();
+    }
 
     if (fileBuffer) {
       try {
         const extMatch = originalName?.match(/\.[^./\\]+$/);
         const fileExt = extMatch?.[0] ?? '';
         const fileName = `${randomUUID()}${fileExt}`;
-        data.foto = await this.storage.upload(fileBuffer, fileName);
+        data.foto = await this.storage.upload(fileBuffer, fileName, 'users');
       } catch {
         throw new InternalServerErrorException('Error al guardar la imagen');
       }
@@ -115,6 +119,7 @@ export class UserService {
           apellidos: true,
           correo: true,
           foto: true,
+          monedaBase: true,
           fechaUltimaEdicion: true,
         },
       });

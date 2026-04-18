@@ -11,17 +11,30 @@ export class LocalStorageAdapter implements IStorageAdapter {
 
   constructor(private readonly configService: ConfigService) {
     const uploadsDir =
-      this.configService.get<string>('UPLOADS_DIR') ?? './uploads/users';
+      this.configService.get<string>('UPLOADS_DIR') ?? './uploads';
     this.uploadsRoot = join(process.cwd(), uploadsDir);
   }
 
-  async upload(buffer: Buffer, filename?: string): Promise<string> {
+  async upload(
+    buffer: Buffer,
+    filename?: string,
+    folder?: string,
+  ): Promise<string> {
     const normalizedFilename =
       filename && filename.trim().length > 0
         ? filename.replace(/\\/g, '/')
         : randomUUID();
 
-    const absolutePath = join(this.uploadsRoot, normalizedFilename);
+    const normalizedFolder =
+      folder && folder.trim().length > 0
+        ? folder.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+        : 'general';
+
+    const absolutePath = join(
+      this.uploadsRoot,
+      normalizedFolder,
+      normalizedFilename,
+    );
 
     try {
       await mkdir(dirname(absolutePath), { recursive: true });
@@ -30,6 +43,6 @@ export class LocalStorageAdapter implements IStorageAdapter {
       throw new InternalServerErrorException('Error al guardar el archivo');
     }
 
-    return `/uploads/users/${normalizedFilename}`;
+    return `/uploads/${normalizedFolder}/${normalizedFilename}`;
   }
 }

@@ -23,7 +23,7 @@ describe('HealthService', () => {
         { provide: PrismaService, useValue: prisma },
         {
           provide: ConfigService,
-          useValue: { get: jest.fn().mockReturnValue('./uploads/users') },
+          useValue: { get: jest.fn().mockReturnValue('./uploads') },
         },
       ],
     }).compile();

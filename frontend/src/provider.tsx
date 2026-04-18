@@ -12,6 +12,8 @@ import { queryClient } from "./lib/queryClient";
 import { AppErrorBoundary } from "./components/error/AppErrorBoundary";
 import { LoadingSpinner } from "./components/ui/LoadingSpinner";
 
+import { ColorThemeProvider } from "@/contexts/color-theme";
+
 declare module "@react-types/shared" {
   interface RouterConfig {
     routerOptions: NavigateOptions;
@@ -26,10 +28,12 @@ export function Provider({ children }: { children: ReactNode }) {
       <HeroUIProvider navigate={navigate} useHref={useHref}>
         <SessionProvider>
           <ThemeProvider>
-            <ToastProvider />
-            <AppErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
-            </AppErrorBoundary>
+            <ColorThemeProvider>
+              <ToastProvider />
+              <AppErrorBoundary>
+                <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
+              </AppErrorBoundary>
+            </ColorThemeProvider>
           </ThemeProvider>
         </SessionProvider>
       </HeroUIProvider>

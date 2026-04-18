@@ -27,9 +27,12 @@ const parsedSchema = z.object({
     })
     .optional(),
   fecha: z.string().nullable().optional(),
+  monedaDetectada: z.string().length(3).optional(),
   productos: z.array(productSuggestionSchema),
   totalDetectado: z.number().nullable().optional(),
   notes: z.array(z.string()).optional(),
+  source: z.string().optional(),
+  lowConfidence: z.boolean().optional(),
 });
 
 const scanResponseSchema = z.object({

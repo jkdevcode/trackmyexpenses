@@ -13,13 +13,14 @@ import {
   SettingsIcon,
   LogoutIcon,
   Logo,
+  ReportsIcon,
 } from "./LayoutIcons";
 
 import { useSession } from "@/contexts/session-context";
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { LanguageSwitch } from "@/components/ui/language-switch";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -27,15 +28,15 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
   const { t } = useTranslation();
   const { user, logout } = useSession();
   const ASSETS_URL = import.meta.env.VITE_ASSETS_URL;
 
   const navigate = useNavigate();
 
-  const avatarUrl = user?.foto
-    ? `${ASSETS_URL}${user.foto}`
-    : "/default-avatar.png";
+  const avatarUrl = user?.foto ? `${ASSETS_URL}${user.foto}` : undefined;
 
   const menuItems = [
     {
@@ -47,6 +48,11 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
       label: t("navigation.invoices"),
       href: "/invoices",
       icon: <InvoiceIcon />,
+    },
+    {
+      label: t("navigation.reports"),
+      href: "/reports",
+      icon: <ReportsIcon />,
     },
     {
       label: t("navigation.settings"),
@@ -144,6 +150,7 @@ export const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
               color={appColor}
               size={isCollapsed ? "sm" : "md"}
               src={avatarUrl}
+              showFallback
             />
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">

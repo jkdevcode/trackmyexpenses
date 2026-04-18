@@ -1,22 +1,34 @@
-# backend/src/producto
+﻿# Product Module
 
-Modulo para catalogo de productos reutilizable en facturas manuales y OCR.
+## Description
+
+This module manages the authenticated user's product catalog, which is reused by manual invoice entry and OCR-confirmed invoices.
 
 ## Responsibilities
 
-- Crear y listar productos del sistema.
-- Validar duplicados por codigo de producto.
-- Exponer contratos DTO para entrada segura.
+- Create products in the current user's private catalog.
+- List catalog products for invoice forms and OCR review flows.
+- Enforce user-scoped uniqueness and validation rules.
 
-## Main Files
+## Key Files
 
-- **`producto.controller.ts`**: Endpoints REST de productos.
-- **`producto.service.ts`**: Logica de negocio y persistencia.
-- **`dto/create-producto.dto.ts`**: Validacion de payload de creacion.
-- **`errors/producto-not-found.error.ts`**: Error de dominio de producto.
+- `producto.controller.ts`: Protected endpoints for creating and listing products.
+- `producto.service.ts`: Product business logic and persistence orchestration.
+- `dto/create-producto.dto.ts`: Validation contract for product creation.
+- `errors/producto-not-found.error.ts`: Domain error used when a requested product does not exist.
 
-## Usage
+## How it Works
 
-- Importado por `ProductoModule`.
-- Utilizado por `FacturaService` para construir items de factura.
-- Consumido por frontend en el formulario manual de facturas.
+- Product endpoints are protected by JWT auth and always resolve data relative to the authenticated user.
+- Manual invoice flows use the catalog directly for product selection.
+- OCR flows can resolve an existing product by name or create one before attaching the item snapshot to the invoice.
+
+## Integration
+
+- Imported by `ProductoModule` and consumed heavily by the invoice module.
+- Used by the frontend create-product modal and manual invoice forms.
+- Relies on Prisma for storage and the shared auth guard for access control.
+
+## Notes
+
+- Product codes are unique per user, not globally across the whole system.

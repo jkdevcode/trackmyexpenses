@@ -9,6 +9,8 @@ import {
   FacturaRepository,
   FacturaRepositoryTx,
   FacturaStatsDateRange,
+  UpdateFacturaProductoSnapshotInput,
+  UpdateFacturaRecordInput,
 } from './factura.repository.port';
 
 const FACTURA_LIST_SELECT = {
@@ -19,6 +21,12 @@ const FACTURA_LIST_SELECT = {
   nitProveedor: true,
   fechaHoraCompra: true,
   totalPagar: true,
+  moneda: true,
+  monedaBase: true,
+  tasaCambio: true,
+  totalPagarBase: true,
+  imagenUrl: true,
+  ocrSource: true,
   usuarioId: true,
 } as const;
 
@@ -32,6 +40,22 @@ export class PrismaFacturaRepository implements FacturaRepository {
     return await this.prisma.$transaction((tx) =>
       callback(new PrismaFacturaRepositoryTx(tx)),
     );
+  }
+
+  async findFacturasByUser(userId: number, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    return await this.prisma.factura.findMany({
+      where: {
+        usuarioId: userId,
+      },
+      orderBy: {
+        fechaHoraCompra: 'desc',
+      },
+      skip,
+      take: limit,
+      select: FACTURA_LIST_SELECT,
+    });
   }
 
   async findFacturasByUserAndRange(
@@ -80,7 +104,22 @@ export class PrismaFacturaRepository implements FacturaRepository {
         id: facturaId,
         usuarioId: userId,
       },
-      include: {
+      select: {
+        id: true,
+        codigoFactura: true,
+        metodoPago: true,
+        lugarCompra: true,
+        nitProveedor: true,
+        fechaHoraCompra: true,
+        totalPagar: true,
+        moneda: true,
+        monedaBase: true,
+        tasaCambio: true,
+        tasaCambioFecha: true,
+        tasaCambioFuente: true,
+        totalPagarBase: true,
+        imagenUrl: true,
+        ocrSource: true,
         usuario: {
           select: {
             id: true,
@@ -89,12 +128,22 @@ export class PrismaFacturaRepository implements FacturaRepository {
           },
         },
         productos: {
-          include: {
+          select: {
+            id: true,
+            productoId: true,
+            cantidad: true,
+            unidad: true,
+            descuento: true,
+            precioUnitario: true,
+            precioTotal: true,
+            productoNombre: true,
+            productoCodigo: true,
             producto: {
               select: {
                 id: true,
                 nombre: true,
                 precioUnitario: true,
+                codigo: true,
               },
             },
           },
@@ -113,45 +162,97 @@ export class PrismaFacturaRepository implements FacturaRepository {
     });
   }
 
-  async findProductoById(productoId: number) {
-    return await this.prisma.producto.findUnique({
-      where: { id: productoId },
-      select: { id: true, precioUnitario: true },
+  async findFacturaCurrencyByUser(userId: number, facturaId: number) {
+    return await this.prisma.factura.findFirst({
+      where: {
+        id: facturaId,
+        usuarioId: userId,
+      },
+      select: {
+        id: true,
+        totalPagar: true,
+        totalPagarBase: true,
+        moneda: true,
+        monedaBase: true,
+        tasaCambio: true,
+      },
     });
+  }
+
+  async findProductoById(userId: number, productoId: number) {
+    return await this.prisma.producto.findFirst({
+      where: { id: productoId, usuarioId: userId },
+      select: { id: true, precioUnitario: true, nombre: true, codigo: true },
+    });
+  }
+
+  async findUsuarioMonedaBase(userId: number) {
+    const user = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: { monedaBase: true },
+    });
+    return user?.monedaBase ?? null;
   }
 
   async countFacturasByUser(userId: number) {
     return await this.prisma.factura.count({ where: { usuarioId: userId } });
   }
 
+  async sumTotalPagarByUser(userId: number) {
+    const result = await this.prisma.$queryRaw<
+      Array<{ total: Prisma.Decimal | null }>
+    >`
+      SELECT COALESCE(SUM(COALESCE(totalPagarBase, totalPagar)), 0) AS total
+      FROM Factura
+      WHERE usuarioId = ${userId}
+    `;
+
+    return Number(result[0]?.total ?? 0);
+  }
+
   async sumTotalPagarByUserAndRange(
     userId: number,
     range: FacturaStatsDateRange,
   ) {
-    const aggregate = await this.prisma.factura.aggregate({
-      where: {
-        usuarioId: userId,
-        fechaHoraCompra: {
-          gte: range.startDate,
-          lte: range.endDate,
-        },
-      },
-      _sum: {
-        totalPagar: true,
-      },
-    });
+    const result = await this.prisma.$queryRaw<
+      Array<{ total: Prisma.Decimal | null }>
+    >`
+      SELECT COALESCE(SUM(COALESCE(totalPagarBase, totalPagar)), 0) AS total
+      FROM Factura
+      WHERE usuarioId = ${userId}
+        AND fechaHoraCompra >= ${range.startDate}
+        AND fechaHoraCompra <= ${range.endDate}
+    `;
 
-    return Number(aggregate._sum.totalPagar) || 0;
+    return Number(result[0]?.total ?? 0);
   }
 }
 
 class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
   constructor(private readonly tx: Prisma.TransactionClient) {}
 
-  async findProductosByIds(productIds: number[]) {
+  async findProductosByIds(userId: number, productIds: number[]) {
     return await this.tx.producto.findMany({
-      where: { id: { in: productIds } },
-      select: { id: true, precioUnitario: true },
+      where: {
+        id: { in: productIds },
+        usuarioId: userId,
+      },
+      select: { id: true, precioUnitario: true, nombre: true, codigo: true },
+    });
+  }
+
+  async findFacturaProductosByFacturaId(facturaId: number) {
+    return await this.tx.facturaProducto.findMany({
+      where: { facturaId },
+      select: {
+        id: true,
+        productoId: true,
+        cantidad: true,
+        unidad: true,
+        descuento: true,
+        precioUnitario: true,
+        precioTotal: true,
+      },
     });
   }
 
@@ -165,8 +266,102 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
         nitProveedor: data.nitProveedor,
         fechaHoraCompra: data.fechaHoraCompra,
         totalPagar: new Prisma.Decimal(data.totalPagar),
+        moneda: data.moneda ?? null,
+        monedaBase: data.monedaBase ?? null,
+        tasaCambio:
+          data.tasaCambio === undefined || data.tasaCambio === null
+            ? null
+            : new Prisma.Decimal(data.tasaCambio),
+        tasaCambioFecha: data.tasaCambioFecha ?? null,
+        tasaCambioFuente: data.tasaCambioFuente ?? null,
+        totalPagarBase:
+          data.totalPagarBase === undefined || data.totalPagarBase === null
+            ? null
+            : new Prisma.Decimal(data.totalPagarBase),
+        imagenUrl: data.imagenUrl ?? null,
+        ocrSource: data.ocrSource ?? null,
       },
       select: { id: true },
+    });
+  }
+
+  async updateFactura(facturaId: number, data: UpdateFacturaRecordInput) {
+    const updateData: Prisma.FacturaUpdateInput = {};
+
+    if (data.metodoPago !== undefined) {
+      updateData.metodoPago = data.metodoPago;
+    }
+    if (data.lugarCompra !== undefined) {
+      updateData.lugarCompra = data.lugarCompra;
+    }
+    if (data.nitProveedor !== undefined) {
+      updateData.nitProveedor = data.nitProveedor;
+    }
+    if (data.fechaHoraCompra !== undefined) {
+      updateData.fechaHoraCompra = data.fechaHoraCompra;
+    }
+    if (data.totalPagar !== undefined) {
+      updateData.totalPagar = new Prisma.Decimal(data.totalPagar);
+    }
+    if (data.moneda !== undefined) {
+      updateData.moneda = data.moneda;
+    }
+    if (data.monedaBase !== undefined) {
+      updateData.monedaBase = data.monedaBase;
+    }
+    if (data.tasaCambio !== undefined) {
+      updateData.tasaCambio =
+        data.tasaCambio === null ? null : new Prisma.Decimal(data.tasaCambio);
+    }
+    if (data.tasaCambioFecha !== undefined) {
+      updateData.tasaCambioFecha = data.tasaCambioFecha;
+    }
+    if (data.tasaCambioFuente !== undefined) {
+      updateData.tasaCambioFuente = data.tasaCambioFuente;
+    }
+    if (data.totalPagarBase !== undefined) {
+      updateData.totalPagarBase =
+        data.totalPagarBase === null
+          ? null
+          : new Prisma.Decimal(data.totalPagarBase);
+    }
+
+    return await this.tx.factura.update({
+      where: { id: facturaId },
+      data: updateData,
+    });
+  }
+
+  async updateFacturaProductoSnapshot(
+    data: UpdateFacturaProductoSnapshotInput,
+  ) {
+    return await this.tx.facturaProducto.update({
+      where: {
+        facturaId_productoId: {
+          facturaId: data.facturaId,
+          productoId: data.productoId,
+        },
+      },
+      data: {
+        cantidad: new Prisma.Decimal(data.cantidad),
+        unidad: data.unidad ?? null,
+        descuento: new Prisma.Decimal(data.descuento),
+        precioUnitario: new Prisma.Decimal(data.precioUnitario),
+        precioTotal: new Prisma.Decimal(data.precioTotal),
+      },
+    });
+  }
+
+  async deleteFacturaProductosByFacturaId(facturaId: number) {
+    const result = await this.tx.facturaProducto.deleteMany({
+      where: { facturaId },
+    });
+    return result.count;
+  }
+
+  async deleteFacturaById(facturaId: number) {
+    await this.tx.factura.delete({
+      where: { id: facturaId },
     });
   }
 
@@ -176,18 +371,25 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
         data: {
           facturaId: data.facturaId,
           productoId: data.productoId,
-          cantidad: data.cantidad,
+          cantidad: new Prisma.Decimal(data.cantidad),
           unidad: data.unidad,
           descuento: new Prisma.Decimal(data.descuento),
+          precioUnitario: new Prisma.Decimal(data.precioUnitario),
           precioTotal: new Prisma.Decimal(data.precioTotal),
+          productoNombre: data.productoNombre,
+          productoCodigo: data.productoCodigo,
         },
         select: {
           id: true,
           facturaId: true,
           productoId: true,
           cantidad: true,
+          unidad: true,
           descuento: true,
+          precioUnitario: true,
           precioTotal: true,
+          productoNombre: true,
+          productoCodigo: true,
         },
       });
     } catch (error: unknown) {
@@ -204,7 +406,22 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
   async findFacturaByIdWithRelations(facturaId: number) {
     return await this.tx.factura.findUniqueOrThrow({
       where: { id: facturaId },
-      include: {
+      select: {
+        id: true,
+        codigoFactura: true,
+        metodoPago: true,
+        lugarCompra: true,
+        nitProveedor: true,
+        fechaHoraCompra: true,
+        totalPagar: true,
+        moneda: true,
+        monedaBase: true,
+        tasaCambio: true,
+        tasaCambioFecha: true,
+        tasaCambioFuente: true,
+        totalPagarBase: true,
+        imagenUrl: true,
+        ocrSource: true,
         usuario: {
           select: {
             id: true,
@@ -213,10 +430,20 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
           },
         },
         productos: {
-          include: {
+          select: {
+            id: true,
+            productoId: true,
+            cantidad: true,
+            unidad: true,
+            descuento: true,
+            precioUnitario: true,
+            precioTotal: true,
+            productoNombre: true,
+            productoCodigo: true,
             producto: {
               select: {
                 id: true,
+                codigo: true,
                 nombre: true,
                 precioUnitario: true,
               },
@@ -227,41 +454,59 @@ class PrismaFacturaRepositoryTx implements FacturaRepositoryTx {
     });
   }
 
-  async findProductoByNombre(nombre: string) {
+  async findProductoByNombre(userId: number, nombre: string) {
     return await this.tx.producto.findFirst({
-      where: { nombre },
+      where: { nombre, usuarioId: userId },
       select: { id: true },
     });
   }
 
-  async createProducto(data: CreateProductoInput) {
+  async createProducto(userId: number, data: CreateProductoInput) {
     return await this.tx.producto.create({
       data: {
         nombre: data.nombre,
         codigo: data.codigo,
         precioUnitario: new Prisma.Decimal(data.precioUnitario),
+        usuarioId: userId,
       },
       select: { id: true },
     });
   }
 
-  async updateFacturaTotalAndGetDetails(facturaId: number, increment: number) {
+  async updateFacturaTotalAndGetDetails(
+    facturaId: number,
+    increment: number,
+    incrementBase: number,
+  ) {
     return await this.tx.factura.update({
       where: { id: facturaId },
       data: {
         totalPagar: { increment },
+        totalPagarBase: { increment: incrementBase },
       },
       select: {
         id: true,
         codigoFactura: true,
         totalPagar: true,
+        moneda: true,
+        monedaBase: true,
+        tasaCambio: true,
+        tasaCambioFecha: true,
+        tasaCambioFuente: true,
+        totalPagarBase: true,
+        imagenUrl: true,
+        ocrSource: true,
         productos: {
           select: {
             id: true,
             productoId: true,
             cantidad: true,
+            unidad: true,
             descuento: true,
+            precioUnitario: true,
             precioTotal: true,
+            productoNombre: true,
+            productoCodigo: true,
             producto: {
               select: {
                 id: true,

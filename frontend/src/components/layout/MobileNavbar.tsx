@@ -19,26 +19,28 @@ import {
   SettingsIcon,
   LogoutIcon,
   Logo,
+  ReportsIcon,
 } from "./LayoutIcons";
 
 import { useSession } from "@/contexts/session-context";
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
+import { useAppColorVariants } from "@/theme/app-color-variants";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { LanguageSwitch } from "@/components/ui/language-switch";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 export const MobileNavbar = () => {
   const { t } = useTranslation();
   const { user, logout } = useSession();
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   const ASSETS_URL = import.meta.env.VITE_ASSETS_URL;
 
-  const avatarUrl = user?.foto
-    ? `${ASSETS_URL}${user.foto}`
-    : "/default-avatar.png";
+  const avatarUrl = user?.foto ? `${ASSETS_URL}${user.foto}` : undefined;
 
   const menuItems = [
     {
@@ -50,6 +52,11 @@ export const MobileNavbar = () => {
       label: t("navigation.invoices"),
       href: "/invoices",
       icon: <InvoiceIcon />,
+    },
+    {
+      label: t("navigation.reports"),
+      href: "/reports",
+      icon: <ReportsIcon />,
     },
     {
       label: t("navigation.settings"),
@@ -98,6 +105,7 @@ export const MobileNavbar = () => {
           role="button"
           size="sm"
           src={avatarUrl}
+          showFallback
           tabIndex={0}
           onClick={() => navigate("/profile")}
           onKeyDown={(e) => {
@@ -181,6 +189,7 @@ export const MobileNavbar = () => {
                 className="w-12 h-12 group-hover:scale-105 transition-transform"
                 color={appColor}
                 src={avatarUrl}
+                showFallback
               />
               <div className="flex flex-col">
                 <span className={`font-bold text-lg ${appColorVariants.text}`}>

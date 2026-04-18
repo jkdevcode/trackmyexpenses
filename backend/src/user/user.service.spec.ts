@@ -101,6 +101,7 @@ describe('UserService', () => {
     expect(storage.upload).toHaveBeenCalledWith(
       expect.any(Buffer),
       expect.stringMatching(/\.png$/),
+      'users',
     );
     const [updateInput] = prisma.usuario.update.mock.calls[0] as [
       {
@@ -110,6 +111,7 @@ describe('UserService', () => {
           apellidos?: string;
           correo?: string;
           documento?: string;
+          monedaBase?: string;
         };
       },
     ];

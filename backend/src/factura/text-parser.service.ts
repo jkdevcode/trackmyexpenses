@@ -7,8 +7,12 @@ import { RequestContext } from '../common/context/request-context';
 import { ScanResponseDto } from './dto/scan-response.dto';
 
 type GeminiResponse = { response: { text: () => string } };
+type GeminiPromptPart =
+  | string
+  | { inlineData: { data: string; mimeType: string } };
+type GeminiPrompt = string | GeminiPromptPart[];
 type GeminiModel = {
-  generateContent: (prompt: string) => Promise<GeminiResponse>;
+  generateContent: (prompt: GeminiPrompt) => Promise<GeminiResponse>;
 };
 type ParsedData = ScanResponseDto['parsed'];
 type ParsedProduct = ParsedData['productos'][number];
@@ -34,12 +38,13 @@ export class TextParserService {
 
   async parseAndEnrich(
     rawText: string,
+    userId?: number,
   ): Promise<{ parsed: ParsedData; usedFallbackParser: boolean }> {
     let parsedData: ParsedData = { productos: [] };
     let usedFallbackParser = false;
 
     try {
-      parsedData = await this.parseWithAI(rawText);
+      parsedData = await this.parseWithAI({ text: rawText });
     } catch (error: unknown) {
       this.logger.warn({
         msg: 'AI parsing failed. Switching to fallback parser',
@@ -66,63 +71,141 @@ export class TextParserService {
       usedFallbackParser = true;
     }
 
-    const enrichedProducts = await this.enrichProducts(parsedData.productos);
+    const enriched = await this.finalizeParsedData(parsedData, rawText, userId);
+    return { parsed: enriched, usedFallbackParser };
+  }
+
+  async finalizeParsedData(
+    parsedData: ParsedData,
+    rawText?: string,
+    userId?: number,
+  ): Promise<ParsedData> {
+    const enrichedProducts = await this.enrichProducts(
+      parsedData.productos,
+      userId,
+    );
+    const monedaDetectada =
+      parsedData.monedaDetectada ??
+      (rawText ? TextParserHelper.detectCurrency(rawText) : null);
+    const lowConfidence = this.hasLowConfidence(parsedData);
+
     return {
-      parsed: {
-        ...parsedData,
-        productos: enrichedProducts,
-      },
-      usedFallbackParser,
+      ...parsedData,
+      productos: enrichedProducts,
+      monedaDetectada: monedaDetectada ?? undefined,
+      lowConfidence,
     };
   }
 
-  private async parseWithAI(text: string): Promise<ParsedData> {
+  /**
+   * Parses a receipt using Gemini AI.
+   *
+   * The input accepts either pre-extracted OCR text or a base64-encoded image.
+   *
+   * @param input.text        - Cleaned OCR text extracted from Tesseract
+   * @param input.imageBase64 - Base64 image for multimodal parsing
+   */
+  async parseWithAI(input: {
+    text?: string;
+    imageBase64?: string;
+  }): Promise<ParsedData> {
     if (!this.geminiModel) {
       throw new Error('AI not configured');
     }
 
-    const prompt = `
-      Analiza el texto OCR de una factura comercial.
-      Extrae datos en JSON estricto:
-      {
-        "empresa": { "nombre": string, "nit": string },
-        "fecha": "YYYY-MM-DD",
-        "totalDetectado": integer (sin puntos),
-        "productos": [
+    const { text, imageBase64 } = input;
+
+    const prompt = `You are an expert system for extracting structured data from receipts.
+
+Return ONLY valid JSON.
+
+## OUTPUT SCHEMA
+{
+  "empresa": { "nombre": string | null, "nit": string | null },
+  "fecha": string | null,
+  "monedaDetectada": string | null,
+  "totalDetectado": number | null,
+  "productos": [
+    {
+      "nombreDetected": string,
+      "cantidad": number,
+      "unidad": "u" | "kg" | "g",
+      "precioUnitario": number,
+      "precioTotal": number,
+      "confidence": {
+        "nombre": number,
+        "cantidad": number,
+        "precio": number
+      }
+    }
+  ],
+  "notes": string[]
+}
+
+## RULES
+
+1. NEVER include TOTAL, SUBTOTAL, IVA, TAX as products.
+2. Detect columns visually if image is provided.
+3. Merge multi-line product rows.
+4. Normalize prices:
+   "12.500" -> 12500
+5. Default cantidad = 1
+6. If unclear, set price = 0 and confidence.precio = 0.0
+
+## EXAMPLE
+LECHE ENTERA
+2 x 3.200 -> 6400
+
+Output:
+{
+  "nombreDetected": "LECHE ENTERA",
+  "cantidad": 2,
+  "precioUnitario": 3200,
+  "precioTotal": 6400
+}
+`;
+
+    try {
+      let result: GeminiResponse;
+
+      if (imageBase64) {
+        result = await this.geminiModel.generateContent([
+          prompt,
           {
-            "nombreDetected": string,
-            "cantidad": number,
-            "unidad": "u" | "kg" | "g",
-            "precioUnitario": integer (COP sans points),
-            "precioTotal": integer (COP sans points),
-            "confidence": { "nombre": 0.0-1.0, "cantidad": 0.0-1.0, "precio": 0.0-1.0 }
-          }
-        ]
+            inlineData: {
+              data: imageBase64,
+              mimeType: 'image/jpeg',
+            },
+          },
+        ]);
+      } else {
+        result = await this.geminiModel.generateContent(
+          `${prompt}
+
+${text ?? ''}`,
+        );
       }
 
-      Reglas:
-      1. Normaliza montos a enteros (elimina puntos de miles).
-      2. Detecta unidades (kg/g) en descripcion.
-      3. "confidence" estimado (1.0 si es claro, 0.5 si dudoso).
-
-      Texto OCR:
-      """
-      ${text}
-      """
-    `;
-
-    const result = await this.geminiModel.generateContent(prompt);
-    return this.normalizeParsedData(
-      JSON.parse(result.response.text()) as unknown,
-    );
+      const raw = result.response.text();
+      return this.normalizeParsedData(JSON.parse(raw) as unknown);
+    } catch (error: unknown) {
+      this.logger.warn('AI parsing failed, fallback will be used', error);
+      throw error;
+    }
   }
 
   private async enrichProducts(
     products: ParsedProduct[],
+    userId?: number,
   ): Promise<ParsedProduct[]> {
-    const dbProducts = await this.prisma.producto.findMany({
-      select: { id: true, nombre: true, codigo: true },
-    });
+    const dbProducts =
+      userId === undefined
+        ? []
+        : await this.prisma.producto.findMany({
+            where: { usuarioId: userId },
+            select: { id: true, nombre: true, codigo: true },
+            take: 500,
+          });
 
     const fuse = new Fuse(dbProducts, {
       keys: ['nombre', 'codigo'],
@@ -174,13 +257,63 @@ export class TextParserService {
   }
 
   private normalizeProducts(products: unknown): ParsedProduct[] {
-    if (!Array.isArray(products)) {
-      return [];
-    }
+    if (!Array.isArray(products)) return [];
 
-    return products.filter(
-      (product): product is ParsedProduct =>
-        typeof product === 'object' && product !== null,
+    return products.reduce<ParsedProduct[]>((acc, product) => {
+      if (typeof product !== 'object' || product === null) return acc;
+
+      const p = product as Record<string, unknown>;
+
+      const nombre =
+        typeof p.nombreDetected === 'string' ? p.nombreDetected.trim() : '';
+      if (!nombre) return acc;
+
+      const cantidad =
+        typeof p.cantidad === 'number' && p.cantidad > 0 ? p.cantidad : 1;
+
+      const precioUnitario =
+        typeof p.precioUnitario === 'number' && isFinite(p.precioUnitario)
+          ? Math.round(p.precioUnitario)
+          : 0;
+
+      const precioTotal =
+        typeof p.precioTotal === 'number' && isFinite(p.precioTotal)
+          ? Math.round(p.precioTotal)
+          : Math.round(precioUnitario * cantidad);
+
+      const unidad = (['u', 'kg', 'g'] as const).includes(
+        p.unidad as 'u' | 'kg' | 'g',
+      )
+        ? (p.unidad as 'u' | 'kg' | 'g')
+        : 'u';
+
+      const rawConf = (p.confidence ?? {}) as Record<string, unknown>;
+      const confidence = {
+        nombre: typeof rawConf.nombre === 'number' ? rawConf.nombre : 0.5,
+        cantidad: typeof rawConf.cantidad === 'number' ? rawConf.cantidad : 0.5,
+        precio: typeof rawConf.precio === 'number' ? rawConf.precio : 0.5,
+      };
+
+      acc.push({
+        nombreDetected: nombre,
+        cantidad,
+        unidad,
+        precioUnitario,
+        precioTotal,
+        confidence,
+      });
+
+      return acc;
+    }, []);
+  }
+
+  private hasLowConfidence(parsed: ParsedData): boolean {
+    return (
+      parsed.productos?.some(
+        (p) =>
+          (p.confidence?.precio ?? 1) < 0.5 ||
+          (p.confidence?.nombre ?? 1) < 0.5,
+      ) ?? false
     );
   }
 }
@@ -242,10 +375,33 @@ class TextParserHelper {
     return { cantidad: 1, unidad: 'u' };
   }
 
+  static detectCurrency(text: string): string | null {
+    const upper = text.toUpperCase();
+
+    if (upper.includes('USD') || upper.includes('US$')) {
+      return 'USD';
+    }
+    if (upper.includes('EUR')) {
+      return 'EUR';
+    }
+    if (upper.includes('COP') || upper.includes('COL')) {
+      return 'COP';
+    }
+    if (upper.includes('MXN')) {
+      return 'MXN';
+    }
+    if (upper.includes('CLP')) {
+      return 'CLP';
+    }
+
+    return null;
+  }
+
   static fallbackParse(text: string): unknown[] {
     const lines = text.split('\n');
     const products = [];
-    const lineRegex = /^(.+?)\s+([$]?\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)$/;
+    const lineRegex =
+      /^(.+?)\s+(?:COP\s*|\$\s*)?(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)$/i;
 
     for (const line of lines) {
       const cleanLine = line.trim();

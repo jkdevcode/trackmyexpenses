@@ -12,7 +12,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 
-import { THEME_COLOR_MAP, appColor } from "@/theme/theme.config";
+import { useColorTheme } from "@/hooks/use-color-theme";
+import { THEME_COLOR_MAP } from "@/theme/theme.config";
 
 interface AverageTicketChartProps {
   data: ExpenseData[];
@@ -24,6 +25,7 @@ export const AverageTicketChart = ({
   loading,
 }: AverageTicketChartProps) => {
   const { t } = useTranslation("dashboard");
+  const { appColor } = useColorTheme();
   const [recharts, setRecharts] = useState<{
     LineChart: typeof LineChartType;
     Line: typeof LineType;
@@ -58,14 +60,14 @@ export const AverageTicketChart = ({
   // Get colors
   const primaryRgb = THEME_COLOR_MAP[appColor].dark;
   const primaryColor = `rgb(${primaryRgb})`;
-  const secondaryColor = "#9333ea"; // Purple-ish for contrast or secondary metric
+  const secondaryColor =
+    appColor === "secondary"
+      ? "#22c55e" // verde (ej: success)
+      : "#9333ea"; // morado normal
 
   if (loading || !recharts) {
     return (
-      <Card
-        className="h-[300px] w-full animate-pulse bg-default-100"
-        shadow="sm"
-      >
+      <Card className="h-75 w-full animate-pulse bg-default-100" shadow="sm">
         <CardBody />
       </Card>
     );
@@ -81,7 +83,7 @@ export const AverageTicketChart = ({
   } = recharts;
 
   return (
-    <Card className="h-[300px] w-full" shadow="sm">
+    <Card className="h-75 w-full" shadow="sm">
       <CardHeader className="flex flex-col items-start px-6 pt-6 pb-0">
         <h3 className="text-lg font-semibold">
           {t("charts.average_ticket_title")}
@@ -107,7 +109,7 @@ export const AverageTicketChart = ({
           </div>
         </div>
       </CardHeader>
-      <CardBody className="pb-4 h-full min-h-[200px]">
+      <CardBody className="pb-4 h-full min-h-50">
         <ResponsiveContainer height="100%" width="100%">
           <LineChart
             data={data}
@@ -127,9 +129,14 @@ export const AverageTicketChart = ({
             />
             <Tooltip
               contentStyle={{
+                backgroundColor: "hsl(var(--heroui-default-100))",
                 borderRadius: "8px",
-                border: "none",
-                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                border: "1px solid hsl(var(--heroui-default-200))",
+                color: "hsl(var(--heroui-foreground))",
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)",
+              }}
+              labelStyle={{
+                color: "hsl(var(--heroui-default-500))",
               }}
               cursor={{
                 stroke: primaryColor,

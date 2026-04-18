@@ -13,7 +13,7 @@ describe('LocalStorageAdapter', () => {
 
   beforeEach(() => {
     const configService = {
-      get: jest.fn().mockReturnValue('./uploads/users'),
+      get: jest.fn().mockReturnValue('./uploads'),
     } as unknown as ConfigService;
     adapter = new LocalStorageAdapter(configService);
     (mkdir as jest.Mock).mockResolvedValue(undefined);
@@ -28,6 +28,7 @@ describe('LocalStorageAdapter', () => {
     const result = await adapter.upload(
       Buffer.from('abc'),
       'profile/avatar.jpg',
+      'users',
     );
 
     expect(mkdir).toHaveBeenCalled();

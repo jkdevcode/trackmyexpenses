@@ -1,22 +1,36 @@
-# backend/src
+﻿# Backend Source
 
-Codigo fuente principal del backend NestJS organizado por modulos de negocio e infraestructura.
+## Description
+
+This directory contains the NestJS application source code, organized into business modules and shared infrastructure layers.
 
 ## Responsibilities
 
-- Definir bootstrap (`main.ts`) y composicion global (`app.module.ts`).
-- Encapsular dominios (`auth`, `user`, `factura`, `producto`).
-- Aplicar cross-cutting concerns (`common`, `config`, `infra`, `prisma`).
+- Bootstrap the HTTP server and global middleware stack.
+- Compose the domain modules for auth, users, products, invoices, and reports.
+- Centralize shared configuration, error handling, logging, and infrastructure adapters.
 
-## Main Files
+## Key Files
 
-- **`main.ts`**: Inicializacion de app, Swagger, CORS y middlewares globales.
-- **`app.module.ts`**: Registro de modulos y providers globales.
-- **`config/env.validation.ts`**: Validacion tipada de variables de entorno.
-- **`common/filters/global-exception.filter.ts`**: Formato unificado de errores.
+- `main.ts`: Starts the app, sets the `/api` prefix, configures CORS, cookie parsing, CSRF origin checks, Zod validation, and Swagger.
+- `app.module.ts`: Wires global modules such as config, logging, cache, throttling, static uploads, Prisma, and domain modules.
+- `common/filters/global-exception.filter.ts`: Normalizes exceptions into the structured API error shape.
+- `config/env.validation.ts`: Validates and defaults environment variables before the app finishes booting.
 
-## Usage
+## How it Works
 
-- Base para `npm run start:dev`, `npm run build` y tests.
-- Cada modulo expone controller/service/module segun arquitectura NestJS.
-- Referenciado por e2e tests en `backend/test`.
+- Requests enter through `main.ts`, which enables cookie-based auth support and Swagger documentation.
+- `app.module.ts` registers shared infrastructure once so modules can inject it through Nest dependency injection.
+- Domain modules such as `auth`, `factura`, and `user` stay focused on business behavior while `common`, `config`, `infra`, and `prisma` provide reusable foundations.
+- Shared period filtering and UTC date normalization live in common utilities and are reused by invoice and report flows.
+
+## Integration
+
+- `backend/test` boots this source tree for e2e coverage.
+- The frontend consumes the HTTP API exposed by controllers in these modules.
+- Prisma, storage, exchange rate, and mail services are shared across multiple domains from here.
+
+## Notes
+
+- The current filtering contract is `week | month | year | all | custom`, with `custom` relying on validated `YYYY-MM-DD` dates.
+- Static uploads are served under `/uploads`, while API routes stay under `/api`.

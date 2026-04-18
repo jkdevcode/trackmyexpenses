@@ -1,20 +1,29 @@
-# frontend/src/types
+﻿# Shared Types
 
-Tipos globales compartidos por multiples features.
+## Description
+
+This folder contains lightweight TypeScript types that are shared outside any single frontend feature.
 
 ## Responsibilities
 
-- Exponer contratos comunes de TypeScript.
-- Evitar duplicacion de tipos entre modulos.
-- Servir como punto de export para tipos transversales.
+- Hold small global contracts that do not belong to one domain module.
+- Prevent duplicated utility types across shared components.
+- Keep the global type surface intentionally small.
 
-## Main Files
+## Key Files
 
-- **`index.ts`**: Barrel de tipos globales del proyecto.
-- **`README.md`**: Convenciones para agregar nuevos tipos compartidos.
+- `index.ts`: Exports shared types such as `IconSvgProps` for reusable SVG-based components.
 
-## Usage
+## How it Works
 
-- Importado por features cuando el tipo no es de dominio local.
-- Los tipos especificos de feature deben vivir en `src/features/*/types.ts`.
-- Mantener nombres claros y estables para evitar acoplamiento.
+- Shared UI pieces such as icon components and the language switch import these types to keep prop contracts consistent.
+- Feature-specific DTOs and view models remain inside their respective feature folders.
+
+## Integration
+
+- Used by shared UI and component layers.
+- Complements feature-local `types.ts` files instead of replacing them.
+
+## Notes
+
+- Add new types here only when they are truly cross-feature; otherwise keep them near the owning feature.

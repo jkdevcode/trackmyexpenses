@@ -1,34 +1,29 @@
-import type { DateFilterType } from "../types";
+import type { InvoiceDateRangeValue } from "../../invoices/hooks/useInvoiceFilters";
+import type { InvoiceFilter, InvoicePeriod } from "../../invoices/types";
 
-import { Button } from "@heroui/button";
-import { useTranslation } from "react-i18next";
-
-import { appColor } from "@/theme/theme.config";
+import { PeriodFilter } from "@/components/filters/PeriodFilter";
 
 interface DateFilterProps {
-  filter: DateFilterType;
-  onChange: (filter: DateFilterType) => void;
+  dateRangeValue: InvoiceDateRangeValue;
+  filter: InvoiceFilter;
+  onDateRangeChange: (value: InvoiceDateRangeValue) => void;
+  onPeriodChange: (filter: InvoicePeriod) => void;
 }
 
-export const DateFilter = ({ filter, onChange }: DateFilterProps) => {
-  const { t } = useTranslation("dashboard");
-
-  const filters: DateFilterType[] = ["day", "week", "month", "year"];
-
+export const DateFilter = ({
+  dateRangeValue,
+  filter,
+  onDateRangeChange,
+  onPeriodChange,
+}: DateFilterProps) => {
   return (
-    <div className="flex items-center gap-2 bg-content2/50 p-1 rounded-lg w-fit">
-      {filters.map((f) => (
-        <Button
-          key={f}
-          className={`capitalize font-medium ${filter === f ? "shadow-md" : "text-default-500 hover:text-default-900"}`}
-          color={filter === f ? appColor : "default"}
-          size="sm"
-          variant={filter === f ? "solid" : "light"}
-          onPress={() => onChange(f)}
-        >
-          {t(`filters.${f}`)}
-        </Button>
-      ))}
-    </div>
+    <PeriodFilter
+      dateRangeValue={dateRangeValue}
+      showBackdrop={true}
+      translationNamespace="dashboard"
+      value={filter.period}
+      onChange={onPeriodChange}
+      onDateRangeChange={onDateRangeChange}
+    />
   );
 };

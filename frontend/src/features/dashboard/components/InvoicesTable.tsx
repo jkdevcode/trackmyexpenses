@@ -12,10 +12,14 @@ import {
 } from "@heroui/table";
 import { Pagination } from "@heroui/pagination";
 import { Chip } from "@heroui/chip";
+import { Tooltip } from "@heroui/tooltip";
 import { useTranslation } from "react-i18next";
 
-import { appColor } from "@/theme/theme.config";
-import { appColorVariants } from "@/theme/app-color-variants";
+import { formatCurrency, formatDate } from "../../invoices/utils/formatters";
+
+import { useAppColorVariants } from "@/theme/app-color-variants";
+import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface InvoicesTableProps {
   invoices: Invoice[];
@@ -37,8 +41,14 @@ const statusTextClassMap: Record<string, string> = {
   error: "text-danger",
 };
 
+const resolveCurrency = (value?: string | null) =>
+  normalizeCurrencyCode(value, DEFAULT_CURRENCY);
+
 export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
   const { t, i18n } = useTranslation("dashboard");
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
+
   const [page, setPage] = useState(1);
 
   const rowsPerPage = 2;
@@ -64,24 +74,6 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
     { key: "status", label: t("table.headers.status") },
   ];
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-
-    return new Intl.DateTimeFormat(i18n.language, {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }).format(date);
-  };
-
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
@@ -106,8 +98,8 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
           ) : null
         }
         classNames={{
-          th: `bg-default-100/50 ${appColorVariants.text} font-bold`,
-          td: "py-3 border-b border-default-100 last:border-0",
+          th: `bg-default-100/50 ${appColorVariants.text} font-bold px-2`,
+          td: "py-3 px-2 border-b border-default-100 last:border-0",
         }}
         isStriped={false}
       >
@@ -118,7 +110,9 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
               className={
                 column.key === "status" || column.key === "date"
                   ? "hidden sm:table-cell"
-                  : ""
+                  : column.key === "provider"
+                    ? "min-w-0"
+                    : ""
               }
             >
               {column.label}
@@ -137,16 +131,18 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
                 switch (columnKey) {
                   case "provider":
                     return (
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span
-                            className="font-medium text-foreground text-sm truncate max-w-xs xl:max-w-44 2xl:max-w-64"
-                            title={item.provider}
+                      <TableCell className="min-w-0">
+                        <div className="flex flex-col min-w-0">
+                          <Tooltip
+                            content={item.provider}
+                            placement="top-start"
                           >
-                            {item.provider}
-                          </span>
+                            <span className="font-medium text-foreground text-sm line-clamp-2 wrap-break-word cursor-help">
+                              {item.provider}
+                            </span>
+                          </Tooltip>
                           <div className="flex sm:hidden gap-2 text-xs text-default-400">
-                            <span>{formatDate(item.date)}</span>
+                            <span>{formatDate(item.date, i18n.language)}</span>
                             <span>•</span>
                             <span
                               className={
@@ -164,20 +160,49 @@ export const InvoicesTable = ({ invoices, loading }: InvoicesTableProps) => {
                     return (
                       <TableCell className="hidden sm:table-cell whitespace-nowrap">
                         <span className="text-default-500 text-sm">
-                          {formatDate(item.date)}
+                          {formatDate(item.date, i18n.language)}
                         </span>
                       </TableCell>
                     );
-                  case "total":
+                  case "total": {
+                    const currency = resolveCurrency(
+                      item.moneda ?? item.monedaBase,
+                    );
+                    const baseCurrency = resolveCurrency(
+                      item.monedaBase ?? currency,
+                    );
+                    const showBase = currency !== baseCurrency;
+                    const baseTotal =
+                      item.totalPagarBase !== null &&
+                      item.totalPagarBase !== undefined
+                        ? item.totalPagarBase
+                        : item.total;
+
                     return (
                       <TableCell>
-                        <span
-                          className={`font-semibold whitespace-nowrap ${appColorVariants.text}`}
-                        >
-                          {formatCurrency(item.total)}
-                        </span>
+                        <div className="flex flex-col">
+                          <span
+                            className={`font-semibold whitespace-nowrap ${appColorVariants.text}`}
+                          >
+                            {formatCurrency(
+                              item.total,
+                              i18n.language,
+                              currency,
+                            )}
+                          </span>
+                          {showBase ? (
+                            <span className="text-xs text-default-500">
+                              {formatCurrency(
+                                baseTotal,
+                                i18n.language,
+                                baseCurrency,
+                              )}
+                            </span>
+                          ) : null}
+                        </div>
                       </TableCell>
                     );
+                  }
                   case "status":
                     return (
                       <TableCell className="hidden sm:table-cell">

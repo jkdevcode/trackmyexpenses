@@ -15,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { FacturaModule } from './factura/factura.module';
 import { ProductoModule } from './producto/producto.module';
+import { ReportesModule } from './reportes/reportes.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { RequestLoggingInterceptor } from './common/interceptors/request-logging.interceptor';
 import { validateEnv } from './config/env.validation';
@@ -91,7 +92,7 @@ import { validateEnv } from './config/env.validation';
       },
     }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'uploads'),
+      rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
       exclude: ['/api/(.*)'],
     }),
@@ -101,6 +102,7 @@ import { validateEnv } from './config/env.validation';
     UserModule,
     FacturaModule,
     ProductoModule,
+    ReportesModule,
   ],
   controllers: [AppController],
   providers: [

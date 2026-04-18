@@ -1,0 +1,50 @@
+{
+  "default": {
+    "title": "TrackMyExpenses",
+    "description": "Gestiona y haz un seguimiento de tus gastos y facturas fácilmente."
+  },
+  "dashboard": {
+    "title": "Dashboard | TrackMyExpenses",
+    "description": "Resumen de tus gastos, facturas y actividad financiera."
+  },
+  "invoices": {
+    "title": "Facturas | TrackMyExpenses",
+    "description": "Visualiza y gestiona todas tus facturas."
+  },
+  "manual": {
+    "title": "Crear Factura Manual | TrackMyExpenses",
+    "description": "Registra manualmente una factura agregando productos, cantidades y precios."
+  },
+  "newInvoice": {
+    "title": "Crear Factura | TrackMyExpenses",
+    "description": "Crea una nueva factura manualmente o sube un PDF/Imagen usando OCR."
+  },
+  "ocr": {
+    "title": "Escanear Factura | TrackMyExpenses",
+    "description": "Utiliza OCR para extraer datos automáticamente de tus archivos de factura."
+  },
+  "reports": {
+    "title": "Reportes | TrackMyExpenses",
+    "description": "Genera informes detallados de tus gastos y datos financieros."
+  },
+  "profile": {
+    "title": "Perfil | TrackMyExpenses",
+    "description": "Gestiona tu perfil de usuario y tu información personal."
+  },
+  "settings": {
+    "title": "Configuración | TrackMyExpenses",
+    "description": "Configura las preferencias de la aplicación y los ajustes generales."
+  },
+  "landing": {
+    "title": "Bienvenido a TrackMyExpenses",
+    "description": "La mejor herramienta para gestionar tus gastos sin esfuerzo."
+  },
+  "forgotPassword": {
+    "title": "Recuperar contrasena | TrackMyExpenses",
+    "description": "Solicita un enlace para restablecer la contrasena de tu cuenta."
+  },
+  "resetPassword": {
+    "title": "Restablecer contrasena | TrackMyExpenses",
+    "description": "Define una nueva contrasena para tu cuenta de TrackMyExpenses."
+  }
+}

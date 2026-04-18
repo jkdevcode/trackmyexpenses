@@ -1,0 +1,27 @@
+{
+  "title": "Reports",
+  "card": {
+    "title": "Invoice report",
+    "description": "Select a date range to generate the PDF."
+  },
+  "filters": {
+    "all_time": "All time",
+    "range_label": "Report for:"
+  },
+  "actions": {
+    "generate": "Generate report"
+  },
+  "validation": {
+    "from_required": "Start date is required",
+    "to_required": "End date is required",
+    "from_range": "Start date must be before or on the end date",
+    "to_range": "End date must be on or after the start date",
+    "REPORT_NO_DATA": "No invoices found for the selected date range"
+  },
+  "errors": {
+    "generation_failed": "Could not generate the report"
+  },
+  "info": {
+    "no_data": "No data in that range"
+  }
+}

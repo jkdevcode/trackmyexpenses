@@ -10,11 +10,13 @@ import { addToast } from "@heroui/toast";
 
 import { useLoginMutation } from "../hooks/useAuthMutations";
 
+import { ChevronLeftIcon } from "@/components/ui/icons";
 import { getErrorMessage } from "@/utils/errors";
-import { appColor } from "@/theme/theme.config";
 import { EyeFilledIcon, EyeSlashFilledIcon, Logo } from "@/components/ui/icons";
 import { getLoginSchema } from "@/schemas/auth";
 import { useSession } from "@/contexts/session-context";
+import { useColorTheme } from "@/hooks/use-color-theme";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 interface LoginFormValues {
   documento: string;
@@ -25,9 +27,21 @@ const LoginPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useSession();
+  const { appColor } = useColorTheme();
+
+  const { t: tMeta } = useTranslation("meta");
+
+  usePageMeta({
+    title: tMeta("login.title", "Login | TrackMyExpenses"),
+    description: tMeta(
+      "login.description",
+      "Access your TrackMyExpenses account.",
+    ),
+  });
+
   const [isVisible, setIsVisible] = useState(false);
   const loginMutation = useLoginMutation();
-  const linkColor = appColor === "default" ? "foreground" : "primary";
+  const linkColor = appColor === "default" ? "foreground" : appColor;
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
@@ -73,8 +87,11 @@ const LoginPage = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-md w-full space-y-8 bg-content1 p-8 rounded-2xl shadow-lg">
+        <RouterLink className="mb-2 inline-block" to="/">
+          <ChevronLeftIcon className="w-6 h-6" />
+        </RouterLink>
         <div className="flex flex-col items-center">
-          <Logo size={60} />
+          <Logo width={40} height={40} />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
             {t("auth:login.title")}
           </h2>
@@ -120,12 +137,7 @@ const LoginPage = () => {
 
           <div className="flex items-center justify-between">
             <div className="text-sm">
-              <Link
-                as={RouterLink}
-                color={linkColor}
-                href="#"
-                to="/forgot-contrasena"
-              >
+              <Link as={RouterLink} color={linkColor} to="/forgot-password">
                 {t("auth:login.forgot_password")}
               </Link>
             </div>

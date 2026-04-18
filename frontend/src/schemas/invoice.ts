@@ -8,4 +8,8 @@ export const getInvoiceSchema = (t: TFunction) =>
     nitProveedor: yup.string().trim().ensure(),
     fechaHoraCompra: yup.string().required(t("validation:required")),
     metodoPago: yup.string().required(t("validation:required")),
+    moneda: yup
+      .string()
+      .required(t("validation:required"))
+      .length(3, t("validation:currency_invalid")),
   });

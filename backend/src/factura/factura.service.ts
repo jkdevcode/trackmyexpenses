@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -9,18 +8,28 @@ import type { Cache } from 'cache-manager';
 import { AddProductoFacturaDto } from './dto/add-producto.dto';
 import { ConfirmFacturaDto } from './dto/confirm-factura.dto';
 import { CreateFacturaDto } from './dto/create-factura.dto';
+import { CreateOcrFacturaDto } from './dto/create-ocr-factura.dto';
+import { UpdateFacturaDto } from './dto/update-factura.dto';
 import { Logger } from 'nestjs-pino';
-import { PeriodFilter } from './factura.types';
+import { AppError } from '../common/errors/app.error';
+import { CustomPeriodRange, PeriodFilter } from './factura.types';
 import { RequestContext } from '../common/context/request-context';
 import {
   assertValidFacturaItems,
+  assertValidCurrencyCode,
   calculateDiscountedTotal,
   calculateFacturaTotal,
+  calculateBaseTotal,
   calculateSpendingTrend,
   FacturaDomainValidationError,
   getPeriodWindow,
+  normalizeFacturaDate,
+  normalizeFacturaUnidad,
+  normalizeCurrencyCode,
   normalizeAndValidateOcrItem,
+  mergeOcrDuplicates,
 } from './factura.domain';
+import { FACTURA_ERROR_CODES } from './errors/factura-error-codes';
 import { FacturaNotFoundError } from './errors/factura-not-found.error';
 import { DomainConflictError } from '../common/errors/domain-conflict.error';
 import {
@@ -29,6 +38,9 @@ import {
 } from './factura.repository.port';
 import type { FacturaRepository } from './factura.repository.port';
 import type { MetodoPagoValue } from './factura.repository.port';
+import type { UpdateFacturaRecordInput } from './factura.repository.port';
+import { ExchangeRateService } from '../infra/exchange-rate/exchange-rate.service';
+import { StorageService } from '../infra/storage/storage.service';
 
 type FacturaStats = {
   currentPeriodInvoices: number;
@@ -37,11 +49,35 @@ type FacturaStats = {
   totalInvoices: number;
 };
 
+type CurrencyInfo = {
+  moneda: string;
+  monedaBase: string;
+  tasaCambio: number;
+  tasaCambioFuente: string | null;
+  tasaCambioFecha: Date | null;
+};
+
+function buildStatsCacheKey(
+  userId: number,
+  period: PeriodFilter,
+  range?: CustomPeriodRange,
+): string {
+  if (period !== 'custom') {
+    return `factura:stats:${userId}:${period}`;
+  }
+
+  const startDate = range?.startDate?.trim() || 'missing-start';
+  const endDate = range?.endDate?.trim() || 'missing-end';
+
+  return `factura:stats:${userId}:${period}:${startDate}:${endDate}`;
+}
+
 type CreateFacturaItemInput = {
   productoId: number;
   cantidad: number;
   descuento?: number;
   unidad?: string;
+  precioUnitario?: number;
 };
 
 type CreateFacturaInput = {
@@ -50,6 +86,10 @@ type CreateFacturaInput = {
   nitProveedor?: string;
   fechaHoraCompra?: Date;
   items: CreateFacturaItemInput[];
+  moneda?: string;
+  tasaCambio?: number;
+  imagenUrl?: string;
+  ocrSource?: string;
 };
 
 @Injectable()
@@ -58,10 +98,41 @@ export class FacturaService {
     @Inject(FACTURA_REPOSITORY) private readonly repo: FacturaRepository,
     private logger: Logger,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly exchangeRateService: ExchangeRateService,
+    private readonly storage: StorageService,
   ) {}
 
-  async create(userId: number, dto: CreateFacturaDto) {
+  async create(
+    userId: number,
+    dto: CreateFacturaDto,
+    file?: Express.Multer.File,
+  ) {
     try {
+      let imagenUrl: string | undefined;
+
+      if (file) {
+        try {
+          const fileName = `factura-${Date.now()}-${userId}.jpg`;
+          imagenUrl = await this.storage.upload(
+            file.buffer,
+            fileName,
+            'invoices',
+          );
+        } catch (error: unknown) {
+          this.logger.error({
+            msg: 'Error al guardar imagen de factura',
+            requestId: RequestContext.getRequestId(),
+            error,
+          });
+        }
+      }
+
+      const currencyInfo = await this.resolveCurrencyInfo(
+        userId,
+        dto.moneda,
+        dto.tasaCambio,
+      );
+
       const factura = await this.repo.transaction((tx) =>
         this.createFacturaWithItemsTx(
           tx,
@@ -71,11 +142,16 @@ export class FacturaService {
             lugarCompra: dto.lugarCompra || 'Comercio Desconocido',
             nitProveedor: dto.nitProveedor,
             fechaHoraCompra: dto.fechaHoraCompra
-              ? new Date(dto.fechaHoraCompra)
+              ? normalizeFacturaDate(dto.fechaHoraCompra)
               : undefined,
             items: dto.items,
+            moneda: dto.moneda,
+            tasaCambio: dto.tasaCambio,
+            imagenUrl,
+            ocrSource: dto.ocrSource,
           },
           'FAC',
+          currencyInfo,
         ),
       );
 
@@ -85,10 +161,7 @@ export class FacturaService {
         factura,
       };
     } catch (error: unknown) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof FacturaNotFoundError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -103,9 +176,21 @@ export class FacturaService {
 
   async createFromOcr(userId: number, dto: ConfirmFacturaDto) {
     try {
+      const currencyInfo = await this.resolveCurrencyInfo(
+        userId,
+        dto.factura.moneda,
+        dto.factura.tasaCambio,
+      );
+
       const factura = await this.repo.transaction(async (tx) => {
-        const input = await this.buildCreateInputFromOcrTx(tx, dto);
-        return this.createFacturaWithItemsTx(tx, userId, input, 'OCR');
+        const input = await this.buildCreateInputFromOcrTx(tx, userId, dto);
+        return this.createFacturaWithItemsTx(
+          tx,
+          userId,
+          input,
+          'OCR',
+          currencyInfo,
+        );
       });
 
       return {
@@ -114,10 +199,7 @@ export class FacturaService {
         data: { factura },
       };
     } catch (error: unknown) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof FacturaNotFoundError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -130,15 +212,174 @@ export class FacturaService {
     }
   }
 
+  async createWithOcrAndFile(
+    userId: number,
+    dto: CreateOcrFacturaDto,
+    file?: Express.Multer.File,
+  ) {
+    try {
+      let imagenUrl: string | undefined;
+
+      if (file) {
+        try {
+          const fileName = `factura-ocr-${Date.now()}-${userId}.jpg`;
+          imagenUrl = await this.storage.upload(
+            file.buffer,
+            fileName,
+            'invoices',
+          );
+        } catch (error: unknown) {
+          this.logger.error({
+            msg: 'Error al guardar imagen de factura OCR',
+            requestId: RequestContext.getRequestId(),
+            error,
+          });
+        }
+      }
+
+      const currencyInfo = await this.resolveCurrencyInfo(
+        userId,
+        dto.moneda,
+        dto.tasaCambio,
+      );
+
+      // 1. Normalize duplicates from OCR/AI before validation
+      const normalizedOcrItems = mergeOcrDuplicates(dto.items);
+
+      // 2. Strict business validation of items using domain codes
+      const validatedItems = normalizedOcrItems.map((item, index) => {
+        if (!item.nombreDetectado || typeof item.nombreDetectado !== 'string') {
+          throw new FacturaDomainValidationError(
+            FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+            [
+              {
+                field: `items[${index}]`,
+                code: FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+                meta: { index },
+              },
+            ],
+          );
+        }
+
+        const precio = Number(item.precioUnitario);
+        if (isNaN(precio) || precio < 0) {
+          throw new FacturaDomainValidationError(
+            FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID,
+            [
+              {
+                field: `items[${index}].precioUnitario`,
+                code: FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID,
+                meta: { index, productName: item.nombreDetectado },
+              },
+            ],
+          );
+        }
+
+        const cantidad = Number(item.cantidadDetectada);
+        if (isNaN(cantidad) || cantidad <= 0) {
+          throw new FacturaDomainValidationError(
+            FACTURA_ERROR_CODES.OCR_ITEM_CANTIDAD_INVALID,
+            [
+              {
+                field: `items[${index}].cantidadDetectada`,
+                code: FACTURA_ERROR_CODES.OCR_ITEM_CANTIDAD_INVALID,
+                meta: { index, productName: item.nombreDetectado },
+              },
+            ],
+          );
+        }
+
+        return {
+          nombreDetectado: item.nombreDetectado,
+          precioUnitario: precio,
+          cantidadDetectada: cantidad,
+          unidadDetectada: item.unidadDetectada || 'u',
+          descuentoDetectado: Number(item.descuentoDetectado || 0),
+        };
+      });
+
+      const confirmDto: ConfirmFacturaDto = {
+        factura: {
+          fechaHoraCompra: dto.fechaHoraCompra,
+          metodoPago: dto.metodoPago || 'EFECTIVO',
+          lugarCompra: dto.lugarCompra,
+          nitProveedor: dto.nitProveedor,
+          moneda: dto.moneda,
+          tasaCambio: dto.tasaCambio,
+          totalPagar: dto.totalPagar,
+        },
+        productos: validatedItems,
+      };
+
+      const factura = await this.repo.transaction(async (tx) => {
+        const input = await this.buildCreateInputFromOcrTx(
+          tx,
+          userId,
+          confirmDto,
+        );
+        input.imagenUrl = imagenUrl;
+        input.ocrSource = dto.ocrSource;
+
+        return this.createFacturaWithItemsTx(
+          tx,
+          userId,
+          input,
+          'OCR',
+          currencyInfo,
+        );
+      });
+
+      return {
+        status: 201,
+        message: 'Factura OCR registrada exitosamente con imagen',
+        factura,
+      };
+    } catch (error: unknown) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      this.logger.error({
+        msg: 'Error al registrar factura OCR con imagen',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
+      throw new InternalServerErrorException(
+        'Error al procesar el registro de factura OCR',
+      );
+    }
+  }
+
   async findAll(
     userId: number,
     period: PeriodFilter = 'month',
     page = 1,
     limit = 20,
+    range?: CustomPeriodRange,
   ) {
     try {
+      if (period === 'all') {
+        const [facturas, stats] = await Promise.all([
+          this.repo.findFacturasByUser(userId, page, limit),
+          this.calculateAllTimeStats(userId),
+        ]);
+
+        return {
+          status: 200,
+          message: 'Facturas obtenidas exitosamente',
+          data: facturas,
+          facturas,
+          pagination: {
+            page,
+            limit,
+            total: stats.totalInvoices,
+          },
+          stats,
+        };
+      }
+
       const { startDate, endDate, prevStartDate, prevEndDate } =
-        getPeriodWindow(period);
+        getPeriodWindow(period, new Date(), range);
 
       const [facturas, total, stats] = await Promise.all([
         this.repo.findFacturasByUserAndRange(
@@ -170,6 +411,10 @@ export class FacturaService {
         stats,
       };
     } catch (error: unknown) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
       this.logger.error({
         msg: 'Error al obtener facturas',
         requestId: RequestContext.getRequestId(),
@@ -209,8 +454,238 @@ export class FacturaService {
     }
   }
 
-  async getStats(userId: number, period: PeriodFilter = 'month') {
-    const cacheKey = `factura:stats:${userId}:${period}`;
+  async update(userId: number, facturaId: number, dto: UpdateFacturaDto) {
+    const factura = await this.repo.findFacturaCurrencyByUser(
+      userId,
+      facturaId,
+    );
+
+    if (!factura) {
+      throw new FacturaNotFoundError();
+    }
+
+    const itemsToUpdate = dto.items ?? [];
+
+    if (itemsToUpdate.length > 0) {
+      const seen = new Set<number>();
+      for (let idx = 0; idx < itemsToUpdate.length; idx++) {
+        const item = itemsToUpdate[idx];
+        if (seen.has(item.productoId)) {
+          throw new FacturaDomainValidationError(
+            FACTURA_ERROR_CODES.ITEM_DUPLICATE,
+            [
+              {
+                field: `items[${idx}]`,
+                code: FACTURA_ERROR_CODES.ITEM_DUPLICATE,
+                meta: { index: idx, productoId: item.productoId },
+              },
+            ],
+          );
+        }
+        seen.add(item.productoId);
+      }
+    }
+
+    try {
+      const updatedFactura = await this.repo.transaction(async (tx) => {
+        const updateData: UpdateFacturaRecordInput = {};
+
+        if (dto.metodoPago !== undefined) {
+          updateData.metodoPago = dto.metodoPago;
+        }
+        if (dto.lugarCompra !== undefined) {
+          updateData.lugarCompra = dto.lugarCompra;
+        }
+        if (dto.nitProveedor !== undefined) {
+          updateData.nitProveedor = dto.nitProveedor || null;
+        }
+        if (dto.fechaHoraCompra !== undefined) {
+          updateData.fechaHoraCompra = normalizeFacturaDate(
+            dto.fechaHoraCompra,
+          );
+        }
+
+        const existingItems =
+          await tx.findFacturaProductosByFacturaId(facturaId);
+
+        const updatedPrecioTotals = new Map<number, number>();
+
+        if (itemsToUpdate.length > 0) {
+          const existingByProductoId = new Map(
+            existingItems.map((item) => [item.productoId, item]),
+          );
+
+          for (const item of itemsToUpdate) {
+            const current = existingByProductoId.get(item.productoId);
+            if (!current) {
+              throw new FacturaNotFoundError([
+                {
+                  field: `items[${itemsToUpdate.indexOf(item)}]`,
+                  code: FACTURA_ERROR_CODES.PRODUCTO_NOT_FOUND,
+                  meta: { productoId: item.productoId },
+                },
+              ]);
+            }
+
+            const cantidad =
+              item.cantidad !== undefined
+                ? item.cantidad
+                : Number(current.cantidad);
+            const unidad = normalizeFacturaUnidad(
+              item.unidad ?? current.unidad,
+            );
+            const descuento =
+              item.descuento !== undefined
+                ? item.descuento
+                : current.descuento
+                  ? Number(current.descuento)
+                  : 0;
+            const precioUnitario =
+              item.precioUnitario !== undefined
+                ? item.precioUnitario
+                : Number(current.precioUnitario);
+
+            const precioUnitarioFinal = Number.isFinite(precioUnitario)
+              ? precioUnitario
+              : Number(current.precioTotal) / Math.max(cantidad, 1);
+
+            if (!Number.isFinite(precioUnitarioFinal)) {
+              throw new FacturaDomainValidationError(
+                FACTURA_ERROR_CODES.ITEM_PRECIO_INVALID,
+                [
+                  {
+                    field: `items[${itemsToUpdate.indexOf(item)}].precioUnitario`,
+                    code: FACTURA_ERROR_CODES.ITEM_PRECIO_INVALID,
+                    meta: { productoId: item.productoId },
+                  },
+                ],
+              );
+            }
+
+            assertValidFacturaItems([
+              {
+                productoId: item.productoId,
+                cantidad,
+                unidad,
+                descuento,
+                precioUnitario: precioUnitarioFinal,
+              },
+            ]);
+
+            const nuevoPrecioTotal = calculateDiscountedTotal(
+              precioUnitarioFinal,
+              cantidad,
+              descuento,
+            );
+
+            updatedPrecioTotals.set(item.productoId, nuevoPrecioTotal);
+
+            await tx.updateFacturaProductoSnapshot({
+              facturaId,
+              productoId: item.productoId,
+              cantidad,
+              unidad,
+              descuento,
+              precioUnitario: precioUnitarioFinal,
+              precioTotal: nuevoPrecioTotal,
+            });
+          }
+
+          const totalPagar = calculateFacturaTotal(
+            existingItems.map((item) => {
+              const updated = updatedPrecioTotals.get(item.productoId);
+              return updated ?? Number(item.precioTotal ?? 0);
+            }),
+          );
+
+          updateData.totalPagar = totalPagar;
+          const monedaBase = normalizeCurrencyCode(factura.monedaBase ?? 'COP');
+          const moneda = normalizeCurrencyCode(factura.moneda ?? monedaBase);
+          const tasaCambioRaw = Number(factura.tasaCambio);
+          const tasaCambio =
+            Number.isFinite(tasaCambioRaw) && tasaCambioRaw > 0
+              ? tasaCambioRaw
+              : moneda === monedaBase
+                ? 1
+                : Number.NaN;
+
+          if (!Number.isFinite(tasaCambio) || tasaCambio <= 0) {
+            throw new FacturaDomainValidationError(
+              FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID,
+              [{ code: FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID }],
+            );
+          }
+
+          updateData.moneda = factura.moneda ?? moneda;
+          updateData.monedaBase = factura.monedaBase ?? monedaBase;
+          updateData.tasaCambio = factura.tasaCambio
+            ? Number(factura.tasaCambio)
+            : tasaCambio;
+          updateData.totalPagarBase = calculateBaseTotal(
+            totalPagar,
+            tasaCambio,
+          );
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          await tx.updateFactura(facturaId, updateData);
+        }
+
+        return tx.findFacturaByIdWithRelations(facturaId);
+      });
+
+      return {
+        status: 200,
+        message: 'Factura actualizada exitosamente',
+        factura: updatedFactura,
+      };
+    } catch (error: unknown) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      this.logger.error({
+        msg: 'Error al actualizar factura',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
+      throw new InternalServerErrorException('Error al actualizar factura');
+    }
+  }
+
+  async remove(userId: number, facturaId: number) {
+    const factura = await this.repo.findFacturaIdByUser(userId, facturaId);
+
+    if (!factura) {
+      throw new FacturaNotFoundError();
+    }
+
+    try {
+      await this.repo.transaction(async (tx) => {
+        await tx.deleteFacturaProductosByFacturaId(facturaId);
+        await tx.deleteFacturaById(facturaId);
+      });
+
+      return {
+        status: 200,
+        message: 'Factura eliminada exitosamente',
+      };
+    } catch (error: unknown) {
+      this.logger.error({
+        msg: 'Error al eliminar factura',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
+      throw new InternalServerErrorException('Error al eliminar factura');
+    }
+  }
+
+  async getStats(
+    userId: number,
+    period: PeriodFilter = 'month',
+    range?: CustomPeriodRange,
+  ) {
+    const cacheKey = buildStatsCacheKey(userId, period, range);
     const cached = await this.cacheManager.get<FacturaStats>(cacheKey);
     if (cached) {
       return {
@@ -220,8 +695,23 @@ export class FacturaService {
       };
     }
 
-    const { startDate, endDate, prevStartDate, prevEndDate } =
-      getPeriodWindow(period);
+    if (period === 'all') {
+      const stats = await this.calculateAllTimeStats(userId);
+
+      await this.cacheManager.set(cacheKey, stats, 600000);
+
+      return {
+        status: 200,
+        message: 'Estadisticas obtenidas exitosamente',
+        stats,
+      };
+    }
+
+    const { startDate, endDate, prevStartDate, prevEndDate } = getPeriodWindow(
+      period,
+      new Date(),
+      range,
+    );
 
     const stats = await this.calculateStats(
       userId,
@@ -245,20 +735,38 @@ export class FacturaService {
     facturaId: number,
     dto: AddProductoFacturaDto,
   ) {
-    const factura = await this.repo.findFacturaIdByUser(userId, facturaId);
+    const factura = await this.repo.findFacturaCurrencyByUser(
+      userId,
+      facturaId,
+    );
 
     if (!factura) {
       throw new FacturaNotFoundError();
     }
 
-    const producto = await this.repo.findProductoById(dto.productoId);
+    const producto = await this.repo.findProductoById(userId, dto.productoId);
 
     if (!producto) {
-      throw new FacturaNotFoundError('Producto no encontrado');
+      throw new FacturaNotFoundError([
+        { code: FACTURA_ERROR_CODES.PRODUCTO_NOT_FOUND },
+      ]);
     }
 
-    const precioUnitario = Number(producto.precioUnitario);
+    const precioUnitario =
+      dto.precioUnitario ?? Number(producto.precioUnitario);
+    const unidad = normalizeFacturaUnidad(dto.unidad);
     const descuento = dto.descuento || 0;
+
+    assertValidFacturaItems([
+      {
+        productoId: dto.productoId,
+        cantidad: dto.cantidad,
+        unidad,
+        descuento,
+        precioUnitario,
+      },
+    ]);
+
     const precioTotal = calculateDiscountedTotal(
       precioUnitario,
       dto.cantidad,
@@ -266,19 +774,71 @@ export class FacturaService {
       false,
     );
 
+    const monedaBase = normalizeCurrencyCode(factura.monedaBase ?? 'COP');
+    const moneda = normalizeCurrencyCode(factura.moneda ?? monedaBase);
+    const tasaCambioRaw = Number(factura.tasaCambio);
+    const tasaCambio =
+      Number.isFinite(tasaCambioRaw) && tasaCambioRaw > 0
+        ? tasaCambioRaw
+        : moneda === monedaBase
+          ? 1
+          : Number.NaN;
+
+    if (!Number.isFinite(tasaCambio) || tasaCambio <= 0) {
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID,
+        [{ code: FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID }],
+      );
+    }
+
+    const precioTotalBase = calculateBaseTotal(precioTotal, tasaCambio);
+    const existingTotalBase = Number(factura.totalPagarBase);
+    const existingTotalRaw = Number(factura.totalPagar);
+    const existingTotal = Number.isFinite(existingTotalRaw)
+      ? existingTotalRaw
+      : 0;
+    const shouldBackfillBase =
+      !Number.isFinite(existingTotalBase) || existingTotalBase <= 0;
+
     try {
       const result = await this.repo.transaction(async (tx) => {
+        const backfillData: UpdateFacturaRecordInput = {};
+        if (!factura.moneda) {
+          backfillData.moneda = moneda;
+        }
+        if (!factura.monedaBase) {
+          backfillData.monedaBase = monedaBase;
+        }
+        if (!factura.tasaCambio) {
+          backfillData.tasaCambio = tasaCambio;
+        }
+        if (shouldBackfillBase) {
+          backfillData.totalPagarBase = calculateBaseTotal(
+            existingTotal,
+            tasaCambio,
+          );
+        }
+
+        if (Object.keys(backfillData).length > 0) {
+          await tx.updateFactura(facturaId, backfillData);
+        }
+
         const fp = await tx.createFacturaProducto({
           facturaId,
           productoId: dto.productoId,
           cantidad: dto.cantidad,
+          unidad,
           descuento,
+          precioUnitario,
           precioTotal,
+          productoNombre: producto.nombre,
+          productoCodigo: producto.codigo,
         });
 
         const updatedFactura = await tx.updateFacturaTotalAndGetDetails(
           facturaId,
           precioTotal,
+          precioTotalBase,
         );
 
         return { fp, updatedFactura };
@@ -310,27 +870,24 @@ export class FacturaService {
     userId: number,
     input: CreateFacturaInput,
     codePrefix: 'FAC' | 'OCR',
+    currencyInfo: CurrencyInfo,
   ) {
-    try {
-      assertValidFacturaItems(input.items);
-    } catch (error: unknown) {
-      if (error instanceof FacturaDomainValidationError) {
-        throw new BadRequestException(error.message);
-      }
-      throw error;
-    }
+    assertValidFacturaItems(input.items);
 
     const productIds = [...new Set(input.items.map((item) => item.productoId))];
 
-    const products = await tx.findProductosByIds(productIds);
+    const products = await tx.findProductosByIds(userId, productIds);
 
     if (products.length !== productIds.length) {
       const foundIds = new Set(products.map((product) => product.id));
       const missingIds = productIds.filter((id) => !foundIds.has(id));
 
-      throw new FacturaNotFoundError(
-        `Productos no encontrados: ${missingIds.join(', ')}`,
-      );
+      throw new FacturaNotFoundError([
+        {
+          code: FACTURA_ERROR_CODES.ITEMS_NOT_FOUND,
+          meta: { missingIds },
+        },
+      ]);
     }
 
     const productById = new Map(
@@ -339,7 +896,8 @@ export class FacturaService {
 
     const detalles = input.items.map((item) => {
       const product = productById.get(item.productoId)!;
-      const precioUnitario = Number(product.precioUnitario);
+      const precioUnitario =
+        item.precioUnitario ?? Number(product.precioUnitario);
       const descuento = item.descuento ?? 0;
       const precioTotal = calculateDiscountedTotal(
         precioUnitario,
@@ -350,12 +908,19 @@ export class FacturaService {
       return {
         ...item,
         descuento,
+        precioUnitario,
         precioTotal,
+        productoNombre: product.nombre,
+        productoCodigo: product.codigo,
       };
     });
 
     const totalPagar = calculateFacturaTotal(
       detalles.map((item) => item.precioTotal),
+    );
+    const totalPagarBase = calculateBaseTotal(
+      totalPagar,
+      currencyInfo.tasaCambio,
     );
 
     const factura = await tx.createFactura({
@@ -364,8 +929,17 @@ export class FacturaService {
       metodoPago: input.metodoPago,
       lugarCompra: input.lugarCompra,
       nitProveedor: input.nitProveedor,
-      fechaHoraCompra: input.fechaHoraCompra ?? new Date(),
+      fechaHoraCompra:
+        input.fechaHoraCompra ?? normalizeFacturaDate(new Date()),
       totalPagar,
+      moneda: currencyInfo.moneda,
+      monedaBase: currencyInfo.monedaBase,
+      tasaCambio: currencyInfo.tasaCambio,
+      tasaCambioFecha: currencyInfo.tasaCambioFecha,
+      tasaCambioFuente: currencyInfo.tasaCambioFuente,
+      totalPagarBase,
+      imagenUrl: input.imagenUrl,
+      ocrSource: input.ocrSource,
     });
 
     await Promise.all(
@@ -376,7 +950,10 @@ export class FacturaService {
           cantidad: item.cantidad,
           unidad: item.unidad,
           descuento: item.descuento,
+          precioUnitario: item.precioUnitario,
           precioTotal: item.precioTotal,
+          productoNombre: item.productoNombre,
+          productoCodigo: item.productoCodigo,
         }),
       ),
     );
@@ -386,45 +963,55 @@ export class FacturaService {
 
   private async buildCreateInputFromOcrTx(
     tx: FacturaRepositoryTx,
+    userId: number,
     dto: ConfirmFacturaDto,
   ): Promise<CreateFacturaInput> {
     const items: CreateFacturaItemInput[] = [];
 
-    for (const item of dto.productos) {
-      let normalized: ReturnType<typeof normalizeAndValidateOcrItem>;
-      try {
-        normalized = normalizeAndValidateOcrItem(item);
-      } catch (error: unknown) {
-        if (error instanceof FacturaDomainValidationError) {
-          throw new BadRequestException(error.message);
-        }
-        throw error;
-      }
+    for (let index = 0; index < dto.productos.length; index++) {
+      const item = dto.productos[index];
+      // FacturaDomainValidationError (AppError) is caught by GlobalExceptionFilter directly
+      const normalized = normalizeAndValidateOcrItem(item, index);
 
-      let producto = await tx.findProductoByNombre(normalized.nombreDetectado);
+      let producto = await tx.findProductoByNombre(
+        userId,
+        normalized.nombreDetectado,
+      );
 
       if (!producto) {
         if (
           !Number.isFinite(normalized.precioUnitario) ||
           normalized.precioUnitario <= 0
         ) {
-          throw new BadRequestException(
-            'Items OCR sin producto existente requieren precioUnitario valido',
+          throw new FacturaDomainValidationError(
+            FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID,
+            [
+              {
+                field: `items[${index}].precioUnitario`,
+                code: FACTURA_ERROR_CODES.OCR_ITEM_PRECIO_INVALID,
+                meta: { index, productName: normalized.nombreDetectado },
+              },
+            ],
           );
         }
 
-        producto = await tx.createProducto({
+        producto = await tx.createProducto(userId, {
           nombre: normalized.nombreDetectado,
           codigo: this.generateProductoCode(),
           precioUnitario: normalized.precioUnitario,
         });
       }
 
+      const precioUnitario = Number.isFinite(normalized.precioUnitario)
+        ? normalized.precioUnitario
+        : undefined;
+
       items.push({
         productoId: producto.id,
         cantidad: normalized.cantidad,
         descuento: normalized.descuento,
         unidad: normalized.unidad,
+        precioUnitario,
       });
     }
 
@@ -432,8 +1019,10 @@ export class FacturaService {
       metodoPago: dto.factura.metodoPago,
       lugarCompra: dto.factura.lugarCompra,
       nitProveedor: dto.factura.nitProveedor,
-      fechaHoraCompra: new Date(dto.factura.fechaHoraCompra),
+      fechaHoraCompra: normalizeFacturaDate(dto.factura.fechaHoraCompra),
       items,
+      moneda: dto.factura.moneda,
+      tasaCambio: dto.factura.tasaCambio,
     };
   }
 
@@ -465,6 +1054,90 @@ export class FacturaService {
       spendingTrend: calculateSpendingTrend(totalSpending, prevTotalSpending),
       totalInvoices,
     };
+  }
+
+  private async calculateAllTimeStats(userId: number): Promise<FacturaStats> {
+    const [totalInvoices, totalSpending] = await Promise.all([
+      this.repo.countFacturasByUser(userId),
+      this.repo.sumTotalPagarByUser(userId),
+    ]);
+
+    return {
+      currentPeriodInvoices: totalInvoices,
+      totalSpending,
+      spendingTrend: 0,
+      totalInvoices,
+    };
+  }
+
+  private async resolveCurrencyInfo(
+    userId: number,
+    monedaInput?: string,
+    tasaCambioInput?: number,
+  ): Promise<CurrencyInfo> {
+    const userMonedaBase = await this.repo.findUsuarioMonedaBase(userId);
+    const monedaBase = normalizeCurrencyCode(userMonedaBase ?? 'COP');
+    const moneda = normalizeCurrencyCode(monedaInput ?? monedaBase);
+
+    // FacturaDomainValidationError (AppError) propagates to GlobalExceptionFilter
+    assertValidCurrencyCode(monedaBase);
+    assertValidCurrencyCode(moneda);
+
+    if (moneda === monedaBase) {
+      if (tasaCambioInput && Math.abs(tasaCambioInput - 1) > 0.000001) {
+        throw new FacturaDomainValidationError(
+          FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID,
+          [{ code: FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID }],
+        );
+      }
+
+      return {
+        moneda,
+        monedaBase,
+        tasaCambio: 1,
+        tasaCambioFuente: null,
+        tasaCambioFecha: null,
+      };
+    }
+
+    if (tasaCambioInput !== undefined) {
+      if (!Number.isFinite(tasaCambioInput) || tasaCambioInput <= 0) {
+        throw new FacturaDomainValidationError(
+          FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID,
+          [{ code: FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID }],
+        );
+      }
+
+      return {
+        moneda,
+        monedaBase,
+        tasaCambio: tasaCambioInput,
+        tasaCambioFuente: 'MANUAL',
+        tasaCambioFecha: new Date(),
+      };
+    }
+
+    try {
+      const rate = await this.exchangeRateService.getRate(moneda, monedaBase);
+      return {
+        moneda,
+        monedaBase,
+        tasaCambio: rate.rate,
+        tasaCambioFuente: rate.source,
+        tasaCambioFecha: rate.fetchedAt,
+      };
+    } catch (error: unknown) {
+      this.logger.error({
+        msg: 'No se pudo obtener tasa de cambio',
+        requestId: RequestContext.getRequestId(),
+        error,
+      });
+
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID,
+        [{ code: FACTURA_ERROR_CODES.TASA_CAMBIO_INVALID }],
+      );
+    }
   }
 
   private generateFacturaCode(prefix: 'FAC' | 'OCR'): string {

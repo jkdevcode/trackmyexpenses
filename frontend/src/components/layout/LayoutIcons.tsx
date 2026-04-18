@@ -1,5 +1,6 @@
 import { IconSvgProps } from "@/types";
 
+// layout icons
 export const HomeIcon = (props: IconSvgProps) => (
   <svg
     aria-hidden="true"
@@ -89,6 +90,34 @@ export const SettingsIcon = (props: IconSvgProps) => (
     />
     <path
       d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+    />
+  </svg>
+);
+
+export const ReportsIcon = (props: IconSvgProps) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="1em"
+    role="presentation"
+    viewBox="0 0 24 24"
+    width="1em"
+    {...props}
+  >
+    <path
+      d="M4 4H14C16.8284 4 18.2426 4 19.1213 4.87868C20 5.75736 20 7.17157 20 10V20H8C5.17157 20 4 18.8284 4 16V4Z"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+    />
+    <path
+      d="M8 10H16M8 14H13"
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"

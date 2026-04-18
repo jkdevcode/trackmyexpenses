@@ -1,11 +1,42 @@
-import { PeriodFilter } from './factura.types';
+import { Prisma } from '@prisma/client';
+import { CustomPeriodRange, PeriodFilter, PeriodWindow } from './factura.types';
+import { AppError, type AppErrorDetail } from '../common/errors/app.error';
+import { FACTURA_ERROR_CODES } from './errors/factura-error-codes';
+import {
+  getPeriodWindow as getSharedPeriodWindow,
+  normalizeFacturaDate as normalizeSharedFacturaDate,
+  PeriodResolutionError,
+} from '../common/utils/date-periods';
 
 export type FacturaItemInput = {
   productoId: number;
   cantidad: number;
   descuento?: number;
   unidad?: string;
+  precioUnitario?: number;
 };
+
+export const FACTURA_UNITS = ['u', 'kg', 'g'] as const;
+export type FacturaUnidad = (typeof FACTURA_UNITS)[number];
+
+export function normalizeFacturaUnidad(unit?: string | null): FacturaUnidad {
+  return FACTURA_UNITS.includes(unit as FacturaUnidad)
+    ? (unit as FacturaUnidad)
+    : 'u';
+}
+
+export function isValidFacturaCantidad(
+  cantidad: number,
+  unidad?: string | null,
+): boolean {
+  if (!Number.isFinite(cantidad) || cantidad <= 0) {
+    return false;
+  }
+
+  return normalizeFacturaUnidad(unidad) === 'kg'
+    ? true
+    : Number.isInteger(cantidad);
+}
 
 export type OcrProductoInput = {
   nombreDetectado?: string;
@@ -15,36 +46,86 @@ export type OcrProductoInput = {
   unidadDetectada?: string;
 };
 
-export type PeriodWindow = {
-  startDate: Date;
-  endDate: Date;
-  prevStartDate: Date;
-  prevEndDate: Date;
-};
-
-export class FacturaDomainValidationError extends Error {
-  constructor(message: string) {
-    super(message);
+export class FacturaDomainValidationError extends AppError {
+  constructor(code: string, details?: AppErrorDetail[]) {
+    super(code, code, details);
     this.name = 'FacturaDomainValidationError';
   }
 }
 
+/**
+ * Normalizes OCR/AI product items by merging duplicates (same name, case-insensitive).
+ * Quantities are summed; the first item's price and unit are preserved.
+ * Only used in the OCR flow — the manual flow never normalizes.
+ */
+export function mergeOcrDuplicates(
+  items: OcrProductoInput[],
+): OcrProductoInput[] {
+  const seen = new Map<
+    string,
+    OcrProductoInput & { cantidadDetectada: number }
+  >();
+
+  for (const item of items) {
+    const key = (item.nombreDetectado ?? '').trim().toUpperCase();
+    if (!key) continue;
+
+    if (seen.has(key)) {
+      const existing = seen.get(key)!;
+      existing.cantidadDetectada =
+        Number(existing.cantidadDetectada) +
+        Number(item.cantidadDetectada || 1);
+    } else {
+      seen.set(key, {
+        ...item,
+        cantidadDetectada: Number(item.cantidadDetectada || 1),
+      });
+    }
+  }
+
+  return Array.from(seen.values());
+}
+
 export function assertValidFacturaItems(items: FacturaItemInput[]): void {
   if (!items || items.length === 0) {
-    throw new FacturaDomainValidationError(
-      'No se permite crear factura sin items',
-    );
+    throw new FacturaDomainValidationError(FACTURA_ERROR_CODES.ITEMS_EMPTY, [
+      { code: FACTURA_ERROR_CODES.ITEMS_EMPTY },
+    ]);
   }
 
   const productIds = new Set<number>();
 
-  for (const item of items) {
+  for (let index = 0; index < items.length; index++) {
+    const item = items[index];
+
     if (!Number.isInteger(item.productoId) || item.productoId <= 0) {
-      throw new FacturaDomainValidationError('productoId invalido en items');
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.ITEM_PRODUCTO_ID_INVALID,
+        [
+          {
+            field: `items[${index}]`,
+            code: FACTURA_ERROR_CODES.ITEM_PRODUCTO_ID_INVALID,
+            meta: { index, productoId: item.productoId },
+          },
+        ],
+      );
     }
 
-    if (!Number.isInteger(item.cantidad) || item.cantidad <= 0) {
-      throw new FacturaDomainValidationError('cantidad invalida en items');
+    if (!isValidFacturaCantidad(item.cantidad, item.unidad)) {
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.ITEM_CANTIDAD_INVALID,
+        [
+          {
+            field: `items[${index}].cantidad`,
+            code: FACTURA_ERROR_CODES.ITEM_CANTIDAD_INVALID,
+            meta: {
+              index,
+              productoId: item.productoId,
+              unidad: normalizeFacturaUnidad(item.unidad),
+            },
+          },
+        ],
+      );
     }
 
     if (
@@ -52,13 +133,43 @@ export function assertValidFacturaItems(items: FacturaItemInput[]): void {
       (item.descuento < 0 || item.descuento > 100)
     ) {
       throw new FacturaDomainValidationError(
-        'descuento invalido en items (debe estar entre 0 y 100)',
+        FACTURA_ERROR_CODES.ITEM_DESCUENTO_INVALID,
+        [
+          {
+            field: `items[${index}].descuento`,
+            code: FACTURA_ERROR_CODES.ITEM_DESCUENTO_INVALID,
+            meta: { index, productoId: item.productoId },
+          },
+        ],
+      );
+    }
+
+    if (
+      item.precioUnitario !== undefined &&
+      (!Number.isFinite(item.precioUnitario) || item.precioUnitario <= 0)
+    ) {
+      throw new FacturaDomainValidationError(
+        FACTURA_ERROR_CODES.ITEM_PRECIO_INVALID,
+        [
+          {
+            field: `items[${index}].precioUnitario`,
+            code: FACTURA_ERROR_CODES.ITEM_PRECIO_INVALID,
+            meta: { index, productoId: item.productoId },
+          },
+        ],
       );
     }
 
     if (productIds.has(item.productoId)) {
       throw new FacturaDomainValidationError(
-        `No se permiten items repetidos del producto ${item.productoId}`,
+        FACTURA_ERROR_CODES.ITEM_DUPLICATE,
+        [
+          {
+            field: `items[${index}]`,
+            code: FACTURA_ERROR_CODES.ITEM_DUPLICATE,
+            meta: { index, productoId: item.productoId },
+          },
+        ],
       );
     }
 
@@ -66,7 +177,10 @@ export function assertValidFacturaItems(items: FacturaItemInput[]): void {
   }
 }
 
-export function normalizeAndValidateOcrItem(item: OcrProductoInput): {
+export function normalizeAndValidateOcrItem(
+  item: OcrProductoInput,
+  index = 0,
+): {
   nombreDetectado: string;
   cantidad: number;
   descuento: number;
@@ -77,22 +191,44 @@ export function normalizeAndValidateOcrItem(item: OcrProductoInput): {
   const cantidad = Number(item.cantidadDetectada);
   const descuento = Number(item.descuentoDetectado || 0);
   const precioUnitario = Number(item.precioUnitario);
+  const unidad = normalizeFacturaUnidad(item.unidadDetectada);
 
   if (!nombreDetectado) {
     throw new FacturaDomainValidationError(
-      'Cada item OCR debe tener nombreDetectado',
+      FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+      [
+        {
+          field: `items[${index}]`,
+          code: FACTURA_ERROR_CODES.OCR_ITEM_NAME_MISSING,
+          meta: { index },
+        },
+      ],
     );
   }
 
-  if (!Number.isFinite(cantidad) || cantidad <= 0) {
+  if (!isValidFacturaCantidad(cantidad, unidad)) {
     throw new FacturaDomainValidationError(
-      'La cantidad de cada item debe ser > 0',
+      FACTURA_ERROR_CODES.OCR_ITEM_CANTIDAD_INVALID,
+      [
+        {
+          field: `items[${index}].cantidad`,
+          code: FACTURA_ERROR_CODES.OCR_ITEM_CANTIDAD_INVALID,
+          meta: { index, productName: nombreDetectado, unidad },
+        },
+      ],
     );
   }
 
   if (!Number.isFinite(descuento) || descuento < 0 || descuento > 100) {
     throw new FacturaDomainValidationError(
-      'El descuento de cada item debe estar entre 0 y 100',
+      FACTURA_ERROR_CODES.ITEM_DESCUENTO_INVALID,
+      [
+        {
+          field: `items[${index}].descuento`,
+          code: FACTURA_ERROR_CODES.ITEM_DESCUENTO_INVALID,
+          meta: { index, productName: nombreDetectado },
+        },
+      ],
     );
   }
 
@@ -101,7 +237,7 @@ export function normalizeAndValidateOcrItem(item: OcrProductoInput): {
     cantidad,
     descuento,
     precioUnitario,
-    unidad: item.unidadDetectada || 'u',
+    unidad,
   };
 }
 
@@ -111,72 +247,79 @@ export function calculateDiscountedTotal(
   descuento = 0,
   roundResult = true,
 ): number {
-  const subtotal = precioUnitario * cantidad;
-  const descuentoAplicado = subtotal * (descuento / 100);
-  const total = subtotal - descuentoAplicado;
-  return roundResult ? roundCurrency(total) : total;
+  const subtotal = new Prisma.Decimal(precioUnitario).mul(cantidad);
+  const descuentoAplicado = subtotal.mul(
+    new Prisma.Decimal(descuento).div(100),
+  );
+  const total = subtotal.minus(descuentoAplicado);
+  const totalNumber = total.toNumber();
+  return roundResult ? roundCurrency(totalNumber) : totalNumber;
 }
 
 export function calculateFacturaTotal(detalleTotales: number[]): number {
-  const total = detalleTotales.reduce((acc, value) => acc + value, 0);
-  return roundCurrency(total);
+  let total = new Prisma.Decimal(0);
+  for (const value of detalleTotales) {
+    if (!Number.isFinite(value)) {
+      return Number.NaN;
+    }
+    total = total.plus(new Prisma.Decimal(value));
+  }
+  return roundCurrency(total.toNumber());
 }
 
 export function roundCurrency(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
+  return new Prisma.Decimal(value)
+    .toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
+    .toNumber();
+}
+
+export function calculateBaseTotal(
+  totalPagar: number,
+  tasaCambio: number,
+): number {
+  return roundCurrency(
+    new Prisma.Decimal(totalPagar).mul(tasaCambio).toNumber(),
+  );
+}
+
+export function normalizeCurrencyCode(code: string): string {
+  return code.trim().toUpperCase();
+}
+
+export function assertValidCurrencyCode(code: string): void {
+  if (!/^[A-Z]{3}$/.test(code)) {
+    throw new FacturaDomainValidationError(FACTURA_ERROR_CODES.MONEDA_INVALID, [
+      { code: FACTURA_ERROR_CODES.MONEDA_INVALID, meta: { code } },
+    ]);
+  }
+}
+
+function facturaPeriodErrorFactory(
+  err: PeriodResolutionError,
+): FacturaDomainValidationError {
+  const code =
+    err.code in FACTURA_ERROR_CODES
+      ? FACTURA_ERROR_CODES[err.code as keyof typeof FACTURA_ERROR_CODES]
+      : err.code;
+  const detail: AppErrorDetail = {
+    code,
+    ...(err.field ? { field: err.field } : {}),
+    ...(err.meta ? { meta: err.meta } : {}),
+  };
+
+  return new FacturaDomainValidationError(code, [detail]);
+}
+
+export function normalizeFacturaDate(value: string | Date): Date {
+  return normalizeSharedFacturaDate(value);
 }
 
 export function getPeriodWindow(
-  period: PeriodFilter,
+  period: Exclude<PeriodFilter, 'all'>,
   now = new Date(),
+  range?: CustomPeriodRange,
 ): PeriodWindow {
-  const startDate = new Date(now);
-  const endDate = new Date(now);
-  const prevStartDate = new Date(now);
-  const prevEndDate = new Date(now);
-
-  startDate.setHours(0, 0, 0, 0);
-  endDate.setHours(23, 59, 59, 999);
-
-  switch (period) {
-    case 'day':
-      prevStartDate.setDate(now.getDate() - 1);
-      prevStartDate.setHours(0, 0, 0, 0);
-      prevEndDate.setDate(now.getDate() - 1);
-      prevEndDate.setHours(23, 59, 59, 999);
-      break;
-    case 'week': {
-      const day = now.getDay();
-      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      startDate.setDate(diff);
-
-      prevStartDate.setTime(startDate.getTime());
-      prevStartDate.setDate(startDate.getDate() - 7);
-      prevEndDate.setTime(prevStartDate.getTime());
-      prevEndDate.setDate(prevStartDate.getDate() + 6);
-      prevEndDate.setHours(23, 59, 59, 999);
-      break;
-    }
-    case 'year':
-      startDate.setMonth(0, 1);
-
-      prevStartDate.setFullYear(now.getFullYear() - 1, 0, 1);
-      prevStartDate.setHours(0, 0, 0, 0);
-      prevEndDate.setFullYear(now.getFullYear() - 1, 11, 31);
-      prevEndDate.setHours(23, 59, 59, 999);
-      break;
-    case 'month':
-    default:
-      startDate.setDate(1);
-
-      prevStartDate.setMonth(now.getMonth() - 1, 1);
-      prevStartDate.setHours(0, 0, 0, 0);
-      prevEndDate.setDate(0);
-      prevEndDate.setHours(23, 59, 59, 999);
-      break;
-  }
-
-  return { startDate, endDate, prevStartDate, prevEndDate };
+  return getSharedPeriodWindow(period, now, range, facturaPeriodErrorFactory);
 }
 
 export function calculateSpendingTrend(

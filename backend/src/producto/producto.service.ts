@@ -13,10 +13,15 @@ export class ProductoService {
     private logger: Logger,
   ) {}
 
-  async create(dto: CreateProductoDto) {
+  async create(userId: number, dto: CreateProductoDto) {
     try {
       const exists = await this.prisma.producto.findUnique({
-        where: { codigo: dto.codigo },
+        where: {
+          codigo_usuarioId: {
+            codigo: dto.codigo,
+            usuarioId: userId,
+          },
+        },
       });
 
       if (exists) {
@@ -28,6 +33,7 @@ export class ProductoService {
           codigo: dto.codigo,
           nombre: dto.nombre,
           precioUnitario: dto.precioUnitario,
+          usuarioId: userId,
         },
       });
 
@@ -47,9 +53,10 @@ export class ProductoService {
     }
   }
 
-  async findAll() {
+  async findAll(userId: number) {
     try {
       const productos = await this.prisma.producto.findMany({
+        where: { usuarioId: userId },
         orderBy: { nombre: 'asc' },
       });
 
@@ -69,8 +76,10 @@ export class ProductoService {
     }
   }
 
-  async findOne(id: number) {
-    const producto = await this.prisma.producto.findUnique({ where: { id } });
+  async findOne(userId: number, id: number) {
+    const producto = await this.prisma.producto.findFirst({
+      where: { id, usuarioId: userId },
+    });
     if (!producto) throw new ProductoNotFoundError('Producto no encontrado');
     return producto;
   }

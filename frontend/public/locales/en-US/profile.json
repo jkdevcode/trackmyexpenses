@@ -12,6 +12,12 @@
   "sections": {
     "personal": "Personal Data"
   },
+  "currency": {
+    "label": "Base currency",
+    "placeholder": "Select",
+    "alert_title": "Base currency update",
+    "alert_body": "Changing base currency does not affect previous invoices"
+  },
   "security": {
     "title": "Security",
     "current_password": "Current Password",

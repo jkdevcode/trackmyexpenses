@@ -1,0 +1,308 @@
+import type {
+  CreateInvoiceWithFileDto,
+  OcrSource,
+  ProductSuggestion,
+  ScanResponse,
+} from "@/features/invoices/types";
+
+import { useMemo, useState } from "react";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
+import { addToast } from "@heroui/toast";
+import { useNavigate } from "react-router-dom";
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  useDisclosure,
+} from "@heroui/modal";
+import { Card, CardBody } from "@heroui/card";
+import { Button } from "@heroui/button";
+import { useTranslation } from "react-i18next";
+
+import { OcrSourceBadge } from "../components/OcrSourceBadge";
+import { calculateInvoiceBaseTotal } from "../utils/currency";
+import { formatCurrency, toInvoiceUtcIsoString } from "../utils/formatters";
+
+import { InvoiceForm, type InvoiceFormValues } from "./components/InvoiceForm";
+import { InvoiceUpload } from "./components/InvoiceUpload";
+
+import { useAppColorVariants } from "@/theme/app-color-variants";
+import { useInvoiceErrorToast } from "@/features/invoices/hooks/useInvoiceErrorToast";
+import { useCreateInvoiceWithFileMutation } from "@/features/invoices/hooks/useInvoiceMutations";
+import { DEFAULT_CURRENCY, normalizeCurrencyCode } from "@/constants/currency";
+import { useSession } from "@/contexts/session-context";
+import { useColorTheme } from "@/hooks/use-color-theme";
+import { scrollToFirstError } from "@/utils/scrollToFirstError";
+
+type PendingData = {
+  formData: {
+    fechaHoraCompra: string;
+    metodoPago: InvoiceFormValues["metodoPago"];
+    lugarCompra: string;
+    nitProveedor?: string;
+    totalPagar: number;
+    moneda: string;
+    tasaCambio?: number;
+  };
+  products: ProductSuggestion[];
+};
+
+export const OcrInvoiceFlow = () => {
+  const { t, i18n } = useTranslation(["invoices", "common"]);
+  const { user } = useSession();
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
+  const showInvoiceError = useInvoiceErrorToast();
+
+  const [step, setStep] = useState<"upload" | "edit">("upload");
+  const [scanData, setScanData] = useState<ScanResponse | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Map<string, string>>(
+    new Map(),
+  );
+  const [itemErrors, setItemErrors] = useState<Map<number, string>>(new Map());
+  const [saveErrorMessage, setSaveErrorMessage] = useState("");
+  const createInvoiceMutation = useCreateInvoiceWithFileMutation();
+  const navigate = useNavigate();
+
+  const {
+    isOpen: isConfirmOpen,
+    onOpen: onConfirmOpen,
+    onClose: onConfirmClose,
+  } = useDisclosure();
+  const [pendingData, setPendingData] = useState<PendingData | null>(null);
+
+  const baseCurrency = normalizeCurrencyCode(
+    user?.monedaBase,
+    DEFAULT_CURRENCY,
+  );
+
+  const clearServerErrors = () => {
+    setFieldErrors(new Map());
+    setItemErrors(new Map());
+    setSaveErrorMessage("");
+  };
+
+  const handleScanComplete = (data: ScanResponse, file: File) => {
+    clearServerErrors();
+    setScanData(data);
+    setSelectedFile(file);
+    setStep("edit");
+  };
+
+  const handlePreSave = (
+    formData: InvoiceFormValues & { totalPagar: number; tasaCambio?: number },
+    products: ProductSuggestion[],
+  ) => {
+    clearServerErrors();
+    setPendingData({ formData, products });
+    onConfirmOpen();
+  };
+
+  const handleConfirmSave = async () => {
+    if (!pendingData) {
+      return;
+    }
+
+    onConfirmClose();
+
+    try {
+      if (!selectedFile) {
+        addToast({
+          title: t("toast.error"),
+          description: t("upload.missing_file_on_confirm"),
+          color: "danger",
+        });
+
+        return;
+      }
+
+      const payload: CreateInvoiceWithFileDto = {
+        factura: {
+          fechaHoraCompra: toInvoiceUtcIsoString(
+            pendingData.formData.fechaHoraCompra,
+          ),
+          metodoPago: pendingData.formData
+            .metodoPago as CreateInvoiceWithFileDto["factura"]["metodoPago"],
+          lugarCompra: pendingData.formData.lugarCompra.trim(),
+          nitProveedor: pendingData.formData.nitProveedor?.trim() || undefined,
+          totalPagar: pendingData.formData.totalPagar,
+          moneda: pendingData.formData.moneda,
+          tasaCambio: pendingData.formData.tasaCambio,
+        },
+        productos: pendingData.products
+          .filter((product) => product.nombreDetected.trim() !== "")
+          .map((product) => ({
+            nombreDetectado: product.nombreDetected.trim(),
+            precioUnitario: Number(product.precioUnitario),
+            cantidadDetectada: Number(product.cantidad),
+            unidadDetectada: product.unidad || "u",
+            descuentoDetectado: 0,
+          })),
+        ocrSource: scanData?.parsed?.source as OcrSource,
+        file: selectedFile,
+      };
+
+      await createInvoiceMutation.mutateAsync(payload);
+
+      addToast({
+        title: t("toast.save_success_title"),
+        description: t("toast.save_success_desc"),
+        color: "success",
+      });
+      navigate("/dashboard");
+    } catch (error) {
+      const {
+        itemErrors: nextItemErrors,
+        fieldErrors: nextFieldErrors,
+        hasFieldErrors,
+        message,
+      } = showInvoiceError(error);
+
+      setItemErrors(nextItemErrors);
+      setFieldErrors(nextFieldErrors);
+      setSaveErrorMessage(message);
+
+      if (hasFieldErrors) {
+        setTimeout(() => scrollToFirstError(), 120);
+      }
+    }
+  };
+
+  const totalBase = useMemo(() => {
+    if (!pendingData) {
+      return null;
+    }
+
+    if (pendingData.formData.moneda === baseCurrency) {
+      return pendingData.formData.totalPagar;
+    }
+
+    return calculateInvoiceBaseTotal(
+      pendingData.formData.totalPagar,
+      pendingData.formData.tasaCambio,
+    );
+  }, [baseCurrency, pendingData]);
+
+  return (
+    <>
+      <LazyMotion features={domAnimation}>
+        <AnimatePresence mode="wait">
+          {step === "upload" && (
+            <m.div
+              key="upload"
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: 20 }}
+            >
+              <InvoiceUpload onScanComplete={handleScanComplete} />
+            </m.div>
+          )}
+
+          {step === "edit" && scanData && (
+            <m.div
+              key="edit"
+              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, x: 20 }}
+            >
+              <div className="mx-auto mb-4 max-w-4xl space-y-4">
+                <div className="flex items-center justify-between rounded-xl border border-default-200 bg-content1 p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-default-600">
+                      {t("ocr.source.label")}:
+                    </span>
+                    <OcrSourceBadge
+                      source={scanData.parsed.source as OcrSource}
+                    />
+                  </div>
+                </div>
+
+                {scanData.parsed.source === "fallback" && (
+                  <Card className="border-none bg-warning-50 text-warning-700">
+                    <CardBody className="flex-row items-center gap-2 px-3 py-2 text-sm">
+                      {t("ocr.fallback_warning")}
+                    </CardBody>
+                  </Card>
+                )}
+
+                {(scanData.parsed.source as string) === "error" && (
+                  <Card className="border-none bg-danger-50 text-danger-700">
+                    <CardBody className="flex-row items-center gap-2 px-3 py-2 text-sm">
+                      {t("ocr.error_message")}
+                    </CardBody>
+                  </Card>
+                )}
+              </div>
+
+              <InvoiceForm
+                errorMessage={saveErrorMessage}
+                fieldErrors={fieldErrors}
+                initialData={scanData.parsed}
+                itemErrors={itemErrors}
+                saving={createInvoiceMutation.isPending}
+                onCancel={() => {
+                  clearServerErrors();
+                  setStep("upload");
+                  setSelectedFile(null);
+                  setScanData(null);
+                }}
+                onSave={handlePreSave}
+              />
+            </m.div>
+          )}
+        </AnimatePresence>
+      </LazyMotion>
+
+      <Modal isOpen={isConfirmOpen} onClose={onConfirmClose}>
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            {t("confirm.title")}
+          </ModalHeader>
+          <ModalBody>
+            <p>{t("confirm.message")}</p>
+            <div className="mt-2 space-y-2 rounded-lg bg-default-100 p-4">
+              <div className="flex justify-between">
+                <span className="font-semibold">{t("confirm.products")}:</span>
+                <span>{pendingData?.products.length}</span>
+              </div>
+              <div className="flex justify-between text-lg">
+                <span className="font-bold">{t("confirm.total")}:</span>
+                <span className={`font-bold ${appColorVariants.textStrong}`}>
+                  {formatCurrency(
+                    pendingData?.formData.totalPagar || 0,
+                    i18n.language,
+                    pendingData?.formData.moneda,
+                  )}
+                </span>
+              </div>
+              {pendingData?.formData.moneda !== baseCurrency ? (
+                <div className="flex justify-between text-sm text-default-600">
+                  <span>{t("confirm.total_base")}:</span>
+                  <span>
+                    {totalBase === null
+                      ? t("confirm.total_base_pending")
+                      : formatCurrency(totalBase, i18n.language, baseCurrency)}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button color="danger" variant="light" onPress={onConfirmClose}>
+              {t("confirm.cancel")}
+            </Button>
+            <Button
+              color={appColor}
+              isLoading={createInvoiceMutation.isPending}
+              onPress={handleConfirmSave}
+            >
+              {t("confirm.confirm")}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
+  );
+};

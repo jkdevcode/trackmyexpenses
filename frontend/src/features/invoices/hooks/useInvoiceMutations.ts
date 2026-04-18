@@ -1,16 +1,20 @@
 import type {
-  ConfirmFacturaDto,
   CreateFacturaDto,
+  CreateInvoiceWithFileDto,
   ProductCatalogItem,
+  UpdateFacturaDto,
 } from "../types";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import {
-  confirmInvoiceRequest,
   createInvoiceRequest,
+  createInvoiceWithFileRequest,
+  createProductRequest,
+  deleteInvoiceRequest,
   getProductsRequest,
   scanInvoiceRequest,
+  updateInvoiceRequest,
 } from "../services/invoiceService";
 
 export const useScanInvoiceMutation = () =>
@@ -18,9 +22,14 @@ export const useScanInvoiceMutation = () =>
     mutationFn: (file: File) => scanInvoiceRequest(file),
   });
 
-export const useConfirmInvoiceMutation = () =>
+/**
+ * Submits an OCR-confirmed invoice with its original image file to POST /facturas.
+ * This replaces the old useConfirmInvoiceMutation (POST /facturas/ocr/confirmar).
+ */
+export const useCreateInvoiceWithFileMutation = () =>
   useMutation({
-    mutationFn: (payload: ConfirmFacturaDto) => confirmInvoiceRequest(payload),
+    mutationFn: (dto: CreateInvoiceWithFileDto) =>
+      createInvoiceWithFileRequest(dto),
   });
 
 export const useCreateInvoiceMutation = () =>
@@ -28,8 +37,33 @@ export const useCreateInvoiceMutation = () =>
     mutationFn: (payload: CreateFacturaDto) => createInvoiceRequest(payload),
   });
 
+export const useUpdateInvoiceMutation = () =>
+  useMutation({
+    mutationFn: ({
+      invoiceId,
+      payload,
+    }: {
+      invoiceId: number;
+      payload: UpdateFacturaDto;
+    }) => updateInvoiceRequest(invoiceId, payload),
+  });
+
+export const useDeleteInvoiceMutation = () =>
+  useMutation({
+    mutationFn: (invoiceId: number) => deleteInvoiceRequest(invoiceId),
+  });
+
 export const useProductsQuery = () =>
   useQuery<ProductCatalogItem[]>({
     queryKey: ["productos"],
     queryFn: getProductsRequest,
+  });
+
+export const useCreateProductMutation = () =>
+  useMutation({
+    mutationFn: (payload: {
+      codigo: string;
+      nombre: string;
+      precioUnitario: number;
+    }) => createProductRequest(payload),
   });

@@ -1,4 +1,3 @@
-import { InternalServerErrorException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { createWorker } from 'tesseract.js';
 import { FacturaOcrService } from './factura-ocr.service';
@@ -14,13 +13,21 @@ describe('FacturaOcrService', () => {
   let service: FacturaOcrService;
   let facturaService: { createFromOcr: jest.Mock };
   let imageProcessor: { process: jest.Mock };
-  let textParser: { parseAndEnrich: jest.Mock };
+  let textParser: {
+    parseAndEnrich: jest.Mock;
+    parseWithAI: jest.Mock;
+    finalizeParsedData: jest.Mock;
+  };
   let worker: { recognize: jest.Mock; terminate: jest.Mock };
 
   beforeEach(async () => {
     facturaService = { createFromOcr: jest.fn() };
     imageProcessor = { process: jest.fn() };
-    textParser = { parseAndEnrich: jest.fn() };
+    textParser = {
+      parseAndEnrich: jest.fn(),
+      parseWithAI: jest.fn(),
+      finalizeParsedData: jest.fn(),
+    };
     worker = {
       recognize: jest.fn(),
       terminate: jest.fn(),
@@ -48,14 +55,15 @@ describe('FacturaOcrService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should process image and extract/parse text', async () => {
+  it('should process image with AI primary flow', async () => {
     await service.onModuleInit();
 
     imageProcessor.process.mockResolvedValue(Buffer.from('processed'));
-    worker.recognize.mockResolvedValue({ data: { text: 'OCR TEXT' } });
-    textParser.parseAndEnrich.mockResolvedValue({
-      parsed: { productos: [{ nombreDetected: 'ARROZ' }] },
-      usedFallbackParser: false,
+    textParser.parseWithAI.mockResolvedValue({
+      productos: [{ nombreDetected: 'ARROZ' }],
+    });
+    textParser.finalizeParsedData.mockResolvedValue({
+      productos: [{ nombreDetected: 'ARROZ' }],
     });
 
     const file = {
@@ -67,24 +75,59 @@ describe('FacturaOcrService', () => {
     const result = await service.processImage(file);
 
     expect(imageProcessor.process).toHaveBeenCalledWith(file.buffer);
-    expect(worker.recognize).toHaveBeenCalledWith(Buffer.from('processed'));
-    expect(textParser.parseAndEnrich).toHaveBeenCalledWith('OCR TEXT');
+    expect(textParser.parseWithAI).toHaveBeenCalled();
+    expect(textParser.finalizeParsedData).toHaveBeenCalled();
+    expect(worker.recognize).not.toHaveBeenCalled();
     expect(result).toEqual({
-      rawText: 'OCR TEXT',
-      parsed: { productos: [{ nombreDetected: 'ARROZ' }] },
+      rawText: '',
+      parsed: { productos: [{ nombreDetected: 'ARROZ' }], source: 'ai-image' },
       usedFallbackParser: false,
     });
   });
 
-  it('should throw InternalServerErrorException when OCR processing fails', async () => {
+  it('should fallback to OCR when AI image parsing fails', async () => {
+    await service.onModuleInit();
+
+    imageProcessor.process.mockResolvedValue(Buffer.from('processed'));
+    textParser.parseWithAI.mockRejectedValue(new Error('AI failed'));
+    worker.recognize.mockResolvedValue({ data: { text: 'OCR TEXT' } });
+    textParser.parseAndEnrich.mockResolvedValue({
+      parsed: { productos: [{ nombreDetected: 'ARROZ' }] },
+      usedFallbackParser: false,
+    });
+
+    const result = await service.processImage({
+      buffer: Buffer.from('raw'),
+    } as Express.Multer.File);
+
+    expect(worker.recognize).toHaveBeenCalledWith(Buffer.from('processed'));
+    expect(textParser.parseAndEnrich).toHaveBeenCalledWith(
+      'OCR TEXT',
+      undefined,
+    );
+    expect(result).toEqual({
+      rawText: 'OCR TEXT',
+      parsed: {
+        productos: [{ nombreDetected: 'ARROZ' }],
+        source: 'ocr-fallback',
+      },
+      usedFallbackParser: false,
+    });
+  });
+
+  it('should return error response when processing fails', async () => {
     await service.onModuleInit();
     imageProcessor.process.mockRejectedValue(new Error('sharp failed'));
 
-    await expect(
-      service.processImage({
-        buffer: Buffer.from('raw'),
-      } as Express.Multer.File),
-    ).rejects.toBeInstanceOf(InternalServerErrorException);
+    const result = await service.processImage({
+      buffer: Buffer.from('raw'),
+    } as Express.Multer.File);
+
+    expect(result).toEqual({
+      rawText: '',
+      parsed: { productos: [], notes: ['processing failed'], source: 'error' },
+      usedFallbackParser: true,
+    });
   });
 
   it('should delegate confirmarFactura to facturaService.createFromOcr', async () => {

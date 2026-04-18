@@ -9,9 +9,9 @@ import { isAxiosError } from "axios";
 
 import { useChangePasswordMutation } from "../hooks/useUserMutations";
 
-import { appColor } from "@/theme/theme.config";
 import { getChangePasswordSchema } from "@/schemas/profile";
 import { getErrorMessage } from "@/utils/errors";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 interface ChangePasswordValues {
   currentPassword: string;
@@ -22,6 +22,7 @@ interface ChangePasswordValues {
 const ChangePasswordCard = () => {
   const { t } = useTranslation(["profile", "auth", "validation"]);
   const changePasswordMutation = useChangePasswordMutation();
+  const { appColor } = useColorTheme();
 
   const {
     handleSubmit,

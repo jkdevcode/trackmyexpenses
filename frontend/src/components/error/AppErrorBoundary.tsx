@@ -2,8 +2,11 @@ import type React from "react";
 
 import { Component } from "react";
 import { Button } from "@heroui/button";
+import { type WithTranslation, withTranslation } from "react-i18next";
 
-interface Props {
+import { ColorThemeContext } from "@/contexts/color-theme";
+
+interface Props extends WithTranslation {
   children: React.ReactNode;
   fallbackTitle?: string;
 }
@@ -12,7 +15,10 @@ interface State {
   hasError: boolean;
 }
 
-export class AppErrorBoundary extends Component<Props, State> {
+class AppErrorBoundaryBase extends Component<Props, State> {
+  static contextType = ColorThemeContext;
+  declare context: React.ContextType<typeof ColorThemeContext>;
+
   state: State = {
     hasError: false,
   };
@@ -30,17 +36,20 @@ export class AppErrorBoundary extends Component<Props, State> {
   };
 
   render() {
+    const { t } = this.props;
+    const { appColor } = this.context;
+
     if (this.state.hasError) {
       return (
         <div className="min-h-[40vh] flex flex-col items-center justify-center gap-4 p-6 text-center">
           <h2 className="text-xl font-semibold">
-            {this.props.fallbackTitle ?? "Ocurrio un error inesperado"}
+            {this.props.fallbackTitle ?? t("common:error_boundary.title")}
           </h2>
           <p className="text-default-500 max-w-xl">
-            Esta seccion fallo. Puedes intentar recargar la vista.
+            {t("common:error_boundary.description")}
           </p>
-          <Button color="primary" onPress={this.handleRetry}>
-            Reintentar
+          <Button color={appColor} onPress={this.handleRetry}>
+            {t("common:error_boundary.retry")}
           </Button>
         </div>
       );
@@ -49,3 +58,7 @@ export class AppErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+
+export const AppErrorBoundary = withTranslation("common")(AppErrorBoundaryBase);
+
+export default AppErrorBoundary;

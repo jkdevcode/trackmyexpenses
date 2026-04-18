@@ -1,17 +1,17 @@
-import type { DateFilterType } from "../types";
-
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { addToast } from "@heroui/toast";
 
 import { getDashboardData } from "../services/dashboardService";
+import { useInvoiceFilters } from "../../invoices/hooks/useInvoiceFilters";
 
 import { getErrorMessage } from "@/utils/errors";
 
 export const useDashboardData = () => {
   const { t } = useTranslation(["dashboard", "common"]);
-  const [filter, setFilter] = useState<DateFilterType>("month");
+  const { filter, dateRangeValue, setDateRangeValue, setPeriod } =
+    useInvoiceFilters({ period: "month" });
 
   const query = useQuery({
     queryKey: ["dashboard", filter],
@@ -39,8 +39,10 @@ export const useDashboardData = () => {
   );
 
   return {
+    dateRangeValue,
     filter,
-    setFilter,
+    setDateRangeValue,
+    setPeriod,
     loading: query.isPending,
     stats: data.stats,
     chartData: data.chartData,

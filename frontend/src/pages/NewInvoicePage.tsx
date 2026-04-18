@@ -1,48 +1,88 @@
-import { lazy, Suspense, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { lazy, Suspense, useEffect } from "react";
 import { Tabs, Tab } from "@heroui/tabs";
+import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
+
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const OcrInvoiceFlow = lazy(() =>
-  import("@/features/invoices/components/OcrInvoiceFlow").then((module) => ({
+  import("@/features/invoices/ocr/OcrInvoiceFlow").then((module) => ({
     default: module.OcrInvoiceFlow,
   })),
 );
 const ManualInvoiceForm = lazy(() =>
-  import("@/features/invoices/components/ManualInvoiceForm").then((module) => ({
+  import("@/features/invoices/manual/ManualInvoiceForm").then((module) => ({
     default: module.ManualInvoiceForm,
   })),
 );
 const InvoiceListView = lazy(() =>
-  import("@/features/invoices/components/InvoiceListView").then((module) => ({
+  import("@/features/invoices/list/InvoiceListView").then((module) => ({
     default: module.InvoiceListView,
   })),
 );
 
 type InvoiceTabKey = "ocr" | "manual" | "list";
+const validTabs: InvoiceTabKey[] = ["ocr", "manual", "list"];
 
 export const NewInvoicePage = () => {
-  const { t } = useTranslation("invoices");
-  const [activeTab, setActiveTab] = useState<InvoiceTabKey>("ocr");
+  const { t } = useTranslation(["invoices", "common"]);
+  const { t: tMeta } = useTranslation("meta");
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab") as InvoiceTabKey | null;
+
+  const activeTab: InvoiceTabKey =
+    tabParam && validTabs.includes(tabParam) ? tabParam : "ocr";
+
+  useEffect(() => {
+    if (tabParam !== null && !validTabs.includes(tabParam)) {
+      setSearchParams({ tab: "ocr" }, { replace: true });
+    }
+  }, [tabParam, setSearchParams]);
+
+  const handleTabChange = (key: string) => {
+    setSearchParams({ tab: key });
+  };
+
+  const metaByTab = {
+    ocr: {
+      title: tMeta("ocr.title"),
+      description: tMeta("ocr.description"),
+    },
+    manual: {
+      title: tMeta("manual.title"),
+      description: tMeta("manual.description"),
+    },
+    list: {
+      title: tMeta("invoices.title"),
+      description: tMeta("invoices.description"),
+    },
+  };
+
+  const currentMeta = metaByTab[activeTab];
+
+  usePageMeta({
+    title: currentMeta.title,
+    description: currentMeta.description,
+  });
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-6">
-        {t("page.title", "Nueva Factura")}
-      </h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-6">{t("page.title")}</h1>
       <Tabs
         aria-label={t("page.title")}
         selectedKey={activeTab}
         variant="underlined"
-        onSelectionChange={(key) => setActiveTab(key as InvoiceTabKey)}
+        disableAnimation
+        onSelectionChange={(key) => handleTabChange(key as string)}
       >
         <Tab key="ocr" title={t("tabs.ocr")}>
           {activeTab === "ocr" ? (
             <div className="pt-4">
               <Suspense
                 fallback={
-                  <div className="py-8 text-center text-default-500">
-                    Cargando...
-                  </div>
+                  <LoadingSpinner message={t("common:loading.basic")} />
                 }
               >
                 <OcrInvoiceFlow />
@@ -55,9 +95,7 @@ export const NewInvoicePage = () => {
             <div className="pt-4">
               <Suspense
                 fallback={
-                  <div className="py-8 text-center text-default-500">
-                    Cargando...
-                  </div>
+                  <LoadingSpinner message={t("common:loading.basic")} />
                 }
               >
                 <ManualInvoiceForm />
@@ -70,9 +108,7 @@ export const NewInvoicePage = () => {
             <div className="pt-4">
               <Suspense
                 fallback={
-                  <div className="py-8 text-center text-default-500">
-                    Cargando...
-                  </div>
+                  <LoadingSpinner message={t("common:loading.basic")} />
                 }
               >
                 <InvoiceListView />

@@ -5,22 +5,26 @@ import {
   NavbarItem,
 } from "@heroui/navbar";
 import { Link } from "@heroui/link";
+import { Link as RouterLink } from "react-router-dom";
 import { Button } from "@heroui/button";
 import { useTranslation } from "react-i18next";
 
-import { appColor } from "@/theme/theme.config";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { LanguageSwitch, I18nIcon } from "@/components/ui/language-switch";
 import { availableLanguages } from "@/i18n";
+import { useColorTheme } from "@/hooks/use-color-theme";
 
 export const LandingHeader = () => {
-  const { t } = useTranslation();
-  const linkColor = appColor === "default" ? "foreground" : "primary";
+  const { t } = useTranslation("");
+  const { appColor } = useColorTheme();
+  const linkColor = appColor === "default" ? "foreground" : appColor;
 
   return (
     <HeroNavbar maxWidth="xl" position="sticky">
       <NavbarBrand>
-        <p className="font-bold text-inherit text-xl">{t("app-name")}</p>
+        <RouterLink to="/">
+          <p className="font-bold text-inherit text-xl">{t("app-name")}</p>
+        </RouterLink>
       </NavbarBrand>
       <NavbarContent className="hidden sm:flex gap-4" justify="center">
         <NavbarItem>

@@ -1,0 +1,27 @@
+{
+  "title": "Reportes",
+  "card": {
+    "title": "Reporte de facturas",
+    "description": "Selecciona un rango de fechas para generar el PDF."
+  },
+  "filters": {
+    "all_time": "Todo el tiempo",
+    "range_label": "Reporte de:"
+  },
+  "actions": {
+    "generate": "Generar reporte"
+  },
+  "validation": {
+    "from_required": "La fecha inicial es obligatoria",
+    "to_required": "La fecha final es obligatoria",
+    "from_range": "La fecha inicial debe ser menor o igual a la final",
+    "to_range": "La fecha final debe ser mayor o igual a la inicial",
+    "REPORT_NO_DATA": "No hay facturas en este rango"
+  },
+  "errors": {
+    "generation_failed": "No se pudo generar el reporte"
+  },
+  "info": {
+    "no_data": "No hay datos en ese rango"
+  }
+}

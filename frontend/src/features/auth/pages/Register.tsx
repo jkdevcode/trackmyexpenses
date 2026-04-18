@@ -13,30 +13,48 @@ import { isAxiosError } from "axios";
 
 import { useRegisterMutation } from "../hooks/useAuthMutations";
 
+import { ChevronLeftIcon } from "@/components/ui/icons";
 import { getErrorMessage } from "@/utils/errors";
-import { appColor } from "@/theme/theme.config";
 import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/ui/icons";
 import { getRegisterSchema } from "@/schemas/auth";
 import { CameraIcon } from "@/components/ui/CameraIcon";
+import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from "@/constants/currency";
+import { useAppColorVariants } from "@/theme/app-color-variants";
+import { useColorTheme } from "@/hooks/use-color-theme";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 interface RegisterFormValues {
   nombre: string;
   apellido: string;
   email: string;
-  telefono: string;
-  direccion: string;
+  /*  telefono: string;
+  direccion: string; */
   tipo_documento: string;
   documento_identidad: string;
+  monedaBase: string;
   password: string;
   confirmPassword: string;
 }
 
 const RegisterPage = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(["auth", "common", "validation"]);
   const navigate = useNavigate();
+  const { appColor } = useColorTheme();
+  const appColorVariants = useAppColorVariants();
+
+  const { t: tMeta } = useTranslation("meta");
+
+  usePageMeta({
+    title: tMeta("register.title", "Register | TrackMyExpenses"),
+    description: tMeta(
+      "register.description",
+      "Create a new TrackMyExpenses account.",
+    ),
+  });
+
   const [isVisible, setIsVisible] = useState(false);
   const registerMutation = useRegisterMutation();
-  const linkColor = appColor === "default" ? "foreground" : "primary";
+  const linkColor = appColor === "default" ? "foreground" : appColor;
 
   // Image handling
   const [foto, setFoto] = useState<File | null>(null);
@@ -86,10 +104,11 @@ const RegisterPage = () => {
       nombre: "",
       apellido: "",
       email: "",
-      telefono: "",
-      direccion: "",
+      /*  telefono: "",
+      direccion: "", */
       tipo_documento: "",
       documento_identidad: "",
+      monedaBase: DEFAULT_CURRENCY,
       password: "",
       confirmPassword: "",
     },
@@ -125,6 +144,9 @@ const RegisterPage = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-2xl w-full space-y-8 bg-content1 p-8 rounded-2xl shadow-lg">
+        <RouterLink className="mb-2 inline-block" to="/">
+          <ChevronLeftIcon className="w-6 h-6" />
+        </RouterLink>
         <div className="flex flex-col items-center">
           {/* Logo o Avatar Upload */}
           <div
@@ -141,7 +163,7 @@ const RegisterPage = () => {
               fallback={<CameraIcon className="w-10 h-10 text-default-500" />}
               src={fotoUrl}
             />
-            <span className="text-xs text-primary font-medium">
+            <span className={`text-xs font-medium ${appColorVariants.text}`}>
               {t("auth:register.avatar_fallback")}
             </span>
             <input
@@ -195,7 +217,7 @@ const RegisterPage = () => {
             />
 
             {/* Telefono */}
-            <Input
+            {/*  <Input
               color={appColor}
               errorMessage={errors.telefono?.message}
               isInvalid={!!touchedFields.telefono && !!errors.telefono}
@@ -204,10 +226,10 @@ const RegisterPage = () => {
               type="tel"
               variant="bordered"
               {...register("telefono")}
-            />
+            /> */}
 
             {/* Direccion */}
-            <Input
+            {/* <Input
               color={appColor}
               errorMessage={errors.direccion?.message}
               isInvalid={!!touchedFields.direccion && !!errors.direccion}
@@ -215,7 +237,7 @@ const RegisterPage = () => {
               placeholder={t("auth:fields.address.placeholder")}
               variant="bordered"
               {...register("direccion")}
-            />
+            /> */}
 
             {/* Tipo Documento */}
             <Controller
@@ -255,6 +277,31 @@ const RegisterPage = () => {
               placeholder={t("auth:fields.document_id.placeholder")}
               variant="bordered"
               {...register("documento_identidad")}
+            />
+
+            {/* Moneda Base */}
+            <Controller
+              control={control}
+              name="monedaBase"
+              render={({ field }) => (
+                <Select
+                  color={appColor}
+                  errorMessage={errors.monedaBase?.message}
+                  isInvalid={!!touchedFields.monedaBase && !!errors.monedaBase}
+                  label={t("auth:fields.currency.label")}
+                  placeholder={t("auth:fields.currency.placeholder")}
+                  selectedKeys={field.value ? [field.value] : []}
+                  variant="bordered"
+                  onBlur={field.onBlur}
+                  onChange={(e) => field.onChange(e.target.value)}
+                >
+                  {SUPPORTED_CURRENCIES.map((code) => (
+                    <SelectItem key={code}>
+                      {t(`common:currency.options.${code}`, code)}
+                    </SelectItem>
+                  ))}
+                </Select>
+              )}
             />
 
             {/* Password */}

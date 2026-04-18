@@ -1,0 +1,75 @@
+{
+  "terms": {
+    "title": "Términos de Servicio",
+    "updated": "Última actualización: Abril 2026",
+    "sections": {
+      "intro": {
+        "title": "1. Introducción",
+        "content": "Bienvenido a TrackMyExpenses. Al utilizar nuestro servicio, usted acepta estos Términos de Servicio. Por favor, léalos detenidamente."
+      },
+      "use": {
+        "title": "2. Uso del Servicio",
+        "content": "Nuestro servicio está diseñado para ayudarle a gestionar facturas y llevar un registro de sus gastos. Usted se compromete a usar el servicio solo con fines lícitos y de acuerdo con estos términos."
+      },
+      "responsibilities": {
+        "title": "3. Responsabilidades del Usuario",
+        "content": "Usted es responsable de mantener la confidencialidad de las credenciales de su cuenta y de toda actividad que ocurra bajo la misma."
+      },
+      "acceptable": {
+        "title": "4. Uso Aceptable",
+        "content": "No debe utilizar la aplicación para almacenar software malicioso, infringir ningún derecho de propiedad intelectual, ni participar en actividades fraudulentas."
+      },
+      "data": {
+        "title": "5. Aviso sobre Precisión de Datos (OCR/IA)",
+        "content": "Utilizamos tecnologías de Reconocimiento Óptico de Caracteres (OCR) e IA para extraer detalles de las imágenes de facturas que usted sube. Aunque nos esforzamos por alcanzar una alta precisión, no se garantiza que los resultados extraídos sean perfectos. Usted sigue siendo totalmente responsable de verificar la precisión de todos los datos extraídos antes de utilizarlos para fines contables, fiscales o legales."
+      },
+      "liability": {
+        "title": "6. Limitación de Responsabilidad",
+        "content": "TrackMyExpenses se proporciona 'tal cual' y 'según disponibilidad'. No seremos responsables de ningún daño directo, indirecto, incidental o consecuente que resulte del uso o la incapacidad de uso del servicio."
+      },
+      "modifications": {
+        "title": "7. Modificaciones al Servicio",
+        "content": "Nos reservamos el derecho de modificar o descontinuar, temporal o permanentemente, el servicio con o sin previo aviso."
+      },
+      "termination": {
+        "title": "8. Terminación",
+        "content": "Nos reservamos el derecho de suspender o cancelar su cuenta en cualquier momento, sin previo aviso, por conductas que consideremos que violan estos Términos de Servicio o sean perjudiciales para otros usuarios, para nosotros o para terceros."
+      }
+    }
+  },
+  "privacy": {
+    "title": "Política de Privacidad",
+    "updated": "Última actualización: Abril 2026",
+    "sections": {
+      "data": {
+        "title": "1. Qué Datos Recopilamos",
+        "content": "Recopilamos la información que usted nos proporciona directamente. Esto incluye información de la cuenta (como su nombre y correo), registros de transacciones financieras, facturas, y cualquier imagen que suba para su procesamiento mediante OCR."
+      },
+      "usage": {
+        "title": "2. Cómo Usamos los Datos",
+        "content": "Usamos los datos recopilados para ofrecer y mantener nuestro servicio. Las imágenes subidas se procesan mediante OCR para extraer texto y detalles. También usamos sus datos para comunicarnos con usted y mejorar su experiencia."
+      },
+      "storage": {
+        "title": "3. Almacenamiento de Datos",
+        "content": "Sus datos se almacenan de manera segura en nuestras bases de datos bajo estándares modernos de encriptación. Conservamos su información mientras su cuenta esté activa o según sea necesario para proveerle servicios."
+      },
+      "third_parties": {
+        "title": "4. Servicios de Terceros",
+        "content": "No vendemos sus datos personales. Podemos compartir información con proveedores de servicios de terceros confiables (como alojamiento o APIs de OCR) estrictamente para proporcionar la funcionalidad de TrackMyExpenses."
+      },
+      "security": {
+        "title": "5. Consideraciones de Seguridad",
+        "content": "Tomamos medidas administrativas y técnicas razonables para proteger sus datos personales del acceso no autorizado. Sin embargo, ninguna transmisión de datos a través de Internet es 100% segura."
+      },
+      "rights": {
+        "title": "6. Derechos del Usuario",
+        "content": "Usted conserva todos los derechos sobre sus datos. Puede solicitar el acceso, la corrección o la eliminación de sus datos personales de nuestra plataforma en cualquier momento si nos contacta."
+      },
+      "contact": {
+        "title": "7. Contáctenos",
+        "content": "Si tiene alguna pregunta o inquietud sobre esta Política de Privacidad, por favor contáctenos en {{email}}."
+      }
+    }
+
+  }
+}
