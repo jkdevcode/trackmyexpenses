@@ -1,11 +1,12 @@
 # TrackMyExpenses
 
-TrackMyExpenses is a full-stack expense management platform built as a monorepo with a React frontend and a NestJS backend. The application combines secure authentication, OCR-assisted invoice capture, multi-currency expense tracking, shared date filters, PDF reporting, and a Docker-ready local environment in a single workflow.
-
-## CI Status
-
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](./LICENSE)
 [![Backend CI](https://github.com/jkdevcode/trackmyexpenses/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/jkdevcode/trackmyexpenses/actions/workflows/backend-ci.yml)
 [![Frontend CI](https://github.com/jkdevcode/trackmyexpenses/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/jkdevcode/trackmyexpenses/actions/workflows/frontend-ci.yml)
+[![Dockerized](https://img.shields.io/badge/Dockerized-Yes-2496ED.svg?logo=docker&logoColor=white&style=flat-square)](#docker-compose)
+[![Version](https://img.shields.io/badge/version-v1.0.0-0A7EA4.svg?style=flat-square)](https://github.com/jkdevcode/trackmyexpenses/tags)
+
+TrackMyExpenses is a full-stack expense management platform built as a monorepo with a React frontend and a NestJS backend. The application combines secure authentication, OCR-assisted invoice capture, multi-currency expense tracking, shared date filters, PDF reporting, and a Docker-ready local environment in a single workflow.
 
 ## Features
 
@@ -82,3 +83,7 @@ Notes:
 - [`frontend/README.md`](./frontend/README.md): frontend routes, auth/report flows, shared filters, state management, and frontend environment variables.
 - [`.github/workflows/README.md`](./.github/workflows/README.md): CI/CD workflow responsibilities, Docker smoke tests, and staging deployment notes.
 - [`backend/docs/postman/README.md`](./backend/docs/postman/README.md): how to use the shared Postman collection.
+
+## 📄 License
+
+This project is licensed under the [MIT License](./LICENSE). See the `LICENSE` file for details.
