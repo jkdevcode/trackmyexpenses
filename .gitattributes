@@ -1,0 +1,6 @@
+# Force LF line endings for shell scripts
+*.sh text eol=lf
+# Force LF for Dockerfiles
+Dockerfile* text eol=lf
+# Force LF for .env files
+.env* text eol=lf
