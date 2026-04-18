@@ -1,4 +1,5 @@
 # TrackMyExpenses Frontend
+
 [![Frontend CI](https://github.com/jkdevcode/trackmyexpenses/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/jkdevcode/trackmyexpenses/actions/workflows/frontend-ci.yml)
 
 React SPA built with Vite and TypeScript. The frontend consumes the backend API, keeps authenticated sessions in sync, and renders the landing, auth, dashboard, invoices, reports, profile, settings, legal, and cookie-consent experiences. It can run with the Vite dev server locally or as a static build served by Nginx in Docker Compose.
