@@ -32,5 +32,6 @@ This folder owns backend startup configuration validation so the NestJS app can 
 
 ## Notes
 
+- For local browser-based development, `CORS_ORIGIN` can include both `http://localhost:5173` and `http://127.0.0.1:5173` when the environment mixes loopback hosts.
 - SMTP is optional for local development, but it must be fully configured if password recovery emails are expected to work.
 - Any new env var used in runtime code should be added here first to keep startup validation reliable.
