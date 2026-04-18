@@ -67,6 +67,7 @@ Notes:
 
 - The frontend container serves the Vite build through Nginx.
 - The backend container runs `docker-entrypoint.sh`, generates the Prisma client, and applies `prisma migrate deploy` when `PRISMA_MIGRATE_DEPLOY=true`.
+- The backend image now normalizes shell-script line endings during build and waits for a successful database connection before running Prisma startup steps, which makes `docker compose up` more reliable on Windows-based checkouts.
 - Inside the Docker Compose network, the backend connects to MySQL with the host `mysql`. Local host-machine processes should keep using `localhost`.
 
 ## Delivery and Tooling

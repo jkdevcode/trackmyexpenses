@@ -37,7 +37,7 @@ Notes:
 | --- | --- | --- | --- |
 | `PORT` | HTTP port used by the NestJS server. | No | `3000` |
 | `NODE_ENV` | Runtime mode used for validation and logging defaults. | No | `development` |
-| `CORS_ORIGIN` | Allowed origin list for CORS. Comma-separated values are supported. | Yes in production | `http://localhost:5173` |
+| `CORS_ORIGIN` | Allowed origin list for CORS. Comma-separated values are supported. | Yes in production | `http://localhost:5173,http://127.0.0.1:5173` |
 | `LOG_LEVEL` | Pino log level. | No | `debug` |
 | `DATABASE_URL` | Prisma connection string for MySQL. | Yes | `mysql://root:password@localhost:3306/trackmyexpenses` |
 | `JWT_SECRET` | Secret used to sign auth tokens. Use a long random value in production. | Yes | `replace-with-a-32-char-secret-value` |
@@ -93,7 +93,8 @@ You can run only MySQL from the repository root with `docker compose up -d mysql
 
 - For a backend process running on your host machine, use `localhost` in `DATABASE_URL` because Docker Compose publishes MySQL to the host port.
 - For a service running inside the same Docker Compose network, use the service name `mysql`, for example `mysql://root:<password>@mysql:3306/trackmyexpenses`.
-- The backend container uses `Dockerfile` plus `docker-entrypoint.sh`, generates the Prisma client on startup, and optionally applies migrations through `PRISMA_MIGRATE_DEPLOY`.
+- The backend container uses `Dockerfile` plus `docker-entrypoint.sh`, normalizes shell scripts to avoid CRLF issues, waits for a successful database connection through `check-db.ts`, generates the Prisma client, and optionally applies migrations through `PRISMA_MIGRATE_DEPLOY`.
+- The Docker build skips the Puppeteer Chromium download to reduce build time and avoid unnecessary network work during container creation.
 - The Docker Compose backend health check calls `GET /api/health`, which is also used by the backend CI smoke test.
 
 After MySQL is healthy, run `npx prisma migrate deploy` or `npx prisma migrate dev` from `backend/` to apply the Prisma migrations.
