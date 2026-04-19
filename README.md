@@ -32,7 +32,6 @@ TrackMyExpenses is a full-stack expense management platform built as a monorepo 
 - `frontend/`: React SPA with feature-based modules for auth, dashboard, invoices, reports, settings, landing, and legal pages.
 - `backend/`: NestJS REST API under `/api` with Prisma, Swagger, auth, invoices, OCR, reporting, and infrastructure modules.
 - `.github/workflows/`: CI/CD workflows for backend, frontend, Docker smoke tests, and staging delivery.
-- `changes_summary.txt`, `commits.txt`, `files.txt`: Change-tracking files used to align the docs with the latest merged work.
 
 ## Getting Started
 
